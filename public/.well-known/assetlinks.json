@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.fitlegacy.fit_legacy_lite",
+      "sha256_cert_fingerprints": [
+        "55:30:23:38:0E:D7:79:E9:3F:DA:36:8D:31:A6:BF:55:E8:72:F6:26:7E:1D:58:94:0F:52:71:0C:4F:5E:AE:DC"
+      ]
+    }
+  }
+]

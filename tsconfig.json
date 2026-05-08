@@ -1,0 +1,71 @@
+{
+    "compilerOptions": {
+        "target": "ES2021",
+        "useDefineForClassFields": true,
+        "lib": [
+            "ES2021",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        /* Bundler mode */
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        /* Linting */
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "utils/*": [
+                "./utils/*"
+            ],
+            "@fit-legacy/shared": [
+                "../../packages/shared/index.ts"
+            ],
+            "@fit-legacy/shared/*": [
+                "../../packages/shared/*"
+            ],
+            "@fit-legacy/ai": [
+                "../../packages/ai/src/index.ts"
+            ],
+            "@fit-legacy/ai/*": [
+                "../../packages/ai/src/*"
+            ],
+            "@fit-legacy/config": [
+                "../../packages/config/src/index.ts"
+            ],
+            "@fit-legacy/config/*": [
+                "../../packages/config/src/*"
+            ],
+            "@fit-legacy/auth": [
+                "../../packages/auth/src/index.ts"
+            ],
+            "@fit-legacy/auth/*": [
+                "../../packages/auth/src/*"
+            ]
+        },
+        "types": [
+            "vite/client"
+        ]
+    },
+    "include": [
+        "src",
+        "utils",
+        "../wallet_fitlegacy.app/wallet"
+    ],
+    "references": [
+        {
+            "path": "./tsconfig.node.json"
+        }
+    ]
+}
