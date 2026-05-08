@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Exercise, UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
-
-export interface FoodItem {
+import { Exercise } from '@fit-legacy/shared';
+import { processWirLink, encodeWir, WirProtocol } from './wir';
   id: string;
   name: string;
   calories: number;
@@ -148,40 +147,47 @@ export const useWorkoutStore = create<WorkoutState>()(
 
       loadRoutine: (data: any) => {
         // HYDRATION LOGIC (Senior)
-        // Check if it's minified format (has 'n' instead of 'name')
-        if (data.n) {
-          const exercises = (data.e || []).map((minEx: any) => {
-            // Find base info in MASTER data
-            const allExercises = Object.values(UNIFIED_EXERCISES).flatMap(sections => sections.flatMap(s => s.exercises));
-            const base = allExercises.find(ex => ex.id === minEx.i);
-            return {
-              ...base,
-              id: minEx.i,
-              sets: minEx.s,
-              reps: minEx.r,
-              weight: minEx.w,
-              section: base?.section || 'custom'
-            };
-          }).filter((ex: any) => ex.id);
+        // If data appears to be a WIR object, just process it.
+        // Or if it's already a string, processWirLink handles it.
+        // But store might receive parsed data from older logic or URL.
+        if (data && (data.n || data.v)) {
+           // We'll wrap the JSON string back and process it via the new library
+           // to ensure consistency, or we can use our library directly if we adapt it.
+           // Since processWirLink takes an encoded string, let's use the underlying hydrate/validate functions directly if it's an object.
+        }
 
-          const foods = (data.f || []).map((minFood: any) => {
-            const allFoods = Object.values(UNIFIED_FOODS).flat();
-            const base = allFoods.find(f => f.id === minFood.i);
-            return {
-              ...base,
-              id: minFood.i,
-              quantity: minFood.q
-            };
-          }).filter((f: any) => f.id);
+        // To keep it simple, we check if it has the minified keys
+        if (data.n || data.v) {
+          try {
+             const { validateWir } = require('./wir/validator');
+             const { hydrateWir } = require('./wir/hydrate');
+             const validation = validateWir(data);
+             
+             if (validation.valid && validation.data) {
+                const hydrated = hydrateWir(validation.data);
+                
+                // Map to store format
+                const exercises = hydrated.exercises.map(ex => ({
+                  ...ex,
+                  section: ex.category || 'custom'
+                })) as SelectedExercise[];
+                
+                const foods = hydrated.foods as FoodItem[];
 
-          set({
-            currentRoutine: {
-              name: data.n,
-              coverImageUrl: data.c || null,
-              exercises,
-              foods
-            }
-          });
+                set({
+                  currentRoutine: {
+                    name: hydrated.name,
+                    coverImageUrl: hydrated.coverImageUrl || null,
+                    exercises,
+                    foods
+                  }
+                });
+             } else {
+                console.error("WIR Validation failed", validation.errors);
+             }
+          } catch(e) {
+             console.error("Hydration failed", e);
+          }
         } else {
           // Legacy format
           set({
@@ -198,8 +204,9 @@ export const useWorkoutStore = create<WorkoutState>()(
       getShareableLink: () => {
         const { currentRoutine } = get();
         
-        // MINIFICATION (Senior Strategy)
-        const minified = {
+        // MINIFICATION (Senior Strategy via WIR lib)
+        const protocol: WirProtocol = {
+          v: 1,
           n: currentRoutine.name,
           c: currentRoutine.coverImageUrl,
           e: currentRoutine.exercises.map(ex => ({
@@ -214,8 +221,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           }))
         };
         
-        const routineData = JSON.stringify(minified);
-        const encoded = btoa(unescape(encodeURIComponent(routineData)));
+        const encoded = encodeWir(protocol);
         const baseUrl = window.location.origin;
         // Ruta a la Edge Function de OG — WhatsApp ve meta-tags, usuarios reales son redirigidos al SPA
         return `${baseUrl}/api/og?data=${encoded}`;

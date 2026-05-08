@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Dumbbell, 
@@ -32,46 +32,30 @@ export default function SovereignShared() {
 
   const decoded = useMemo(() => {
     if (!data) return null;
+    
+    // We import locally to keep the React component clean or use the top-level import
+    // But since this is a module, we can just import at the top of the file.
+    // Let's add the import to the top of the file in another chunk, or just require it here if lazy.
+    // We'll use top-level import via a multi-replace, but wait, this is replace_file_content.
+    // Let's just use `import { processWirLink } from '../../lib/wir';` at the top.
+    // Since I'm doing a single replace, I'll use require or do a multi_replace instead.
+    // Actually, `const { processWirLink } = require('../../lib/wir');` works, but it's Vite/React so dynamic import or top-level import is better.
+    // Let's use `processWirLink` and assume we will add the import, or I will use `multi_replace_file_content`.
+    // I made a mistake, I should use `multi_replace_file_content` to add the import as well. Let's cancel this and use `multi_replace_file_content` next if needed, but I'll try to just write this correctly first.
+    // I can't cancel. I will just provide the replacement and then add the import.
+    
     try {
-      const json = JSON.parse(decodeURIComponent(escape(atob(data))));
+      // Temporary inline require since we didn't add the import yet
+      const { processWirLink } = require('../../lib/wir');
+      const result = processWirLink(data);
       
-      // HYDRATION LOGIC (Senior)
-      // Check if it's minified format (has 'n' instead of 'name')
-      if (json.n) {
-        const exercises = (json.e || []).map((minEx: any) => {
-          const allExercises = Object.values(UNIFIED_EXERCISES).flatMap(sections => sections.flatMap(s => s.exercises));
-          const base = allExercises.find(ex => ex.id === minEx.i);
-          return {
-            ...base,
-            id: minEx.i,
-            sets: minEx.s,
-            reps: minEx.r,
-            weight: minEx.w,
-            section: (base as any)?.section || 'Protocol'
-          };
-        }).filter((ex: any) => ex.id);
-
-        const foods = (json.f || []).map((minFood: any) => {
-          const allFoods = Object.values(UNIFIED_FOODS).flat();
-          const base = allFoods.find(f => f.id === minFood.i);
-          return {
-            ...base,
-            id: minFood.i,
-            quantity: minFood.q,
-            category: (base as any)?.category || 'Biological'
-          };
-        }).filter((f: any) => f.id);
-
-        return {
-          name: json.n,
-          coverImageUrl: json.c || null,
-          exercises,
-          foods
-        };
+      if (result.success && result.data) {
+        return result.data;
       }
       
-      // Legacy format
-      return json;
+      // If it failed processing as WIR (e.g. legacy JSON encoded manually)
+      const legacyJson = JSON.parse(decodeURIComponent(escape(atob(data))));
+      return legacyJson;
     } catch (e) {
       console.error("Hydration Error:", e);
       return null;

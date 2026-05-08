@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Check, Share2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { UNIFIED_EXERCISES } from '@fit-legacy/shared';
-
+import { processWirLink } from '@/lib/wir';
 
 
 type Exercise = {
@@ -43,40 +43,31 @@ export function SharedRoutineViewer() {
       const dataParam = searchParams.get('data');
       if (dataParam) {
         try {
-          const decoded = JSON.parse(decodeURIComponent(escape(atob(dataParam))));
+          const result = processWirLink(dataParam);
           
-          // Hydrate the exercises from the minified payload
-          const allExercises = Object.values(UNIFIED_EXERCISES).flatMap(sections => sections.flatMap(s => s.exercises));
-          const exercises = (decoded.e || []).map((minEx: any) => {
-            const base = allExercises.find(ex => ex.id === minEx.i);
-            return {
-              name: base ? base.name : 'Ejercicio desconocido',
-              sets: minEx.s,
-              reps: minEx.r,
-              weight: minEx.w || 0,
-              rest: base?.rest || 60,
-              notes: ''
-            };
-          });
-
-          // Hack to get UNIFIED_FOODS since we might need to import it but we don't want to break the imports above if it's missing, let's assume it's imported or we'll just show the ID
-          const foods = (decoded.f || []).map((minFood: any) => {
-            return {
-              name: minFood.i.replace(/_/g, ' ').toUpperCase(),
-              quantity: minFood.q || 0,
-              protein: 0, // Fallback if no full catalog
-              calories: 0
-            };
-          });
-
-          setRoutine({
-            title: decoded.n || 'Rutina Compartida',
-            duration: exercises.length * 5, // Rough estimate
-            exercises,
-            foods
-          });
-          setLoading(false);
-          return;
+          if (result.success && result.data) {
+             const hydrated = result.data;
+             setRoutine({
+               title: hydrated.name || 'Rutina Compartida',
+               duration: hydrated.exercises.length * 5, // Rough estimate
+               exercises: hydrated.exercises.map(ex => ({
+                 name: ex.name,
+                 sets: ex.sets,
+                 reps: ex.reps,
+                 weight: ex.weight || 0,
+                 rest: 60,
+                 notes: ''
+               })),
+               foods: hydrated.foods.map(food => ({
+                 name: food.name,
+                 quantity: food.quantity,
+                 protein: food.protein,
+                 calories: food.calories
+               }))
+             });
+             setLoading(false);
+             return;
+          }
         } catch (e) {
           console.error("Error decoding WIR format:", e);
         }

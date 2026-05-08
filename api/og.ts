@@ -34,9 +34,12 @@ const BOT_AGENTS = [
 
 function decodeWIR(encoded: string): { name: string; coverImageUrl: string | null } {
   try {
-    // Mismo decode que el frontend: atob → escape → JSON.parse
-    // En Edge Runtime, atob está disponible globalmente
-    const json = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+    const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    const binString = atob(base64);
+    const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0)!);
+    const jsonStr = new TextDecoder().decode(bytes);
+    const json = JSON.parse(jsonStr);
+    
     return {
       name: (json.n || json.name || DEFAULT_TITLE).toUpperCase(),
       coverImageUrl: json.c || json.coverImageUrl || null,

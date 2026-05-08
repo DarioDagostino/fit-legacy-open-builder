@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { cookieStorage } from '@fit-legacy/auth/cookieStorage';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fsoevzostulbtoxcqqdh.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_o4TKqt_cncmL-nRoIm2Ozw_4s6kD07e';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  console.warn('Supabase credentials missing in .env, using hardcoded fallback');
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('⚠️ Supabase credentials missing in .env. Authentication and database features will be disabled. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder_key', {
   auth: {
     storage: cookieStorage,
     persistSession: true,
