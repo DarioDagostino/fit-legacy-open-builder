@@ -30,16 +30,16 @@
                 "./utils/*"
             ],
             "@fit-legacy/shared": [
-                "../../packages/shared/index.ts"
+                "./_consolidated_workout_nutrition/packages/shared/index.ts"
             ],
             "@fit-legacy/shared/*": [
-                "../../packages/shared/*"
+                "./_consolidated_workout_nutrition/packages/shared/*"
             ],
             "@fit-legacy/ai": [
-                "../../packages/ai/src/index.ts"
+                "./src/lib/integrations/nvidiaFallback.ts"
             ],
             "@fit-legacy/ai/*": [
-                "../../packages/ai/src/*"
+                "./src/lib/integrations/*"
             ],
             "@fit-legacy/config": [
                 "../../packages/config/src/index.ts"

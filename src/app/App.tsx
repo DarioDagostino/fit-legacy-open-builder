@@ -16,14 +16,16 @@ import { SharedRoutineViewer } from '@/app/components/routine/SharedRoutineViewe
 
 
 export default function App() {
+  const enableTelemetry = !import.meta.env.DEV;
+
   useEffect(() => {
     initStatsig(); 
   }, []);
 
   return (
     <BrowserRouter>
-      <Analytics />
-      <SpeedInsights />
+      {enableTelemetry ? <Analytics /> : null}
+      {enableTelemetry ? <SpeedInsights /> : null}
       <Toaster position="top-center" richColors theme="dark" />
       <Routes>
         {/* New Arsenal Builder (Main Tool) */}

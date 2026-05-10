@@ -1,69 +1,79 @@
-import { UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
-import { WirProtocol, HydratedWirProtocol, ExpandedExercise, ExpandedFood } from './types';
+/**
+ * src/lib/wir/hydrate.ts
+ * Converts decoded WIR document to internal app structures
+ */
 
-export function hydrateWir(protocol: WirProtocol): HydratedWirProtocol {
-  const allExercises = Object.values(UNIFIED_EXERCISES).flatMap(s => s.flatMap((g: any) => g.exercises));
-  const allFoods = Object.values(UNIFIED_FOODS).flat() as any[];
+import { WirDocument } from './schema';
+import { getExerciseById, getFoodById } from '@fit-legacy/shared';
 
-  const hydratedExercises: ExpandedExercise[] = (protocol.e || []).map(minEx => {
-    const baseInfo = allExercises.find((ex: any) => ex.id === minEx.i);
-    
-    // Provide a safe fallback if the exercise is missing from the catalog (should be caught by validator anyway)
-    if (!baseInfo) {
-      return {
-        id: minEx.i,
-        name: minEx.i.replace(/_/g, ' ').toUpperCase(),
-        category: 'UNKNOWN',
-        sets: minEx.s,
-        reps: minEx.r,
-        weight: minEx.w
-      };
+export interface HydratedRoutine {
+  name: string;
+  coverImageUrl: string | null;
+  exercises: Array<{
+    id: string;
+    name: string;
+    section: string;
+    sets: number;
+    reps: number;
+    weight: number;
+  }>;
+  foods: Array<{
+    id: string;
+    name: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+    category?: string;
+    quantity: number;
+  }>;
+}
+
+/**
+ * Converts a validated WIR document to app internal structure
+ * Resolves IDs to full exercise/food data
+ */
+export function hydrateWir(doc: WirDocument): HydratedRoutine {
+  // Hydrate exercises
+  const exercises = (doc.e || []).map(e => {
+    const exerciseData = getExerciseById(e.i);
+    if (!exerciseData) {
+      throw new Error(`Exercise not found: ${e.i}`);
     }
 
     return {
-      id: baseInfo.id,
-      name: baseInfo.name,
-      description: baseInfo.description,
-      imageUrl: baseInfo.imageUrl,
-      category: baseInfo.category || 'UNKNOWN',
-      sets: minEx.s,
-      reps: minEx.r,
-      weight: minEx.w
+      id: e.i,
+      name: exerciseData.name,
+      section: exerciseData.section,
+      sets: e.s,
+      reps: e.r,
+      weight: e.w,
     };
   });
 
-  const hydratedFoods: ExpandedFood[] = (protocol.f || []).map(minFood => {
-    const baseInfo = allFoods.find((fd: any) => fd.id === minFood.i);
-    
-    if (!baseInfo) {
-      return {
-        id: minFood.i,
-        name: minFood.i.replace(/_/g, ' ').toUpperCase(),
-        category: 'UNKNOWN',
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fat: 0,
-        quantity: minFood.q
-      };
+  // Hydrate foods
+  const foods = (doc.f || []).map(f => {
+    const foodData = getFoodById(f.i);
+    if (!foodData) {
+      throw new Error(`Food not found: ${f.i}`);
     }
 
     return {
-      id: baseInfo.id,
-      name: baseInfo.name,
-      category: baseInfo.category || 'UNKNOWN',
-      calories: baseInfo.calories || 0,
-      protein: baseInfo.protein || 0,
-      carbs: baseInfo.carbs || 0,
-      fat: baseInfo.fat || 0,
-      quantity: minFood.q
+      id: f.i,
+      name: foodData.name,
+      calories: foodData.calories,
+      protein: foodData.protein,
+      carbs: foodData.carbs,
+      fats: foodData.fats,
+      category: foodData.category,
+      quantity: f.q,
     };
   });
 
   return {
-    name: protocol.n,
-    coverImageUrl: protocol.c,
-    exercises: hydratedExercises,
-    foods: hydratedFoods
+    name: doc.n,
+    coverImageUrl: doc.c || null,
+    exercises,
+    foods,
   };
 }

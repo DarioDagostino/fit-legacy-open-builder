@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Exercise } from '@fit-legacy/shared';
-import { processWirLink, encodeWir, WirProtocol } from './wir';
+import { encodeWir, decodeWir, validateWir, hydrateWir, type WirDocument } from './wir';
+
+export interface FoodItem {
   id: string;
   name: string;
   calories: number;
@@ -41,11 +43,6 @@ interface WorkoutState {
   loadRoutine: (data: any) => void;
   getShareableLink: () => string;
 }
-
-// MINIFICATION MAPPING (Senior Strategy)
-// n: name, c: coverImageUrl, e: exercises, f: foods
-// Exercise: i: id, s: sets, r: reps, w: weight
-// Food: i: id, q: quantity
 
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
@@ -146,30 +143,20 @@ export const useWorkoutStore = create<WorkoutState>()(
       },
 
       loadRoutine: (data: any) => {
-        // HYDRATION LOGIC (Senior)
-        // If data appears to be a WIR object, just process it.
-        // Or if it's already a string, processWirLink handles it.
-        // But store might receive parsed data from older logic or URL.
-        if (data && (data.n || data.v)) {
-           // We'll wrap the JSON string back and process it via the new library
-           // to ensure consistency, or we can use our library directly if we adapt it.
-           // Since processWirLink takes an encoded string, let's use the underlying hydrate/validate functions directly if it's an object.
-        }
-
-        // To keep it simple, we check if it has the minified keys
-        if (data.n || data.v) {
-          try {
-             const { validateWir } = require('./wir/validator');
-             const { hydrateWir } = require('./wir/hydrate');
-             const validation = validateWir(data);
-             
-             if (validation.valid && validation.data) {
+        try {
+          // Handle both new .wir format and legacy formats
+          if (data && (data.v === 1 || data.n)) {
+            // Try to treat as WIR document
+            const validation = validateWir(data, { checkCatalog: true });
+            
+            if (validation.valid && validation.data) {
+              try {
                 const hydrated = hydrateWir(validation.data);
                 
                 // Map to store format
                 const exercises = hydrated.exercises.map(ex => ({
                   ...ex,
-                  section: ex.category || 'custom'
+                  difficulty: 'beginner' as const,
                 })) as SelectedExercise[];
                 
                 const foods = hydrated.foods as FoodItem[];
@@ -182,49 +169,59 @@ export const useWorkoutStore = create<WorkoutState>()(
                     foods
                   }
                 });
-             } else {
-                console.error("WIR Validation failed", validation.errors);
-             }
-          } catch(e) {
-             console.error("Hydration failed", e);
+                return;
+              } catch (hydrateError) {
+                console.error("Hydration failed", hydrateError);
+              }
+            } else {
+              console.error("WIR Validation failed", validation.errors);
+            }
           }
-        } else {
-          // Legacy format
+          
+          // Fallback: Legacy format
           set({
             currentRoutine: {
-              name: data.name || "Protocolo Cargado",
-              exercises: data.exercises || [],
-              foods: data.foods || [],
-              coverImageUrl: data.coverImageUrl || null,
+              name: data?.name || "Protocolo Cargado",
+              exercises: data?.exercises || [],
+              foods: data?.foods || [],
+              coverImageUrl: data?.coverImageUrl || null,
             }
           });
+        } catch (error) {
+          console.error("Error loading routine", error);
         }
       },
 
       getShareableLink: () => {
         const { currentRoutine } = get();
         
-        // MINIFICATION (Senior Strategy via WIR lib)
-        const protocol: WirProtocol = {
+        // Build WIR document
+        const wirDoc: WirDocument = {
           v: 1,
           n: currentRoutine.name,
-          c: currentRoutine.coverImageUrl,
-          e: currentRoutine.exercises.map(ex => ({
+          c: currentRoutine.coverImageUrl || undefined,
+          e: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.map(ex => ({
             i: ex.id,
             s: ex.sets,
             r: ex.reps,
             w: ex.weight
-          })),
-          f: currentRoutine.foods.map(f => ({
+          })) : undefined,
+          f: currentRoutine.foods.length > 0 ? currentRoutine.foods.map(f => ({
             i: f.id,
             q: f.quantity
-          }))
+          })) : undefined
         };
-        
-        const encoded = encodeWir(protocol);
-        const baseUrl = window.location.origin;
-        // Ruta a la Edge Function de OG — WhatsApp ve meta-tags, usuarios reales son redirigidos al SPA
-        return `${baseUrl}/api/og?data=${encoded}`;
+
+        try {
+          const encoded = encodeWir(wirDoc);
+          const baseUrl = window.location.origin;
+          
+          // Route can be /r/wir or /api/og - configure as needed
+          return `${baseUrl}/?data=${encoded}`;
+        } catch (error) {
+          console.error("Failed to encode WIR", error);
+          return "";
+        }
       },
     }),
     {

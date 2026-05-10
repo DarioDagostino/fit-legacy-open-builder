@@ -1,26 +1,55 @@
-export * from './types';
-export * from './validator';
-export * from './codec';
-export * from './hydrate';
+/**
+ * src/lib/wir/index.ts
+ * Central export for all WIR functionality
+ */
 
-// Convenience wrapper for the entire flow (decode -> validate -> hydrate)
-import { decodeWirPayload } from './codec';
-import { validateWir } from './validator';
-import { hydrateWir } from './hydrate';
-import { HydratedWirProtocol } from './types';
+// Schema & Types
+export {
+  WirDocumentSchema,
+  WirExerciseSchema,
+  WirFoodSchema,
+  validateWirSchema,
+  isWirDocument,
+  isWirExerciseItem,
+  isWirFoodItem,
+  type WirDocument,
+  type WirExerciseItem,
+  type WirFoodItem,
+  type WirValidationResult,
+} from './schema';
 
-export function processWirLink(encodedData: string): { success: boolean; data?: HydratedWirProtocol; errors?: string[] } {
-  try {
-    const decoded = decodeWirPayload(encodedData);
-    const validation = validateWir(decoded);
-    
-    if (!validation.valid || !validation.data) {
-      return { success: false, errors: validation.errors };
-    }
-    
-    const hydrated = hydrateWir(validation.data);
-    return { success: true, data: hydrated };
-  } catch (err: any) {
-    return { success: false, errors: [err.message || 'Error processing WIR link'] };
-  }
-}
+// Codec (Encode/Decode)
+export {
+  encodeWir,
+  decodeWir,
+  toWirUrl,
+  parseWirUrl,
+  getPayloadSize,
+  exceedsWhatsAppLimit,
+  printPayloadStats,
+} from './codec';
+
+// Validator
+export {
+  validateWir,
+  validateWirStrict,
+  isValidWir,
+  formatValidationErrors,
+  summarizeWir,
+  printWirSummary,
+  type WirValidationOptions,
+  type FullWirValidationResult,
+  type WirSummary,
+} from './validator';
+
+// Hydration (Decode to App Structures)
+export {
+  hydrateWir,
+  type HydratedRoutine,
+} from './hydrate';
+
+// Legacy compatibility
+export {
+  processWirLink,
+  type ProcessWirLinkResult,
+} from './process-link';

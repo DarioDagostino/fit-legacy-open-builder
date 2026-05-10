@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { cookieStorage } from '@fit-legacy/auth/cookieStorage';
+import { cookieStorage } from '@/lib/integrations/cookieStorage';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';

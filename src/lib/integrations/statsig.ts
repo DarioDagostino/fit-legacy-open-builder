@@ -1,12 +1,35 @@
 /**
  * Statsig Feature Flags Configuration
  */
-import Statsig from 'statsig-js';
+
+let StatsigInstance: any = null;
+
+async function getStatsig() {
+  if (StatsigInstance) {
+    return StatsigInstance;
+  }
+
+  const mod = await import('statsig-js');
+  StatsigInstance = mod.default;
+  return StatsigInstance;
+}
 
 const STATSIG_CLIENT_KEY = import.meta.env.VITE_STATSIG_CLIENT_KEY || 'client-YOUR_STATSIG_KEY';
 
 export const initStatsig = async (user?: { userID: string; email?: string }) => {
+  const isDev = import.meta.env.DEV;
+  const hasValidKey =
+    !!STATSIG_CLIENT_KEY &&
+    STATSIG_CLIENT_KEY !== 'client-YOUR_STATSIG_KEY' &&
+    STATSIG_CLIENT_KEY.startsWith('client-');
+
+  if (isDev || !hasValidKey) {
+    return;
+  }
+
   try {
+    const Statsig = await getStatsig();
+
     if (!Statsig || typeof Statsig.initialize !== 'function') {
       console.warn('Statsig SDK not properly loaded or initialize is not a function. Feature flags will be disabled.');
       return;
@@ -25,9 +48,13 @@ export const initStatsig = async (user?: { userID: string; email?: string }) => 
 };
 
 export const isFeatureEnabled = (gateName: string): boolean => {
-  return Statsig.checkGate(gateName);
+  if (!StatsigInstance) return false;
+  return StatsigInstance.checkGate(gateName);
 };
 
 export const getDynamicConfig = (configName: string) => {
-  return Statsig.getConfig(configName);
+  if (!StatsigInstance) {
+    return { get: (_key: string, fallback: any) => fallback };
+  }
+  return StatsigInstance.getConfig(configName);
 };
