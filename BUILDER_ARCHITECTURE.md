@@ -1,82 +1,72 @@
-# 🏗️ Fit Legacy — Arquitectura del Builder
+# Builder Architecture
 
-Este documento detalla la estructura exacta y la lógica de funcionamiento del **Builder Playground App** (`apps/builder_playground_app`). Esta app es el núcleo de creación de protocolos de entrenamiento y nutrición del ecosistema.
+This document describes the active architecture of Fit Legacy Builder.
 
----
-
-## 📍 Ruta Exacta del Proyecto
-`apps/builder_playground_app/`
-
----
-
-## 🗺️ Mapa de Archivos Core
+## Product Flow
 
 ```text
-src/
-├── main.tsx                # Punto de entrada (React Root)
-├── app/
-│   ├── App.tsx             # Router principal (Rutas: /, /arsenal, /builder/*)
-│   └── components/
-│       └── routine/
-│           └── SharedRoutineViewer.tsx  # Viewer del receptor (.wir)
-│   └── fitlegacyfullapp/   # Módulos heredados del HUD de Atleta
-│       └── components/
-│           └── builder/
-│               └── AthleteBuilder.tsx  # El constructor complejo (55KB)
-├── components/
-│   ├── wir/
-│   │   └── WirCanvasPreview.tsx # Canvas compartido (Sync + receptor)
-│   └── workout/
-│       ├── WorkoutBuilder.tsx  # Interfaz Mobile-First (Actualización principal)
-│       └── SharedRoutine.tsx   # Visualizador de rutinas compartidas
-├── lib/
-│   ├── store.ts            # Estado Global (Zustand + Persistencia Local)
-│   └── integrations/
-│       └── statsig.ts      # Feature Flags
-└── styles/
-    ├── index.css           # Estilos base y Tailwind
-    └── theme.css           # Variables de diseño (Noir Aesthetic)
+Builder UI -> local routine state -> WIR encoder -> share URL -> recipient viewer
 ```
 
----
+The main product flow does not require backend persistence. The generated `.wir` payload contains the routine data needed by the recipient viewer.
 
-## ⚙️ Arquitectura Técnica
+## Runtime Areas
 
-### 1. Gestión de Estado (Zustand)
-El estado de la rutina actual se maneja en `src/lib/store.ts`.
-- **Persistencia**: Las rutinas se guardan en `localStorage` automáticamente.
-- **Minificación**: Utiliza una estrategia de mapeo (ej: `n` para `name`, `e` para `exercises`) para generar URLs de compartir ultra-cortas.
+| Area | Path | Responsibility |
+|---|---|---|
+| App shell | `src/app/App.tsx` | Routes and app-level providers. |
+| Builder UI | `src/components/workout/WorkoutBuilder.tsx` | Main routine creation UI. |
+| Routine state | `src/lib/store.ts` | Zustand store and WIR link generation. |
+| WIR codec | `src/lib/wir` | Encode, decode, validate, hydrate. |
+| Canvas preview | `src/components/wir/WirCanvasPreview.tsx` | Shared visual renderer. |
+| Shared viewer | `src/app/components/routine/SharedRoutineViewer.tsx` | Recipient-facing routine view. |
+| Catalog | `_consolidated_workout_nutrition/packages/shared` | Exercise and food IDs. |
 
-### 2. Generación de Identidad (IA)
-Integración con `NvidiaImageService` (vía `@fit-legacy/ai`) para generar portadas fotorrealistas de los entrenamientos basadas en el ejercicio principal.
+## WIR Lifecycle
 
-### 3. Sincronización (Sync)
-- **Exportación**: Genera links `.WIR` (Workout Identity Resource).
-- **Mirror 1:1**: El Sync usa el mismo canvas reusable que el receptor (`WirCanvasPreview`).
-- **Plantillas**: Soporta `routine`, `meal` y `mixed` según contenido.
-- **Redirección OG**: Usa una ruta `/api/og` para que WhatsApp/RRSS muestren una tarjeta visual, pero redirige al usuario real a la app.
+1. User builds a routine.
+2. Store converts internal routine state into a WIR document.
+3. WIR codec validates and encodes the document.
+4. App generates a URL with `?data=<payload>`.
+5. Recipient opens the URL.
+6. Viewer decodes, validates, hydrates catalog IDs, and renders the routine.
 
-### 4. Sistema Visual y Renderizado "Elite Noir"
-- **Iconografía 3D (Icon-First Strategy):** Se reemplazaron por completo los emojis genéricos (🍎, 🥦) por un catálogo dinámico de íconos 3D de alta fidelidad (`/public/meat/`, `/public/more_icons_for_all_food/`, etc.).
-- **Variantes Dinámicas:** Se implementó una lógica (`pickVariant`) que asigna variantes de íconos pseudoaleatorias basadas en la longitud del nombre para evitar repeticiones visuales en alimentos recurrentes.
-- **Fallbacks Estéticos:** Si un elemento no se mapea exactamente, se muestra un ícono 3D genérico de su categoría con `drop-shadow` y opacidad, manteniendo la coherencia premium.
-- **Tipografías**: `Manrope` (UI) + `Sora` (display/headings).
-- **Paleta por template**:
-    - `routine`: base oscura + acento naranja
-    - `meal`: base oscura + acento verde
-    - `mixed`: base oscura + acento azul
-- **Consistencia**: Tokens en `src/styles/theme.css` y fuentes en `src/styles/fonts.css`.
+## State Model
 
-### 5. Fuentes de Datos
-Utiliza los paquetes compartidos del monorepo:
-- `@fit-legacy/shared`: Contiene `UNIFIED_EXERCISES` y `UNIFIED_FOODS` (La base de datos maestra).
+The builder keeps the active routine in local state with persistence through Zustand middleware.
 
----
+Main fields:
 
-## 🚀 Cómo navegar el Builder
-1. Si buscas la **interfaz táctica móvil**: Mira `src/components/workout/WorkoutBuilder.tsx`.
-2. Si buscas el **estado o la lógica de guardado**: Mira `src/lib/store.ts`.
-3. Si buscas la **configuración de rutas**: Mira `src/app/App.tsx`.
+- `name`
+- `exercises`
+- `foods`
+- `coverImageUrl`
 
----
-*Documento generado para facilitar la navegación en el monorepo Fit Legacy.*
+The recipient view should not depend on the sender's local storage.
+
+## Backend Usage
+
+The core WIR sharing flow is URL-based. Backend services are optional and used for related product surfaces:
+
+- Supabase client setup.
+- Shared content routes.
+- Mercado Pago edge function.
+- Community post route.
+
+Backend persistence should be treated as an enhancement, not as a requirement for opening a `.wir` link.
+
+## Design Constraint
+
+The main value proposition is low-friction sharing. Any architecture change should preserve:
+
+- Fast link generation.
+- No required install for recipients.
+- Browser compatibility.
+- Stable decoding of existing links.
+
+## Current Technical Debt
+
+- `WorkoutBuilder.tsx` is still large and should be split into smaller components.
+- Historical docs and consolidated code should be cleaned further.
+- Catalog ownership should be clarified.
+- End-to-end tests for link open and routine completion are still missing.

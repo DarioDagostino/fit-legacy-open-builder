@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Dumbbell, Apple, Check, Zap, Target, Activity, MessageSquare } from 'lucide-react';
+import { Dumbbell, Apple, Check, Target, Activity, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FoodIconRenderer as FoodIcon } from '../workout/FoodIconRenderer';
 
@@ -34,17 +34,18 @@ const ICON_MAP: Record<string, string> = {
   meditation: 'icono_meditacion.svg',
   boxing: 'icono_boxeo.svg',
   custom: 'icono_personalizado.svg',
-  calisthenics: 'icono_calistenia.svg'
+  calisthenics: 'icono_calistenia.svg',
 };
 
-const ExerciseIcon = ({ section, className = "w-4 h-4" }: { section?: string, className?: string }) => {
+const ExerciseIcon = ({ section, className = 'h-4 w-4' }: { section?: string; className?: string }) => {
   const normalizedSection = (section || '').toLowerCase().trim();
   const iconFile = ICON_MAP[normalizedSection] || 'icono_personalizado.svg';
+
   return (
-    <img 
-      src={`/assets/icons/workouts/${iconFile}`} 
-      className={`${className} object-contain`} 
-      alt={section || 'ejercicio'}
+    <img
+      src={`/assets/icons/workouts/${iconFile}`}
+      className={`${className} object-contain`}
+      alt={section || 'exercise'}
     />
   );
 };
@@ -60,10 +61,109 @@ interface WirCanvasPreviewProps {
   isPreview?: boolean;
 }
 
-/**
- * WirCanvasPreview: Renderiza el canvas predefinido exacto que ve el receptor
- * Con estética Neural UI, Glassmorphism y animaciones de alto nivel.
- */
+type PreviewTheme = {
+  background: string;
+  surface: string;
+  mutedSurface: string;
+  border: string;
+  text: string;
+  mutedText: string;
+  accent: string;
+  accentSoft: string;
+};
+
+const themes: Record<'clean' | 'mist' | 'navy' | 'forest' | 'ember' | 'routine' | 'meal' | 'mixed', PreviewTheme> = {
+  clean: {
+    background: '#f5f7fb',
+    surface: '#ffffff',
+    mutedSurface: '#eef3f8',
+    border: '#d9e3ee',
+    text: '#172033',
+    mutedText: '#647083',
+    accent: '#254667',
+    accentSoft: '#e6eef7',
+  },
+  mist: {
+    background: '#edf6fb',
+    surface: '#ffffff',
+    mutedSurface: '#e1eef7',
+    border: '#c6d9e8',
+    text: '#14283b',
+    mutedText: '#607386',
+    accent: '#2f5f8f',
+    accentSoft: '#e1eef9',
+  },
+  navy: {
+    background: '#eef3f8',
+    surface: '#ffffff',
+    mutedSurface: '#e4ecf5',
+    border: '#cbd8e8',
+    text: '#101827',
+    mutedText: '#5d6b7d',
+    accent: '#275f96',
+    accentSoft: '#e0edf8',
+  },
+  forest: {
+    background: '#eff8f1',
+    surface: '#ffffff',
+    mutedSurface: '#e2f0e6',
+    border: '#c6dfce',
+    text: '#14241a',
+    mutedText: '#637466',
+    accent: '#28623a',
+    accentSoft: '#e2f0e6',
+  },
+  ember: {
+    background: '#fff4ef',
+    surface: '#ffffff',
+    mutedSurface: '#f8e5dc',
+    border: '#edcaba',
+    text: '#2a1813',
+    mutedText: '#80685f',
+    accent: '#a84f36',
+    accentSoft: '#f7e3da',
+  },
+  routine: {
+    background: '#f6f7fb',
+    surface: '#ffffff',
+    mutedSurface: '#edf1f6',
+    border: '#dbe3ee',
+    text: '#141e30',
+    mutedText: '#657184',
+    accent: '#35577d',
+    accentSoft: '#e6edf5',
+  },
+  meal: {
+    background: '#f1f8f3',
+    surface: '#ffffff',
+    mutedSurface: '#e5f1e8',
+    border: '#cfe3d4',
+    text: '#14231a',
+    mutedText: '#657568',
+    accent: '#28623a',
+    accentSoft: '#e3f0e7',
+  },
+  mixed: {
+    background: '#f4f7fb',
+    surface: '#ffffff',
+    mutedSurface: '#e9eff6',
+    border: '#d5e0ec',
+    text: '#142033',
+    mutedText: '#637083',
+    accent: '#315f8e',
+    accentSoft: '#e4eef8',
+  },
+};
+
+const formatDisplayTitle = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return 'Untitled routine';
+  if (trimmed === trimmed.toUpperCase()) {
+    return trimmed.toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+  return trimmed;
+};
+
 export function WirCanvasPreview({
   template,
   palette,
@@ -81,396 +181,252 @@ export function WirCanvasPreview({
     }), { calories: 0, protein: 0 });
   }, [foods]);
 
-  const getProgress = () => {
-    const total = exercises.length + foods.length;
-    if (total === 0) return 0;
-    return Math.round((checkedItems.size / total) * 100);
-  };
-
-  const progress = getProgress();
-
-  const paletteOverrides: Record<'clean' | 'mist' | 'navy' | 'forest' | 'ember', {
-    appBgStyle: string;
-    accent: string;
-    border: string;
-  }> = {
-    clean: {
-      appBgStyle: 'radial-gradient(circle at 12% 18%, rgba(255,255,255,0.96), rgba(243,246,252,0.92) 48%, rgba(231,238,247,0.9) 100%)',
-      accent: '#254667',
-      border: 'border-[#cfdced]',
-    },
-    mist: {
-      appBgStyle: 'linear-gradient(145deg, #f8fcff 0%, #dceaf7 45%, #c6dbf0 100%)',
-      accent: '#2f5f8f',
-      border: 'border-[#bdd3e7]',
-    },
-    navy: {
-      appBgStyle: 'linear-gradient(145deg, #0f1a2c 0%, #1f3f66 52%, #2f5f8f 100%)',
-      accent: '#9fd1ff',
-      border: 'border-[#2f5f8d]/45',
-    },
-    forest: {
-      appBgStyle: 'linear-gradient(145deg, #ecfaf0 0%, #d8efdf 45%, #c2e4cf 100%)',
-      accent: '#28623a',
-      border: 'border-[#8dc4a1]/40',
-    },
-    ember: {
-      appBgStyle: 'linear-gradient(145deg, #fff4f1 0%, #ffdcd2 45%, #ffc2b2 100%)',
-      accent: '#b14f39',
-      border: 'border-[#f0b29f]/45',
-    },
-  };
-
-  // Color schemes per template with deep neural aesthetics
-  const templateScheme = template === 'meal'
-    ? {
-        appBg: 'bg-[#050a07]',
-        accent: '#52b06a',
-        accentGlow: 'rgba(82, 176, 106, 0.15)',
-        border: 'border-[#28623a]/30',
-      }
-    : template === 'mixed'
-      ? {
-          appBg: 'bg-[#080a10]',
-          accent: '#4ba3ff',
-          accentGlow: 'rgba(75, 163, 255, 0.16)',
-          border: 'border-[#2f5f8d]/35',
-        }
-      : {
-          appBg: 'bg-[#0a0a0a]',
-          accent: '#E8873A',
-          accentGlow: 'rgba(232, 135, 58, 0.15)',
-          border: 'border-white/10',
-        };
-
-  const paletteTheme = palette ? paletteOverrides[palette] : null;
-
-  const colorScheme = {
-    appBg: templateScheme.appBg,
-    accent: paletteTheme?.accent || templateScheme.accent,
-    accentGlow: templateScheme.accentGlow,
-    border: paletteTheme?.border || templateScheme.border,
-  };
-
-  const containerStyle = paletteTheme
-    ? { background: paletteTheme.appBgStyle }
-    : undefined;
-
-  const templateLabel = template === 'meal' ? 'COMIDA' : template === 'mixed' ? 'MIXTO' : 'RUTINA';
-  const templateIcon = template === 'meal' ? <Apple className="w-3.5 h-3.5" /> : <Dumbbell className="w-3.5 h-3.5" />;
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20, scale: 0.98 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      scale: 1,
-      transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }
-    }
-  };
+  const totalItems = exercises.length + foods.length;
+  const progress = totalItems === 0 ? 0 : Math.round((checkedItems.size / totalItems) * 100);
+  const totalSets = exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 0), 0);
+  const theme = palette ? themes[palette] : themes[template];
+  const displayTitle = formatDisplayTitle(title);
+  const templateLabel = template === 'meal' ? 'Comida' : template === 'mixed' ? 'Mixto' : 'Rutina';
+  const templateIcon = template === 'meal' ? <Apple className="h-4 w-4" /> : <Dumbbell className="h-4 w-4" />;
 
   const itemVariants = {
-    hidden: { opacity: 0, x: -10 },
+    hidden: { opacity: 0, y: 6 },
     visible: (i: number) => ({
       opacity: 1,
-      x: 0,
-      transition: { delay: 0.1 + i * 0.05, duration: 0.3 }
-    })
+      y: 0,
+      transition: { delay: 0.04 + i * 0.03, duration: 0.18 },
+    }),
   };
 
   return (
-    <motion.div 
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className={`relative ${colorScheme.appBg} ${colorScheme.border} border text-white font-sans w-full rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] backdrop-blur-2xl`}
-      style={containerStyle}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="w-full overflow-hidden rounded-3xl border shadow-[0_20px_55px_-35px_rgba(20,30,48,0.45)]"
+      style={{ background: theme.background, borderColor: theme.border, color: theme.text }}
     >
-      {/* Neural Scan Line Effect */}
-      <motion.div 
-        initial={{ top: "-10%" }}
-        animate={{ top: "110%" }}
-        transition={{ 
-          duration: 4, 
-          repeat: Infinity, 
-          ease: "linear" 
-        }}
-        className="absolute left-0 right-0 h-[2px] z-50 pointer-events-none opacity-20"
-        style={{ 
-          background: `linear-gradient(90deg, transparent, ${colorScheme.accent}, transparent)`,
-          boxShadow: `0 0 15px ${colorScheme.accent}`
-        }}
-      />
-
-      {/* Dynamic Background Glow */}
-      <div 
-        className="absolute -top-[10%] -right-[10%] w-[50%] h-[40%] blur-[100px] rounded-full pointer-events-none opacity-20"
-        style={{ background: colorScheme.accent }}
-      />
-      
-      {/* Header Overlay (Glass) */}
-      <div className={`relative z-10 px-6 pt-6 pb-4 flex items-center justify-between border-b ${colorScheme.border} bg-white/[0.02] backdrop-blur-md`}>
-        <div className="flex items-center gap-3">
-          <div className="relative w-6 h-6 rounded-lg overflow-hidden border border-white/15 bg-black/40">
-            <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="w-full h-full object-cover" />
+      <div className="border-b px-5 py-4" style={{ borderColor: theme.border, background: theme.surface }}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
+              <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-extrabold uppercase tracking-wide" style={{ color: theme.text }}>Fit Legacy</p>
+              <p className="text-[10px] font-bold" style={{ color: theme.mutedText }}>Routine link</p>
+            </div>
           </div>
-          <span className="font-brand-display font-black text-xs tracking-[0.2em] uppercase opacity-80">FitLegacy .WIR</span>
-        </div>
-        
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl">
-          <span style={{ color: colorScheme.accent }}>{templateIcon}</span>
-          <span className="text-[10px] font-bold tracking-wider">{templateLabel}</span>
+
+          <div className="flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-extrabold" style={{ background: theme.accentSoft, color: theme.accent }}>
+            {templateIcon}
+            {templateLabel}
+          </div>
         </div>
       </div>
 
-      {/* Hero / Stats Section */}
-      <div className="relative z-10 p-6 space-y-6">
-        <div className="space-y-1">
-          <motion.h1 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-brand-display text-3xl font-black italic tracking-tight leading-none"
-          >
-            {title || 'ENTRENAMIENTO'}
-          </motion.h1>
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-30">
-            Sesión de entrenamiento activa
+      <div className="space-y-5 px-5 py-5">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-extrabold leading-tight tracking-normal" style={{ color: theme.text }}>
+            {displayTitle}
+          </h1>
+          <p className="text-sm font-semibold leading-relaxed" style={{ color: theme.mutedText }}>
+            Checklist para completar desde el navegador, sin instalar otra app.
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {template === 'meal' ? (
             <>
-              <StatCard label="Calorías" value={Math.round(totalMacros.calories)} unit="kcal" icon={<Activity size={12} />} color={colorScheme.accent} />
-              <StatCard label="Proteína" value={Math.round(totalMacros.protein)} unit="g" icon={<Target size={12} />} color={colorScheme.accent} />
+              <StatCard label="Calorias" value={Math.round(totalMacros.calories)} unit="kcal" icon={<Activity size={14} />} theme={theme} />
+              <StatCard label="Proteina" value={Math.round(totalMacros.protein)} unit="g" icon={<Target size={14} />} theme={theme} />
             </>
           ) : template === 'mixed' ? (
             <>
-              <StatCard label="Volumen" value={exercises.length} unit="ex" icon={<Dumbbell size={12} />} color={colorScheme.accent} />
-              <StatCard label="Nutrición" value={foods.length} unit="items" icon={<Apple size={12} />} color={colorScheme.accent} />
-              <StatCard label="Energía" value={Math.round(totalMacros.calories)} unit="kcal" icon={<Zap size={12} />} color={colorScheme.accent} />
+              <StatCard label="Ejercicios" value={exercises.length} unit="items" icon={<Dumbbell size={14} />} theme={theme} />
+              <StatCard label="Comidas" value={foods.length} unit="items" icon={<Apple size={14} />} theme={theme} />
             </>
           ) : (
             <>
-              <StatCard label="Ejercicios" value={exercises.length} unit="total" icon={<Dumbbell size={12} />} color={colorScheme.accent} />
-              <StatCard label="Sets Est." value={exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 0), 0)} unit="series" icon={<Target size={12} />} color={colorScheme.accent} />
+              <StatCard label="Ejercicios" value={exercises.length} unit="items" icon={<Dumbbell size={14} />} theme={theme} />
+              <StatCard label="Series" value={totalSets} unit="total" icon={<Target size={14} />} theme={theme} />
             </>
           )}
         </div>
 
-        {/* Progress System */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-end">
-            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Progreso Total</span>
-            <span className="font-brand-display text-sm font-black italic" style={{ color: colorScheme.accent }}>{progress}%</span>
+        <div className="rounded-2xl border p-4" style={{ borderColor: theme.border, background: theme.surface }}>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-extrabold uppercase tracking-wide" style={{ color: theme.mutedText }}>Progreso</span>
+            <span className="text-sm font-extrabold" style={{ color: theme.accent }}>{progress}%</span>
           </div>
-          <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+          <div className="h-2 overflow-hidden rounded-full" style={{ background: theme.mutedSurface }}>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 1, ease: "circOut" }}
-              className="h-full rounded-full relative overflow-hidden"
-              style={{ background: colorScheme.accent }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-            </motion.div>
+              transition={{ duration: 0.35 }}
+              className="h-full rounded-full"
+              style={{ background: theme.accent }}
+            />
           </div>
+        </div>
+
+        <div className="space-y-5">
+          {template === 'mixed' ? (
+            <>
+              <ListSection title="Entrenamiento" icon={<Dumbbell size={17} />} items={exercises} type="ex" theme={theme} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+              <ListSection title="Comidas" icon={<Apple size={17} />} items={foods} type="food" theme={theme} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+            </>
+          ) : (
+            <>
+              {exercises.length > 0 && (
+                <ListSection title="Ejercicios" icon={<Dumbbell size={17} />} items={exercises} type="ex" theme={theme} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+              )}
+              {foods.length > 0 && (
+                <ListSection title="Comidas" icon={<Apple size={17} />} items={foods} type="food" theme={theme} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className={`relative z-10 px-6 pb-8 space-y-8`}>
-        {template === 'mixed' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <ListSection title="Entrenamiento" icon={<Dumbbell size={18} />} items={exercises} type="ex" color={colorScheme.accent} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
-            <ListSection title="Nutrición" icon={<Apple size={18} />} items={foods} type="food" color={colorScheme.accent} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {exercises.length > 0 && (
-              <ListSection title={template === 'meal' ? 'Carga de Trabajo' : 'Ejercicios'} icon={<Dumbbell size={18} />} items={exercises} type="ex" color={colorScheme.accent} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
-            )}
-            {foods.length > 0 && (
-              <ListSection title="Plan Nutricional" icon={<Apple size={18} />} items={foods} type="food" color={colorScheme.accent} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Decorative Footer */}
       {!isPreview && (
-        <div className="relative z-10 px-8 py-6 border-t border-white/5 bg-white/[0.01] text-center">
-          <p className="text-[10px] opacity-30 italic font-medium max-w-[280px] mx-auto">
-            {template === 'meal'
-              ? 'LA CONSISTENCIA NUTRICIONAL ES EL CIMIENTO DEL RENDIMIENTO.'
-              : template === 'mixed'
-                ? 'CADA SERIE Y CADA COMIDA SON PIEDRAS EN TU LEGADO.'
-                : 'LA DISCIPLINA SUPERA AL TALENTO CUANDO EL TALENTO NO SE ENTRENA.'}
-          </p>
+        <div className="border-t px-5 py-4 text-center text-[11px] font-semibold" style={{ borderColor: theme.border, background: theme.surface, color: theme.mutedText }}>
+          Marca cada item como hecho y volve al link cuando lo necesites.
         </div>
       )}
     </motion.div>
   );
 }
 
-/**
- * StatCard Sub-component
- */
 interface StatCardProps {
   label: string;
   value: string | number;
   unit: string;
   icon: React.ReactNode;
-  color: string;
+  theme: PreviewTheme;
 }
 
-function StatCard({ label, value, unit, icon, color }: StatCardProps) {
+function StatCard({ label, value, unit, icon, theme }: StatCardProps) {
   return (
-    <div className="relative group overflow-hidden rounded-2xl bg-white/[0.03] border border-white/5 p-3 hover:bg-white/[0.06] transition-colors">
-      <div className="flex items-center gap-2 mb-1">
-        <span style={{ color }}>{icon}</span>
-        <span className="text-[8px] uppercase font-bold tracking-widest opacity-40">{label}</span>
+    <div className="rounded-2xl border p-3" style={{ borderColor: theme.border, background: theme.surface }}>
+      <div className="mb-2 flex items-center gap-2" style={{ color: theme.accent }}>
+        {icon}
+        <span className="text-[10px] font-extrabold uppercase tracking-wide" style={{ color: theme.mutedText }}>{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
-        <span className="font-brand-display text-xl font-black tracking-tighter">{value}</span>
-        <span className="text-[10px] font-bold opacity-30">{unit}</span>
+        <span className="text-2xl font-extrabold leading-none" style={{ color: theme.text }}>{value}</span>
+        <span className="text-xs font-bold" style={{ color: theme.mutedText }}>{unit}</span>
       </div>
     </div>
   );
 }
 
-/**
- * ListSection Sub-component
- */
 interface ListSectionProps {
   title: string;
   icon: React.ReactNode;
-  items: any[];
+  items: Array<CanvasExercise | CanvasFood>;
   type: 'ex' | 'food';
-  color: string;
+  theme: PreviewTheme;
   checkedItems: Set<string>;
   onToggle: (id: string) => void;
   variants: any;
 }
 
-function ListSection({ title, icon, items, type, color, checkedItems, onToggle, variants }: ListSectionProps) {
+function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, variants }: ListSectionProps) {
   if (items.length === 0) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-white/5 border border-white/10" style={{ color }}>
-            {icon}
-          </div>
-          <h2 className="font-brand-display text-sm font-black uppercase tracking-widest opacity-90">{title}</h2>
-        </div>
-        <div className="p-8 rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center opacity-20">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-center">Esperando nueva rutina...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
-  
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-white/5 border border-white/10" style={{ color }}>
+    <section className="space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: theme.accentSoft, color: theme.accent }}>
           {icon}
         </div>
-        <h2 className="font-brand-display text-sm font-black uppercase tracking-widest opacity-90">{title}</h2>
+        <h2 className="text-sm font-extrabold uppercase tracking-wide" style={{ color: theme.text }}>{title}</h2>
       </div>
-      
+
       <div className="space-y-2">
         {items.map((item, idx) => {
           const itemId = `${type}_${idx}`;
           const isDone = checkedItems.has(itemId);
-          
+
           return (
             <motion.div
               key={itemId}
               custom={idx}
               variants={variants}
+              initial="hidden"
+              animate="visible"
               onClick={() => onToggle(itemId)}
               onKeyDown={(e) => e.key === 'Enter' && onToggle(itemId)}
               tabIndex={0}
               role="checkbox"
               aria-checked={isDone}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              className={`group flex items-center gap-4 p-3 rounded-2xl cursor-pointer transition-all border outline-none focus-visible:ring-1 focus-visible:ring-white/20 ${
-                isDone 
-                ? 'bg-emerald-500/5 border-emerald-500/20 opacity-50' 
-                : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10'
-              }`}
+              className="cursor-pointer rounded-2xl border p-3 outline-none transition-transform active:scale-[0.99] focus-visible:ring-2"
+              style={{
+                borderColor: isDone ? '#9bd2b0' : theme.border,
+                background: isDone ? '#eef9f1' : theme.surface,
+                color: theme.text,
+              }}
             >
-              {/* Checkbox Neural */}
-              <div 
-                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                  isDone 
-                  ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
-                  : 'border-white/10 group-hover:border-white/30'
-                }`}
-              >
-                <AnimatePresence>
-                  {isDone && (
-                    <motion.div
-                      initial={{ scale: 0, rotate: -20 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      exit={{ scale: 0 }}
-                    >
-                      <Check className="w-4 h-4 text-black stroke-[4]" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  {type === 'food' ? (
-                    <FoodIcon category={(item as any).category} name={item.name} />
-                  ) : (
-                    <ExerciseIcon section={(item as any).section} />
-                  )}
-                  <p className={`text-sm font-bold truncate transition-all ${isDone ? 'line-through opacity-50' : ''}`}>
-                    {item.name}
-                  </p>
+              <div className="flex items-start gap-3">
+                <div
+                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2"
+                  style={{
+                    borderColor: isDone ? '#2f9d55' : theme.border,
+                    background: isDone ? '#2f9d55' : theme.mutedSurface,
+                  }}
+                >
+                  <AnimatePresence>
+                    {isDone && (
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                        <Check className="h-4 w-4 text-white stroke-[4]" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="flex gap-2 text-[10px] font-bold opacity-40">
-                  {type === 'ex' ? (
-                    <>
-                      <span>{item.sets} SETS</span>
-                      <span>·</span>
-                      <span>{item.reps} REPS</span>
-                      {item.weight > 0 && (
-                        <>
-                          <span>·</span>
-                          <span style={{ color }}>{item.weight}KG</span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <span>{item.quantity}G</span>
-                      <span>·</span>
-                      <span>{item.calories}KCAL</span>
-                    </>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    {type === 'food' ? (
+                      <FoodIcon category={(item as CanvasFood).category} name={item.name} />
+                    ) : (
+                      <ExerciseIcon section={(item as CanvasExercise).section} />
+                    )}
+                    <p className={`truncate text-sm font-extrabold ${isDone ? 'line-through' : ''}`} style={{ color: isDone ? theme.mutedText : theme.text }}>
+                      {item.name}
+                    </p>
+                  </div>
+
+                  <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] font-bold" style={{ color: theme.mutedText }}>
+                    {type === 'ex' ? (
+                      <>
+                        <span>{(item as CanvasExercise).sets} sets</span>
+                        <span>{(item as CanvasExercise).reps} reps</span>
+                        {(item as CanvasExercise).weight > 0 && <span>{(item as CanvasExercise).weight} kg</span>}
+                      </>
+                    ) : (
+                      <>
+                        <span>{(item as CanvasFood).quantity} g</span>
+                        <span>{(item as CanvasFood).calories} kcal</span>
+                        <span>{(item as CanvasFood).protein} g protein</span>
+                      </>
+                    )}
+                  </div>
+
+                  {item.notes && (
+                    <div className="mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-xs font-semibold leading-relaxed" style={{ background: theme.mutedSurface, color: theme.mutedText }}>
+                      <MessageSquare size={13} className="mt-0.5 shrink-0" style={{ color: theme.accent }} />
+                      <p>{item.notes}</p>
+                    </div>
                   )}
                 </div>
               </div>
-
-              {/* Notes display */}
-              {item.notes && (
-                <div className="mt-2 ml-10 flex items-start gap-2 opacity-60">
-                  <MessageSquare size={10} className="mt-0.5 shrink-0" style={{ color }} />
-                  <p className="text-[9px] leading-tight italic">{item.notes}</p>
-                </div>
-              )}
             </motion.div>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
-

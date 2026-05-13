@@ -51,7 +51,7 @@ export function SharedRoutineViewer() {
              setRoutine({
                template: hydrated.template || 'routine',
                palette: hydrated.palette,
-               title: hydrated.name || 'Rutina Compartida',
+               title: hydrated.name || 'Shared routine',
                duration: hydrated.exercises.length * 5, // Rough estimate
                exercises: hydrated.exercises.map((ex) => ({
                  name: ex.name,
@@ -125,8 +125,8 @@ export function SharedRoutineViewer() {
     return (
       <div className="min-h-screen bg-[#0C0C0E] flex flex-col items-center justify-center p-6 text-center font-sans">
         <AlertTriangle className="w-12 h-12 text-[#E8873A] mb-4 opacity-80" />
-        <h1 className="text-xl font-bold text-white font-serif tracking-wide mb-2">Rutina no encontrada</h1>
-        <p className="text-[#F0EEF8]/60 text-sm">El enlace caducó o el slug es incorrecto.</p>
+        <h1 className="text-xl font-bold text-white font-serif tracking-wide mb-2">Routine not found</h1>
+        <p className="text-[#F0EEF8]/60 text-sm">The link is invalid or no longer available.</p>
       </div>
     );
   }

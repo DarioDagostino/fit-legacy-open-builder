@@ -294,14 +294,14 @@ export default function SovereignShared() {
                   className="w-full h-16 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-black text-sm italic uppercase rounded-2xl flex items-center justify-center gap-3 hover:bg-[#25D366]/20 hover:border-[#25D366]/60 transition-all active:scale-[0.98]"
                  >
                    <MessageCircle className="w-5 h-5" aria-hidden="true" />
-                   DESAFÍAR POR WHATSAPP
+                   COMPARTIR POR WHATSAPP
                  </button>
                  <button 
                   onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Rutina Copiada'); }}
-                  aria-label="Copiar link de acceso .WIR"
+                  aria-label="Copiar link de acceso"
                   className="w-full py-6 bg-transparent border border-white/10 text-white font-black text-sm uppercase italic rounded-2xl hover:bg-white/5 transition-[background-color,border-color,transform]"
                  >
-                   COPIAR ACCESO .WIR
+                   COPIAR LINK
                  </button>
               </div>
 
@@ -311,7 +311,7 @@ export default function SovereignShared() {
                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Sovereign Performance</p>
                  </div>
                  <p className="text-sm text-zinc-500 leading-relaxed italic">
-                   Este entrenamiento ha sido validado por el motor de Fit Legacy. Diseñado para optimización metabólica y fuerza máxima.
+                   Rutina lista para abrir en el navegador, sin instalar otra app.
                  </p>
               </div>
 

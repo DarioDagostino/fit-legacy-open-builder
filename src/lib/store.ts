@@ -50,7 +50,7 @@ export const useWorkoutStore = create<WorkoutState>()(
   persist(
     (set, get) => ({
       currentRoutine: {
-        name: 'NUEVA RUTINA',
+        name: 'Untitled routine',
         exercises: [],
         foods: [],
         coverImageUrl: null,
@@ -150,7 +150,7 @@ export const useWorkoutStore = create<WorkoutState>()(
 
       clearRoutine: () => {
         set({
-          currentRoutine: { name: "NUEVA RUTINA", exercises: [], foods: [], coverImageUrl: null }
+          currentRoutine: { name: 'Untitled routine', exercises: [], foods: [], coverImageUrl: null }
         });
       },
 
@@ -193,7 +193,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           // Fallback: Legacy format
           set({
             currentRoutine: {
-              name: data?.name || "Rutina Importada",
+              name: data?.name || 'Imported routine',
               exercises: data?.exercises || [],
               foods: data?.foods || [],
               coverImageUrl: data?.coverImageUrl || null,
@@ -215,7 +215,7 @@ export const useWorkoutStore = create<WorkoutState>()(
             ? 'meal'
             : 'routine';
         
-        // Build WIR document
+        // Build the compact share payload used by the public routine link.
         const wirDoc: WirDocument = {
           v: 1,
           t: templateType,

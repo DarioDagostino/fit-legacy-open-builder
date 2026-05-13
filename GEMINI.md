@@ -1,48 +1,22 @@
-# 🧱 Builder Playground App — Guía para IA
+# Assistant Context
 
-> Sandbox de experimentación con Builder.io, OpenAI y features avanzadas.
-> **Puerto local:** `5178` | **URL prod:** `https://builders.fitlegacy.app`
+This repository is a Vite/React project for link-based routine sharing.
 
----
+## Product Description
 
-## 🎯 ¿Qué es esta App?
+Fit Legacy Builder lets a user create a workout or nutrition routine and share it as a URL. The recipient can open the link in a browser without installing an app.
 
-Un playground de experimentación y prototipado. Aquí se prueban integraciones nuevas y features antes de llevarlas a las apps de producción. Incluye integración con Builder.io para CMS visual.
+## Important Paths
 
----
+- `src/components/workout/WorkoutBuilder.tsx`
+- `src/app/components/routine/SharedRoutineViewer.tsx`
+- `src/lib/wir`
+- `src/lib/store.ts`
+- `_consolidated_workout_nutrition/packages/shared`
 
-## 📁 Estructura
+## Guidance
 
-```
-src/
-├── app/
-│   ├── App.tsx
-│   └── components/    → Componentes experimentales
-├── imports/
-├── lib/
-├── styles/
-└── utils/
-```
-
----
-
-## ⚙️ Dependencias Únicas (que otras apps NO tienen)
-
-| Librería | Propósito |
-|---|---|
-| `@builder.io/react` | CMS visual — renderizar contenido desde Builder.io |
-| `openai` | SDK de OpenAI (GPT) como alternativa/complemento a Gemini |
-| `@neondatabase/serverless` | Conexión a NeonDB (alternativa/experimento a Supabase) |
-| `statsig-js` + `statsig-react` | Feature flags y A/B testing |
-
-| `@vercel/speed-insights` | Monitoreo de performance |
-
----
-
-## ⚠️ Reglas Críticas
-
-1. **Este es un sandbox.** No asumir que el código aquí está listo para producción.
-2. **Builder.io:** Requiere una `BUILDER_IO_API_KEY` en `.env`. Verificar antes de tocar código de Builder.
-3. **OpenAI vs Gemini:** Esta app experimenta con ambos. El ecosistema principal usa Gemini. No migrar features de Gemini a OpenAI sin consenso.
-4. Las features exitosas aquí deben **migrarse y pulirse** en `the_road_app` o la app correspondiente.
-5. `@neondatabase/serverless` es experimental. La BD oficial es Supabase PostgreSQL.
+- Keep `.wir` as a technical implementation detail.
+- Avoid generic fitness-app positioning.
+- Avoid promotional language.
+- Preserve build, tests, and typecheck.

@@ -298,7 +298,7 @@ export default function MobileFirstBuilder() {
   const addCustomExercise = () => {
     const trimmedName = customExerciseName.trim();
     if (!trimmedName) {
-      toast.error('Escribe un nombre para el ejercicio');
+      toast.error('Enter an exercise name');
       return;
     }
 
@@ -318,6 +318,29 @@ export default function MobileFirstBuilder() {
     setCustomSeries(3);
     setCustomReps(10);
     setCustomWeight(0);
+    setActiveTab('build');
+  };
+
+  const addSampleRoutine = () => {
+    const sampleIds = ['press_banca', 'remo_barra', 'sentadilla'];
+    const samples = sampleIds
+      .map((id) => allExercises.find((exercise) => exercise.id === id))
+      .filter(Boolean);
+
+    samples.forEach((exercise) => {
+      addExercise({
+        ...exercise,
+        sets: 3,
+        reps: 10,
+        weight: 0,
+      });
+    });
+
+    if (!currentRoutine.name || currentRoutine.name === 'Untitled routine') {
+      updateRoutineName('Sample routine');
+    }
+
+    toast.success('Sample routine added');
     setActiveTab('build');
   };
 
@@ -359,6 +382,33 @@ export default function MobileFirstBuilder() {
     return 'routine';
   }, [currentRoutine.exercises.length, currentRoutine.foods.length]);
 
+  const hasRoutineItems = currentRoutine.exercises.length > 0 || currentRoutine.foods.length > 0;
+  const routineItemCount = currentRoutine.exercises.length + currentRoutine.foods.length;
+  const routineDisplayName = useMemo(() => {
+    const trimmed = currentRoutine.name.trim();
+    if (!trimmed) return 'Untitled routine';
+    if (trimmed === trimmed.toUpperCase()) {
+      return trimmed.toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+    }
+    return trimmed;
+  }, [currentRoutine.name]);
+
+  const screenTitle = activeTab === 'catalog'
+    ? 'Add items'
+    : activeTab === 'food'
+      ? 'Meals'
+      : activeTab === 'build'
+        ? 'Routine'
+        : 'Share';
+
+  const screenSubtitle = activeTab === 'catalog'
+    ? 'Add exercises or meals to create a shareable routine link.'
+    : activeTab === 'food'
+      ? 'Adjust meal portions before sharing.'
+      : activeTab === 'build'
+        ? 'Edit the routine your client will open.'
+        : 'Preview the client view and send the link.';
+
   const selectedWirPalette = useMemo<'clean' | 'mist' | 'navy' | 'forest' | 'ember' | undefined>(() => {
     if (catalogBgImage) {
       return undefined;
@@ -368,14 +418,14 @@ export default function MobileFirstBuilder() {
   }, [catalogBgId, catalogBgImage]);
 
   const sharePreviewText = useMemo(() => {
-    const routineName = (currentRoutine.name || 'NUEVA RUTINA').toUpperCase();
+    const routineName = routineDisplayName;
     const totalItems = currentRoutine.exercises.length + currentRoutine.foods.length;
     const exerciseLine = `Ejercicios: ${currentRoutine.exercises.length}`;
-    const foodLine = `Nutrición: ${currentRoutine.foods.length}`;
+    const foodLine = `Comidas: ${currentRoutine.foods.length}`;
     const totalLine = `Items totales: ${totalItems}`;
 
-    return `💪 NUEVA RUTINA: ${routineName}\n\n${exerciseLine}\n${foodLine}\n${totalLine}\n\nToca para abrir tu entrenamiento en Fit Legacy:\n${getShareableLink(selectedWirPalette)}`;
-  }, [currentRoutine.name, currentRoutine.exercises.length, currentRoutine.foods.length, getShareableLink, selectedWirPalette]);
+    return `Rutina: ${routineName}\n\n${exerciseLine}\n${foodLine}\n${totalLine}\n\nAbrila sin instalar nada:\n${getShareableLink(selectedWirPalette)}`;
+  }, [routineDisplayName, currentRoutine.exercises.length, currentRoutine.foods.length, getShareableLink, selectedWirPalette]);
 
   const handleCatalogLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -413,8 +463,8 @@ export default function MobileFirstBuilder() {
              <button
                onClick={() => setShowCustomize(v => !v)}
                className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 flex items-center justify-center transition-colors"
-               aria-label="Menú de opciones"
-               title="Menú"
+               aria-label="Options menu"
+               title="Options"
              >
                <Menu className="w-5 h-5 text-white" />
              </button>
@@ -422,10 +472,10 @@ export default function MobileFirstBuilder() {
                <img src="/icons/fit-legacy-mark.svg" alt="FL" className="w-full h-full object-cover opacity-90" />
              </div>
              <div className="flex flex-col">
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Fit Legacy</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Fit Legacy Builder</span>
                <div className="flex items-center gap-1.5 opacity-60">
                  <div className="w-1.2 h-1.2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-                 <span className="text-[7px] font-mono uppercase tracking-widest font-black">System Online</span>
+                 <span className="text-[7px] font-mono uppercase tracking-widest font-black">Routine link tool</span>
                </div>
              </div>
            </div>
@@ -433,7 +483,7 @@ export default function MobileFirstBuilder() {
              <motion.button
                onClick={() => {
                  if (!hasValidDonationUrl) {
-                   toast.info('Configura VITE_MP_DONATION_URL para habilitar donaciones');
+                   toast.info('Set VITE_MP_DONATION_URL to enable donations');
                    return;
                  }
                  window.open(donationUrl, '_blank', 'noopener,noreferrer');
@@ -443,16 +493,16 @@ export default function MobileFirstBuilder() {
                animate={{ y: [0, -2, 0] }}
                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/15 hover:bg-white/25 border border-white/40 flex items-center justify-center transition-colors shadow-lg"
-               aria-label="Donar con MercadoPago"
-               title="Donar para hacer crecer la comunidad"
+               aria-label="Donate with Mercado Pago"
+               title="Support the project"
              >
-               <img src="/mercadopago/Group%2016.webp" className="w-8 h-8 md:w-9 md:h-9 object-contain" alt="Donar" />
+               <img src="/mercadopago/Group%2016.webp" className="w-8 h-8 md:w-9 md:h-9 object-contain" alt="Donate" />
              </motion.button>
            ) : activeTab === 'food' ? (
              <motion.button
                onClick={() => {
                  if (!hasValidDonationUrl) {
-                   toast.info('Configura VITE_MP_DONATION_URL para habilitar donaciones');
+                   toast.info('Set VITE_MP_DONATION_URL to enable donations');
                    return;
                  }
                  window.open(donationUrl, '_blank', 'noopener,noreferrer');
@@ -462,10 +512,10 @@ export default function MobileFirstBuilder() {
                animate={{ y: [0, -2, 0] }}
                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/15 hover:bg-white/25 border border-white/40 flex items-center justify-center transition-colors shadow-lg"
-               aria-label="Donar con MercadoPago"
-               title="Donar para hacer crecer la comunidad"
+               aria-label="Donate with Mercado Pago"
+               title="Support the project"
              >
-               <img src="/mercadopago/Group%2016.webp" className="w-8 h-8 md:w-9 md:h-9 object-contain" alt="Donar" />
+               <img src="/mercadopago/Group%2016.webp" className="w-8 h-8 md:w-9 md:h-9 object-contain" alt="Donate" />
              </motion.button>
            ) : (
              <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center" aria-hidden="true">
@@ -480,13 +530,14 @@ export default function MobileFirstBuilder() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 src={catalogLogo} 
-                alt="Logo del Catálogo" 
+                alt="Catalog logo" 
                 className="w-12 h-12 object-contain rounded-2xl bg-white/10 p-1.5 border border-white/20 shadow-lg" 
               />
             )}
-            <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-              {activeTab === 'catalog' ? 'EXPLORAR' : activeTab === 'food' ? 'NUTRIR' : activeTab === 'build' ? 'BUILD' : 'ENVIAR'}
-            </h1>
+            <div>
+              <h1 className="text-4xl font-black italic uppercase tracking-tighter">{screenTitle}</h1>
+              <p className="mt-1 max-w-xs text-[10px] font-bold uppercase tracking-widest text-white/65">{screenSubtitle}</p>
+            </div>
           </div>
         </div>
       </header>
@@ -519,7 +570,7 @@ export default function MobileFirstBuilder() {
                   className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${builderMode === 'workout' ? 'text-white' : 'text-[#35577d] hover:text-[#141e30]'}`}
                 >
                   <Dumbbell size={16} />
-                  EJERCICIOS
+                  Exercises
                 </button>
                 <button 
                   onClick={() => setBuilderMode('nutrition')} 
@@ -528,7 +579,7 @@ export default function MobileFirstBuilder() {
                   className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${builderMode === 'nutrition' ? 'text-white' : 'text-[#35577d] hover:text-[#141e30]'}`}
                 >
                   <Apple size={16} />
-                  COMIDAS
+                  Meals
                 </button>
               </div>
 
@@ -537,7 +588,7 @@ export default function MobileFirstBuilder() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5b6472]" aria-hidden="true" />
                   <input 
                     type="text"
-                    placeholder={`Buscar ${builderMode === 'workout' ? 'ejercicios' : 'nutrición'}...`}
+                    placeholder={`Search ${builderMode === 'workout' ? 'exercises' : 'foods'}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full bg-white/65 backdrop-blur-sm border border-white/50 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#35577d] transition-[border-color] font-bold text-sm text-[#102033] placeholder:text-[#5b6472]"
@@ -562,7 +613,7 @@ export default function MobileFirstBuilder() {
                 {isCustomWorkoutFilter && (
                   <div className="bg-white/76 backdrop-blur-md border border-white/50 rounded-2xl p-4 space-y-3 shadow-[0_16px_24px_-20px_rgba(20,30,48,0.7)]">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#254667]">Agregar nuevo</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#254667]">Custom exercise</p>
                       <ExerciseIcon section="custom" className="w-6 h-6" />
                     </div>
 
@@ -570,13 +621,13 @@ export default function MobileFirstBuilder() {
                       type="text"
                       value={customExerciseName}
                       onChange={(e) => setCustomExerciseName(e.target.value)}
-                      placeholder="Nombre del ejercicio"
+                      placeholder="Exercise name"
                       className="w-full bg-white/80 border border-white/60 rounded-xl py-2.5 px-3 text-xs font-bold text-[#102033] placeholder:text-[#5b6472] focus:outline-none focus:border-[#35577d]"
                     />
 
                     <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1">
-                        <p className="text-[8px] font-black uppercase text-[#5b6472]">Series</p>
+                        <p className="text-[8px] font-black uppercase text-[#5b6472]">Sets</p>
                         <div className="flex items-center justify-between bg-white/70 border border-white/60 rounded-lg px-2 py-1.5">
                           <button onClick={() => setCustomSeries(v => Math.max(1, v - 1))} className="text-[#254667]"><Minus size={14} /></button>
                           <span className="text-xs font-black text-[#102033]">{customSeries}</span>
@@ -594,7 +645,7 @@ export default function MobileFirstBuilder() {
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-[8px] font-black uppercase text-[#5b6472]">Peso</p>
+                        <p className="text-[8px] font-black uppercase text-[#5b6472]">Weight</p>
                         <div className="flex items-center justify-between bg-white/70 border border-white/60 rounded-lg px-2 py-1.5">
                           <button onClick={() => setCustomWeight(v => Math.max(0, v - 2.5))} className="text-[#254667]"><Minus size={14} /></button>
                           <span className="text-xs font-black text-[#102033]">{customWeight}</span>
@@ -607,7 +658,7 @@ export default function MobileFirstBuilder() {
                       onClick={addCustomExercise}
                       className="w-full bg-[#141e30] text-white rounded-xl py-2.5 text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-transform"
                     >
-                      Agregar nuevo
+                      Add custom exercise
                     </button>
                   </div>
                 )}
@@ -615,7 +666,7 @@ export default function MobileFirstBuilder() {
                 {filteredItems.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center opacity-40 text-center space-y-4">
                     <Ghost size={48} />
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Sin resultados</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">No results</p>
                   </div>
                 ) : (
                   filteredItems.map(item => (
@@ -623,7 +674,7 @@ export default function MobileFirstBuilder() {
                       key={`${builderMode}-${item.id}`}
                       onClick={() => {
                         builderMode === 'workout' ? addExercise(item as any) : addFood(item as any);
-                        toast.success(`${item.name} añadido`);
+                        toast.success(`${item.name} added`);
                       }}
                       className="bg-white/72 backdrop-blur-md border border-white/45 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-all group cursor-pointer hover:bg-white/80 shadow-[0_16px_24px_-20px_rgba(20,30,48,0.7)]"
                     >
@@ -657,8 +708,8 @@ export default function MobileFirstBuilder() {
               className="h-full flex flex-col p-6 space-y-6"
             >
               <div className="space-y-1">
-                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#28623a]">Mi Nutrición</h2>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472]">Gestiona las porciones de tu plan</p>
+                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#28623a]">Meals</h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472]">Adjust the food section before sharing</p>
               </div>
 
               <div className="grid grid-cols-4 gap-2">
@@ -694,11 +745,12 @@ export default function MobileFirstBuilder() {
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
                 {currentRoutine.foods.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6 opacity-60">
-                    <Apple size={64} className="text-[#28623a]/20 animate-pulse" />
+                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
+                    <Apple size={64} className="text-[#28623a]/25" />
                     <div className="space-y-2">
-                      <p className="text-sm font-black uppercase tracking-widest">Sin alimentos</p>
-                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('nutrition'); }} className="text-[10px] font-black text-[#28623a] underline underline-offset-4">IR AL CATÁLOGO</button>
+                      <p className="text-sm font-black uppercase tracking-widest text-[#141e30]">No meals yet</p>
+                      <p className="max-w-xs text-xs font-bold leading-relaxed text-[#5b6472]">Add foods if this routine includes nutrition. You can also share workout-only links.</p>
+                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('nutrition'); }} className="mt-2 rounded-xl bg-[#28623a] px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white">Add food</button>
                     </div>
                   </div>
                 ) : (
@@ -726,7 +778,7 @@ export default function MobileFirstBuilder() {
                               <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#28623a] opacity-40" />
                               <input 
                                 type="text"
-                                placeholder="Nota..."
+                                placeholder="Note..."
                                 value={food.notes || ''}
                                 onChange={(e) => updateFood(food.id, { notes: e.target.value })}
                                 className="w-full bg-white/50 border border-[#e6ecf2] rounded-lg py-1.5 pl-8 pr-3 text-[10px] font-bold focus:outline-none focus:border-[#28623a] placeholder:italic"
@@ -754,9 +806,9 @@ export default function MobileFirstBuilder() {
                   value={currentRoutine.name}
                   onChange={(e) => updateRoutineName(e.target.value)}
                   className="w-full bg-transparent border-none p-0 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-[#9aa9ba]"
-                  placeholder="NUEVA RUTINA"
+                  placeholder="Untitled routine"
                 />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472] -mt-3">Ajusta los parámetros de tu entrenamiento</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472] -mt-3">This is the routine your client will open</p>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
@@ -785,11 +837,15 @@ export default function MobileFirstBuilder() {
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
                 {currentRoutine.exercises.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6 opacity-60">
-                    <Dumbbell size={64} className="text-[#35577d]/20 animate-pulse" />
+                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
+                    <Dumbbell size={64} className="text-[#35577d]/25" />
                     <div className="space-y-2">
-                      <p className="text-sm font-black uppercase tracking-widest">Build vacía</p>
-                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }} className="text-[10px] font-black text-[#35577d] underline underline-offset-4">IR AL CATÁLOGO</button>
+                      <p className="text-sm font-black uppercase tracking-widest text-[#141e30]">Start with an exercise</p>
+                      <p className="max-w-xs text-xs font-bold leading-relaxed text-[#5b6472]">Add items, preview the client view, then send the routine through WhatsApp.</p>
+                      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                        <button onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }} className="rounded-xl bg-[#141e30] px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white">Add exercise</button>
+                        <button onClick={addSampleRoutine} className="rounded-xl border border-[#dbe5f0] bg-white px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[#141e30]">Use sample</button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -832,7 +888,7 @@ export default function MobileFirstBuilder() {
                         <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#35577d] opacity-40" />
                         <input 
                           type="text"
-                          placeholder="Nota (ej. 90s descanso, lenta excéntrica...)"
+                          placeholder="Note (rest, tempo, cues...)"
                           value={ex.notes || ''}
                           onChange={(e) => updateExercise(ex.id, { notes: e.target.value })}
                           className="w-full bg-[#f7f9fc] border border-[#e6ecf2] rounded-lg py-2 pl-8 pr-3 text-[10px] font-bold focus:outline-none focus:border-[#35577d] placeholder:italic"
@@ -851,17 +907,43 @@ export default function MobileFirstBuilder() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              className="h-full overflow-y-auto p-6 pb-44"
+              className="h-full overflow-y-auto p-6 pb-64"
             >
               <div className="w-full max-w-3xl mx-auto space-y-6">
-                {/* Full receiver canvas preview */}
+                <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#28623a]">
+                    {hasRoutineItems ? 'Ready to share' : 'Nothing to share yet'}
+                  </p>
+                  <h2 className="mt-2 text-2xl font-black italic uppercase tracking-tighter text-[#141e30]">
+                    {routineDisplayName}
+                  </h2>
+                  <p className="mt-2 text-sm font-bold leading-relaxed text-[#5b6472]">
+                    {hasRoutineItems
+                      ? `${routineItemCount} items. The client can open this link in any browser without installing an app.`
+                      : 'Add at least one exercise or meal before sending a link.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5b6472]">Client preview</p>
+                    <p className="text-xs font-bold text-[#5b6472]">What the recipient opens from WhatsApp.</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('build')}
+                    className="rounded-xl border border-[#e6ecf2] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#141e30]"
+                  >
+                    Edit
+                  </button>
+                </div>
+
                 <div className="flex justify-center">
                   <div className="w-full max-w-sm">
                     <Suspense fallback={<ExportPreviewFallback />}>
                       <WirCanvasPreview
                         template={shareTemplate}
                         palette={selectedWirPalette}
-                        title={currentRoutine.name || 'Tu Rutina'}
+                        title={routineDisplayName}
                         exercises={currentRoutine.exercises.map((ex) => ({
                           name: ex.name,
                           sets: ex.sets || 0,
@@ -884,26 +966,20 @@ export default function MobileFirstBuilder() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setActiveTab('build')}
-                  className="w-full py-4 bg-white border border-[#e6ecf2] text-[#141e30] rounded-2xl font-black text-sm uppercase tracking-[0.14em] active:scale-[0.98] transition-[transform,background-color]"
-                >
-                  RETOCAR EN BUILD
-                </button>
-
-                <div className="space-y-3">
+                <div className="space-y-3 pb-24">
                   <button 
                     onClick={() => {
                       if (currentRoutine.exercises.length === 0 && currentRoutine.foods.length === 0) {
-                        toast.error('Tu build está vacía');
+                        toast.error('Add at least one item before sharing');
                         return;
                       }
                       window.open(`https://wa.me/?text=${encodeURIComponent(sharePreviewText)}`, '_blank');
                     }}
-                    className="w-full h-16 bg-[#28623a] text-white rounded-[1.5rem] font-black text-lg italic uppercase flex items-center justify-center gap-2 active:scale-[0.98] transition-[transform,background-color] shadow-[0_20px_40px_-14px_rgba(40,98,58,0.4)]"
+                    className="w-full h-16 bg-[#28623a] text-white rounded-[1.5rem] font-black text-base uppercase flex items-center justify-center gap-2 active:scale-[0.98] transition-[transform,background-color] shadow-[0_20px_40px_-14px_rgba(40,98,58,0.4)] disabled:opacity-45 disabled:shadow-none"
+                    disabled={!hasRoutineItems}
                   >
                     <Share2 size={24} aria-hidden="true" />
-                    Enviar por WhatsApp
+                    Send via WhatsApp
                   </button>
 
                   <button 
@@ -911,8 +987,7 @@ export default function MobileFirstBuilder() {
                       const link = getShareableLink(selectedWirPalette);
                       if (!link) return;
                       navigator.clipboard.writeText(link);
-                      toast.success('¡Enlace .WIR copiado!', {
-                        icon: '🔗',
+                      toast.success('Link copied', {
                         style: {
                           background: '#141e30',
                           color: '#fff',
@@ -920,9 +995,10 @@ export default function MobileFirstBuilder() {
                         }
                       });
                     }}
-                    className="w-full py-4 bg-white border-2 border-[#141e30] text-[#141e30] rounded-[1.5rem] font-black text-xs uppercase tracking-widest active:scale-[0.98] transition-[transform,background-color] flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-white border-2 border-[#141e30] text-[#141e30] rounded-[1.5rem] font-black text-xs uppercase tracking-widest active:scale-[0.98] transition-[transform,background-color] flex items-center justify-center gap-2 disabled:opacity-45"
+                    disabled={!hasRoutineItems}
                   >
-                    COPIAR ENLACE .WIR
+                    Copy link
                   </button>
                 </div>
               </div>
@@ -958,7 +1034,7 @@ export default function MobileFirstBuilder() {
             <div className="flex items-center justify-between p-5 border-b border-[#e6ecf2]">
               <div className="flex items-center gap-2">
                 <Palette className="w-4 h-4 text-[#35577d]" />
-                <h2 className="text-sm font-black uppercase tracking-widest text-[#141e30]">Personalizar Catálogo</h2>
+                <h2 className="text-sm font-black uppercase tracking-widest text-[#141e30]">Customize catalog</h2>
               </div>
               <button onClick={() => setShowCustomize(false)} className="w-7 h-7 rounded-lg bg-[#eff4fa] hover:bg-[#dfe8f2] flex items-center justify-center transition-colors">
                 <X className="w-3.5 h-3.5 text-[#35577d]" />
@@ -1020,7 +1096,7 @@ export default function MobileFirstBuilder() {
         <div className="max-w-md mx-auto bg-white/95 backdrop-blur-3xl border border-[#e6ecf2] rounded-[2.5rem] p-2 flex items-center justify-between shadow-[0_-20px_40px_-22px_rgba(20,30,48,0.35)]">
             <button 
               onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }}
-              aria-label="Ver Catálogo Ejercicios"
+              aria-label="Add exercises"
               className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'catalog' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
               <img
@@ -1029,15 +1105,15 @@ export default function MobileFirstBuilder() {
                 aria-hidden="true"
                 className="w-5 h-5 object-contain"
               />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Catálogo</span>
+              <span className="text-[8px] font-black uppercase tracking-tighter">Add</span>
             </button>
             <button 
               onClick={() => setActiveTab('food')}
-              aria-label={`Ver Nutrición (${currentRoutine.foods.length} items)`}
+              aria-label={`View meals (${currentRoutine.foods.length} items)`}
               className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 relative ${activeTab === 'food' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
               <Apple size={18} />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Nutrir</span>
+              <span className="text-[8px] font-black uppercase tracking-tighter">Meals</span>
               {currentRoutine.foods.length > 0 && (
                 <div className="absolute top-2 right-4 w-4 h-4 bg-[#28623a] rounded-full flex items-center justify-center border-2 border-white" aria-hidden="true">
                   <span className="text-[8px] font-black text-white">{currentRoutine.foods.length}</span>
@@ -1046,7 +1122,7 @@ export default function MobileFirstBuilder() {
             </button>
             <button 
               onClick={() => setActiveTab('build')}
-              aria-label={`Ver Build (${currentRoutine.exercises.length} items)`}
+              aria-label={`View routine (${currentRoutine.exercises.length} exercises)`}
               className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 relative ${activeTab === 'build' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
               {activeTab === 'build' && (
@@ -1057,7 +1133,7 @@ export default function MobileFirstBuilder() {
                 />
               )}
               <ExerciseIcon section="fullbody" className="w-5 h-5 relative z-10" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Build</span>
+              <span className="text-[8px] font-black uppercase tracking-tighter">Routine</span>
               {currentRoutine.exercises.length > 0 && (
                 <div className="absolute top-2 right-4 w-4 h-4 bg-[#6b1e23] rounded-full flex items-center justify-center border-2 border-white" aria-hidden="true">
                   <span className="text-[8px] font-black text-white">{currentRoutine.exercises.length}</span>
@@ -1066,7 +1142,7 @@ export default function MobileFirstBuilder() {
             </button>
             <button 
               onClick={() => setActiveTab('export')}
-              aria-label="Enviar y compartir"
+              aria-label="Share routine"
               className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'export' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
               <img
@@ -1075,7 +1151,7 @@ export default function MobileFirstBuilder() {
                 aria-hidden="true"
                 className="w-4 h-5 object-contain"
               />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Enviar</span>
+              <span className="text-[8px] font-black uppercase tracking-tighter">Share</span>
             </button>
          </div>
       </nav>
