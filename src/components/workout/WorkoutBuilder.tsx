@@ -7,14 +7,15 @@ import {
   Trash2, 
   Plus, 
   Share2, 
+  Copy,
   Image as ImageIcon,
   Minus,
   Apple,
   Palette,
   X,
   Ghost,
-  Menu,
-  MessageCircle
+  MessageCircle,
+  Check
 } from 'lucide-react';
 import { UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { useWorkoutStore } from '../../lib/store';
@@ -162,16 +163,13 @@ const FoodIcon = ({ category, name = '', className = 'w-6 h-6' }: FoodIconProps)
   }, [Renderer]);
 
   if (!Renderer) {
-    return <span className={`${className} flex items-center justify-center text-lg`}>🍽️</span>;
+    return <Apple className={className} aria-hidden="true" />;
   }
 
   return <Renderer category={category} name={name} className={className} />;
 };
 
 export default function MobileFirstBuilder() {
-  const donationUrl = import.meta.env.VITE_MP_DONATION_URL as string | undefined;
-  const hasValidDonationUrl = !!donationUrl && /^https?:\/\//i.test(donationUrl);
-
   const { 
     currentRoutine, 
     builderMode,
@@ -386,12 +384,17 @@ export default function MobileFirstBuilder() {
   const routineItemCount = currentRoutine.exercises.length + currentRoutine.foods.length;
   const routineDisplayName = useMemo(() => {
     const trimmed = currentRoutine.name.trim();
-    if (!trimmed) return 'Untitled routine';
+    const fallbackName = shareTemplate === 'meal'
+      ? 'Plan de comidas'
+      : shareTemplate === 'mixed'
+        ? 'Rutina y comidas'
+        : 'Rutina';
+    if (!trimmed || trimmed === 'Untitled routine' || trimmed === 'NUEVA RUTINA') return fallbackName;
     if (trimmed === trimmed.toUpperCase()) {
       return trimmed.toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
     }
     return trimmed;
-  }, [currentRoutine.name]);
+  }, [currentRoutine.name, shareTemplate]);
 
   const screenTitle = activeTab === 'catalog'
     ? 'Add items'
@@ -418,14 +421,45 @@ export default function MobileFirstBuilder() {
   }, [catalogBgId, catalogBgImage]);
 
   const sharePreviewText = useMemo(() => {
-    const routineName = routineDisplayName;
-    const totalItems = currentRoutine.exercises.length + currentRoutine.foods.length;
-    const exerciseLine = `Ejercicios: ${currentRoutine.exercises.length}`;
-    const foodLine = `Comidas: ${currentRoutine.foods.length}`;
-    const totalLine = `Items totales: ${totalItems}`;
+    const link = getShareableLink(selectedWirPalette);
+    const intro = shareTemplate === 'meal'
+      ? 'Te paso tu plan de comidas'
+      : shareTemplate === 'mixed'
+        ? 'Te paso tu rutina y comidas'
+        : 'Te paso tu rutina';
+    const summaryParts = [
+      currentRoutine.exercises.length > 0 ? `${currentRoutine.exercises.length} ejercicios` : null,
+      currentRoutine.foods.length > 0 ? `${currentRoutine.foods.length} comidas` : null,
+    ].filter(Boolean);
+    const summary = summaryParts.length > 0 ? `\n${summaryParts.join(' · ')}` : '';
 
-    return `Rutina: ${routineName}\n\n${exerciseLine}\n${foodLine}\n${totalLine}\n\nAbrila sin instalar nada:\n${getShareableLink(selectedWirPalette)}`;
-  }, [routineDisplayName, currentRoutine.exercises.length, currentRoutine.foods.length, getShareableLink, selectedWirPalette]);
+    return `${intro}: ${routineDisplayName}${summary}\n\nAbrilo sin instalar nada:\n${link}`;
+  }, [routineDisplayName, shareTemplate, currentRoutine.exercises.length, currentRoutine.foods.length, getShareableLink, selectedWirPalette]);
+
+  const handleShareToWhatsApp = () => {
+    if (!hasRoutineItems) {
+      toast.error('Add at least one item before sharing');
+      return;
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(sharePreviewText)}`, '_blank');
+  };
+
+  const handleCopyShareLink = () => {
+    if (!hasRoutineItems) {
+      toast.error('Add at least one item before copying a link');
+      return;
+    }
+    const link = getShareableLink(selectedWirPalette);
+    if (!link) return;
+    navigator.clipboard.writeText(link);
+    toast.success('Link copied', {
+      style: {
+        background: '#141e30',
+        color: '#fff',
+        border: '1px solid #35577d'
+      }
+    });
+  };
 
   const handleCatalogLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -456,88 +490,28 @@ export default function MobileFirstBuilder() {
   return (
     <div className="min-h-screen bg-white text-[#141e30] font-sans selection:bg-[#35577d]/20 flex flex-col overflow-hidden">
       
-      {/* Dynamic Header */}
-      <header className="p-4 pt-6 shrink-0 z-10 bg-gradient-to-r from-[#141e30] to-[#35577d] text-white border-b border-[#e6ecf2] shadow-[0_16px_36px_-24px_rgba(20,30,48,0.6)]" role="banner">
-        <div className="flex items-center justify-between mb-4">
+      {/* App Header */}
+      <header className="shrink-0 z-10 border-b border-[#e6ecf2] bg-white/95 px-4 py-3 text-[#141e30] shadow-[0_16px_30px_-28px_rgba(20,30,48,0.45)] backdrop-blur-xl" role="banner">
+        <div className="flex items-center justify-between gap-4">
            <div className="flex items-center gap-3">
-             <button
-               onClick={() => setShowCustomize(v => !v)}
-               className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 flex items-center justify-center transition-colors"
-               aria-label="Options menu"
-               title="Options"
-             >
-               <Menu className="w-5 h-5 text-white" />
-             </button>
-             <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/10 bg-black/40 flex items-center justify-center">
-               <img src="/icons/fit-legacy-mark.svg" alt="FL" className="w-full h-full object-cover opacity-90" />
+             <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-[#e6ecf2] bg-[#f7f9fc]">
+               <img src="/icons/fit-legacy-mark.svg" alt="FL" className="h-full w-full object-cover" />
              </div>
-             <div className="flex flex-col">
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Fit Legacy Builder</span>
-               <div className="flex items-center gap-1.5 opacity-60">
-                 <div className="w-1.2 h-1.2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-                 <span className="text-[7px] font-mono uppercase tracking-widest font-black">Routine link tool</span>
-               </div>
+             <div className="min-w-0">
+               <p className="truncate text-lg font-black leading-tight">{screenTitle}</p>
+               <p className="truncate text-xs font-bold text-[#5b6472]">{screenSubtitle}</p>
              </div>
            </div>
-           {activeTab === 'catalog' ? (
-             <motion.button
-               onClick={() => {
-                 if (!hasValidDonationUrl) {
-                   toast.info('Set VITE_MP_DONATION_URL to enable donations');
-                   return;
-                 }
-                 window.open(donationUrl, '_blank', 'noopener,noreferrer');
-               }}
-               whileHover={{ scale: 1.1 }}
-               whileTap={{ scale: 0.95 }}
-               animate={{ y: [0, -2, 0] }}
-               transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-               className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/15 hover:bg-white/25 border border-white/40 flex items-center justify-center transition-colors shadow-lg"
-               aria-label="Donate with Mercado Pago"
-               title="Support the project"
-             >
-               <img src="/mercadopago/Group%2016.webp" className="w-8 h-8 md:w-9 md:h-9 object-contain" alt="Donate" />
-             </motion.button>
-           ) : activeTab === 'food' ? (
-             <motion.button
-               onClick={() => {
-                 if (!hasValidDonationUrl) {
-                   toast.info('Set VITE_MP_DONATION_URL to enable donations');
-                   return;
-                 }
-                 window.open(donationUrl, '_blank', 'noopener,noreferrer');
-               }}
-               whileHover={{ scale: 1.1 }}
-               whileTap={{ scale: 0.95 }}
-               animate={{ y: [0, -2, 0] }}
-               transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-               className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/15 hover:bg-white/25 border border-white/40 flex items-center justify-center transition-colors shadow-lg"
-               aria-label="Donate with Mercado Pago"
-               title="Support the project"
-             >
-               <img src="/mercadopago/Group%2016.webp" className="w-8 h-8 md:w-9 md:h-9 object-contain" alt="Donate" />
-             </motion.button>
-           ) : (
-             <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center" aria-hidden="true">
-               <div className="w-2 h-2 rounded-full bg-[#28623a]" />
-             </div>
-           )}
-        </div>
-        <div className="space-y-3">
-          <div className="flex items-center gap-4">
-            {(activeTab === 'catalog' || activeTab === 'food') && catalogLogo && (
-              <motion.img 
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                src={catalogLogo} 
-                alt="Catalog logo" 
-                className="w-12 h-12 object-contain rounded-2xl bg-white/10 p-1.5 border border-white/20 shadow-lg" 
-              />
-            )}
-            <div>
-              <h1 className="text-4xl font-black italic uppercase tracking-tighter">{screenTitle}</h1>
-              <p className="mt-1 max-w-xs text-[10px] font-bold uppercase tracking-widest text-white/65">{screenSubtitle}</p>
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="hidden rounded-xl border border-[#e6ecf2] bg-[#f7f9fc] px-3 py-2 text-xs font-black text-[#5b6472] sm:block">
+              {routineItemCount} items
             </div>
+            <button
+              onClick={() => setShowCustomize(true)}
+              className="rounded-xl border border-[#dbe5f0] bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-[#141e30] transition-colors hover:bg-[#f7f9fc]"
+            >
+              Settings
+            </button>
           </div>
         </div>
       </header>
@@ -907,14 +881,14 @@ export default function MobileFirstBuilder() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              className="h-full overflow-y-auto p-6 pb-64"
+              className="h-full overflow-y-auto p-6 pb-52"
             >
               <div className="w-full max-w-3xl mx-auto space-y-6">
                 <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 shadow-sm">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#28623a]">
+                  <p className="text-[10px] font-black uppercase tracking-wide text-[#28623a]">
                     {hasRoutineItems ? 'Ready to share' : 'Nothing to share yet'}
                   </p>
-                  <h2 className="mt-2 text-2xl font-black italic uppercase tracking-tighter text-[#141e30]">
+                  <h2 className="mt-2 text-2xl font-extrabold tracking-normal text-[#141e30]">
                     {routineDisplayName}
                   </h2>
                   <p className="mt-2 text-sm font-bold leading-relaxed text-[#5b6472]">
@@ -966,41 +940,6 @@ export default function MobileFirstBuilder() {
                   </div>
                 </div>
 
-                <div className="space-y-3 pb-24">
-                  <button 
-                    onClick={() => {
-                      if (currentRoutine.exercises.length === 0 && currentRoutine.foods.length === 0) {
-                        toast.error('Add at least one item before sharing');
-                        return;
-                      }
-                      window.open(`https://wa.me/?text=${encodeURIComponent(sharePreviewText)}`, '_blank');
-                    }}
-                    className="w-full h-16 bg-[#28623a] text-white rounded-[1.5rem] font-black text-base uppercase flex items-center justify-center gap-2 active:scale-[0.98] transition-[transform,background-color] shadow-[0_20px_40px_-14px_rgba(40,98,58,0.4)] disabled:opacity-45 disabled:shadow-none"
-                    disabled={!hasRoutineItems}
-                  >
-                    <Share2 size={24} aria-hidden="true" />
-                    Send via WhatsApp
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      const link = getShareableLink(selectedWirPalette);
-                      if (!link) return;
-                      navigator.clipboard.writeText(link);
-                      toast.success('Link copied', {
-                        style: {
-                          background: '#141e30',
-                          color: '#fff',
-                          border: '1px solid #35577d'
-                        }
-                      });
-                    }}
-                    className="w-full py-4 bg-white border-2 border-[#141e30] text-[#141e30] rounded-[1.5rem] font-black text-xs uppercase tracking-widest active:scale-[0.98] transition-[transform,background-color] flex items-center justify-center gap-2 disabled:opacity-45"
-                    disabled={!hasRoutineItems}
-                  >
-                    Copy link
-                  </button>
-                </div>
               </div>
             </motion.div>
           )}
@@ -1029,38 +968,53 @@ export default function MobileFirstBuilder() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed inset-y-0 right-0 z-50 w-80 bg-white/95 backdrop-blur-xl border-l border-[#e6ecf2] flex flex-col"
+            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[360px] flex-col border-l border-[#dbe5f0] bg-white shadow-[-24px_0_60px_-42px_rgba(20,30,48,0.55)]"
           >
-            <div className="flex items-center justify-between p-5 border-b border-[#e6ecf2]">
-              <div className="flex items-center gap-2">
-                <Palette className="w-4 h-4 text-[#35577d]" />
-                <h2 className="text-sm font-black uppercase tracking-widest text-[#141e30]">Customize catalog</h2>
+            <div className="flex items-start justify-between gap-4 border-b border-[#e6ecf2] p-5">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-[#35577d]" />
+                  <h2 className="text-sm font-black uppercase tracking-wide text-[#141e30]">Share settings</h2>
+                </div>
+                <p className="text-xs font-bold leading-relaxed text-[#5b6472]">Brand, client view and delivery options.</p>
               </div>
-              <button onClick={() => setShowCustomize(false)} className="w-7 h-7 rounded-lg bg-[#eff4fa] hover:bg-[#dfe8f2] flex items-center justify-center transition-colors">
-                <X className="w-3.5 h-3.5 text-[#35577d]" />
+              <button onClick={() => setShowCustomize(false)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#f7f9fc] transition-colors hover:bg-[#eff4fa]">
+                <X className="h-4 w-4 text-[#35577d]" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-8">
-              <div className="space-y-3">
-                <p className="text-[10px] font-mono text-[#5b6472] uppercase tracking-widest">Logo / Icono</p>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl border border-[#dbe5f0] bg-[#f7f9fc] flex items-center justify-center overflow-hidden shrink-0">
-                    {catalogLogo ? <img src={catalogLogo} alt="Logo" className="w-full h-full object-cover" /> : <Palette className="w-6 h-6 text-[#35577d]" />}
+            <div className="flex-1 overflow-y-auto p-5 pb-28 space-y-6">
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-wide text-[#5b6472]">Brand</p>
+                  {catalogLogo && (
+                    <button onClick={() => setCatalogLogo(null)} className="text-[10px] font-black uppercase tracking-wide text-[#6b1e23]">
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div className="rounded-2xl border border-[#e6ecf2] bg-[#f7f9fc] p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#dbe5f0] bg-white">
+                      {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full object-cover" /> : <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-black text-[#141e30]">Catalog logo</p>
+                      <p className="mt-1 text-xs font-bold leading-relaxed text-[#5b6472]">Shown in the builder catalog.</p>
+                    </div>
                   </div>
-                  <div className="space-y-2 flex-1">
-                    <label className="flex items-center gap-2 px-3 py-2 bg-[#eff4fa] hover:bg-[#dfe8f2] border border-[#dbe5f0] rounded-xl cursor-pointer transition-all text-xs font-bold uppercase tracking-widest text-[#141e30]">
-                      <ImageIcon className="w-3.5 h-3.5" /> Subir imagen
+                  <div className="mt-4">
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dbe5f0] bg-white px-3 py-3 text-xs font-black uppercase tracking-wide text-[#141e30] transition-colors hover:bg-[#eff4fa]">
+                      <ImageIcon className="h-3.5 w-3.5" /> Upload logo
                       <input type="file" accept="image/*" className="hidden" onChange={handleCatalogLogoUpload} />
                     </label>
-                    {catalogLogo && <button onClick={() => setCatalogLogo(null)} className="w-full px-3 py-1.5 text-[10px] font-mono text-[#5b6472] hover:text-red-500 border border-[#dbe5f0] rounded-xl transition-colors">Restaurar default</button>}
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className="space-y-3">
-                <p className="text-[10px] font-mono text-[#5b6472] uppercase tracking-widest">Fondo</p>
-                <div className="grid grid-cols-2 gap-2">
+              <section className="space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-[#5b6472]">Client view</p>
+                <div className="grid grid-cols-1 gap-2">
                   {CATALOG_BG_PRESETS.map(preset => (
                     <button
                       key={preset.id}
@@ -1068,36 +1022,103 @@ export default function MobileFirstBuilder() {
                         setCatalogBgId(preset.id);
                         setCatalogBgImage(null);
                       }}
-                      className={`relative h-12 rounded-xl border transition-all overflow-hidden ${catalogBgId === preset.id && !catalogBgImage ? 'border-[#35577d] shadow-[0_0_10px_rgba(53,87,125,0.35)]' : 'border-[#dbe5f0] hover:border-[#35577d]/40'}`}
-                      style={preset.style}
+                      className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${catalogBgId === preset.id && !catalogBgImage ? 'border-[#35577d] bg-[#eff4fa]' : 'border-[#e6ecf2] bg-white hover:bg-[#f7f9fc]'}`}
                     >
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[9px] font-mono uppercase tracking-widest text-[#141e30]/80">{preset.label}</span>
+                      <span className="h-9 w-12 shrink-0 rounded-xl border border-white shadow-inner" style={preset.style} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-black text-[#141e30]">{preset.label}</span>
+                        <span className="block text-xs font-bold text-[#5b6472]">Preview palette</span>
                       </span>
-                      {catalogBgId === preset.id && !catalogBgImage && <span className="absolute top-1 right-1 w-2 h-2 bg-[#35577d] rounded-full" />}
+                      {catalogBgId === preset.id && !catalogBgImage && (
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#35577d] text-white">
+                          <Check className="h-3.5 w-3.5" />
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
 
-                <label className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl cursor-pointer transition-all text-xs font-bold uppercase tracking-widest ${catalogBgImage ? 'bg-[#35577d]/10 border-[#35577d]/35 text-[#35577d]' : 'bg-[#eff4fa] hover:bg-[#dfe8f2] border-[#dbe5f0]'}`}>
-                  <ImageIcon className="w-3.5 h-3.5" /> {catalogBgImage ? 'Imagen activa' : 'Imagen personalizada'}
+                <label className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-3 transition-colors ${catalogBgImage ? 'border-[#35577d] bg-[#eff4fa] text-[#35577d]' : 'border-[#e6ecf2] bg-white text-[#141e30] hover:bg-[#f7f9fc]'}`}>
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-9 w-12 items-center justify-center rounded-xl bg-[#eff4fa]">
+                      <ImageIcon className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-black">{catalogBgImage ? 'Custom image' : 'Upload image'}</span>
+                      <span className="block text-xs font-bold text-[#5b6472]">Use a custom background.</span>
+                    </span>
+                  </span>
+                  {catalogBgImage && <Check className="h-4 w-4" />}
                   <input type="file" accept="image/*" className="hidden" onChange={handleCatalogBgUpload} />
                 </label>
 
-                {catalogBgImage && <button onClick={() => { setCatalogBgImage(null); setCatalogBgId('clean'); }} className="w-full px-3 py-1.5 text-[10px] font-mono text-[#5b6472] hover:text-red-500 border border-[#dbe5f0] rounded-xl transition-colors">Quitar imagen</button>}
-              </div>
+                {catalogBgImage && (
+                  <button onClick={() => { setCatalogBgImage(null); setCatalogBgId('clean'); }} className="w-full rounded-xl border border-[#dbe5f0] px-3 py-2 text-xs font-black uppercase tracking-wide text-[#6b1e23] transition-colors hover:bg-[#fff4f4]">
+                    Remove image
+                  </button>
+                )}
+              </section>
+
+              <section className="space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-[#5b6472]">Share</p>
+                <div className="rounded-2xl border border-[#e6ecf2] bg-[#f7f9fc] p-4">
+                  <p className="truncate text-sm font-black text-[#141e30]">{routineDisplayName}</p>
+                  <p className="mt-1 text-xs font-bold text-[#5b6472]">{routineItemCount} items ready</p>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={handleCopyShareLink}
+                      disabled={!hasRoutineItems}
+                      className="flex items-center justify-center gap-2 rounded-xl border border-[#dbe5f0] bg-white px-3 py-3 text-xs font-black uppercase tracking-wide text-[#141e30] disabled:opacity-45"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy
+                    </button>
+                    <button
+                      onClick={handleShareToWhatsApp}
+                      disabled={!hasRoutineItems}
+                      className="flex items-center justify-center gap-2 rounded-xl bg-[#28623a] px-3 py-3 text-xs font-black uppercase tracking-wide text-white disabled:opacity-45"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </section>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {activeTab === 'export' && (
+        <div className="fixed bottom-[86px] left-0 right-0 z-50 px-4">
+          <div className="mx-auto grid max-w-md grid-cols-[1fr_2fr] gap-2 rounded-3xl border border-[#e6ecf2] bg-white/95 p-2 shadow-[0_-18px_42px_-28px_rgba(20,30,48,0.5)] backdrop-blur-xl">
+            <button
+              onClick={handleCopyShareLink}
+              disabled={!hasRoutineItems}
+              className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe5f0] bg-white text-xs font-black uppercase tracking-wide text-[#141e30] disabled:opacity-45"
+            >
+              <Copy className="h-4 w-4" />
+              Copy
+            </button>
+            <button
+              onClick={handleShareToWhatsApp}
+              disabled={!hasRoutineItems}
+              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#28623a] text-xs font-black uppercase tracking-wide text-white shadow-[0_14px_28px_-18px_rgba(40,98,58,0.8)] disabled:opacity-45 disabled:shadow-none"
+            >
+              <Share2 className="h-4 w-4" />
+              WhatsApp
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent shrink-0 z-50" role="navigation">
-        <div className="max-w-md mx-auto bg-white/95 backdrop-blur-3xl border border-[#e6ecf2] rounded-[2.5rem] p-2 flex items-center justify-between shadow-[0_-20px_40px_-22px_rgba(20,30,48,0.35)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 shrink-0 bg-gradient-to-t from-white via-white/95 to-transparent p-3" role="navigation">
+        <div className="mx-auto flex max-w-md items-center justify-between rounded-3xl border border-[#e6ecf2] bg-white/95 p-1.5 shadow-[0_-14px_32px_-24px_rgba(20,30,48,0.35)] backdrop-blur-3xl">
             <button 
               onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }}
               aria-label="Add exercises"
-              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'catalog' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
+              className={`flex h-14 w-20 flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'catalog' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
             >
               <img
                 src="/icons/fit-legacy-mark.svg"
@@ -1105,17 +1126,17 @@ export default function MobileFirstBuilder() {
                 aria-hidden="true"
                 className="w-5 h-5 object-contain"
               />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Add</span>
+              <span className="text-[8px] font-black uppercase tracking-wide">Add</span>
             </button>
             <button 
               onClick={() => setActiveTab('food')}
               aria-label={`View meals (${currentRoutine.foods.length} items)`}
-              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 relative ${activeTab === 'food' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
+              className={`relative flex h-14 w-20 flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'food' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
             >
               <Apple size={18} />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Meals</span>
+              <span className="text-[8px] font-black uppercase tracking-wide">Meals</span>
               {currentRoutine.foods.length > 0 && (
-                <div className="absolute top-2 right-4 w-4 h-4 bg-[#28623a] rounded-full flex items-center justify-center border-2 border-white" aria-hidden="true">
+                <div className="absolute right-4 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#28623a]" aria-hidden="true">
                   <span className="text-[8px] font-black text-white">{currentRoutine.foods.length}</span>
                 </div>
               )}
@@ -1123,19 +1144,12 @@ export default function MobileFirstBuilder() {
             <button 
               onClick={() => setActiveTab('build')}
               aria-label={`View routine (${currentRoutine.exercises.length} exercises)`}
-              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 relative ${activeTab === 'build' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
+              className={`relative flex h-14 w-20 flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'build' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
             >
-              {activeTab === 'build' && (
-                <motion.div 
-                  layoutId="activeTabNav"
-                  className="absolute inset-0 bg-[#141e30] rounded-[2rem] -z-10"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
               <ExerciseIcon section="fullbody" className="w-5 h-5 relative z-10" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Routine</span>
+              <span className="text-[8px] font-black uppercase tracking-wide">Routine</span>
               {currentRoutine.exercises.length > 0 && (
-                <div className="absolute top-2 right-4 w-4 h-4 bg-[#6b1e23] rounded-full flex items-center justify-center border-2 border-white" aria-hidden="true">
+                <div className="absolute right-4 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#6b1e23]" aria-hidden="true">
                   <span className="text-[8px] font-black text-white">{currentRoutine.exercises.length}</span>
                 </div>
               )}
@@ -1143,7 +1157,7 @@ export default function MobileFirstBuilder() {
             <button 
               onClick={() => setActiveTab('export')}
               aria-label="Share routine"
-              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'export' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
+              className={`flex h-14 w-20 flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'export' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
             >
               <img
                 src="/icons/fl-1.svg"
@@ -1151,7 +1165,7 @@ export default function MobileFirstBuilder() {
                 aria-hidden="true"
                 className="w-4 h-5 object-contain"
               />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Share</span>
+              <span className="text-[8px] font-black uppercase tracking-wide">Share</span>
             </button>
          </div>
       </nav>

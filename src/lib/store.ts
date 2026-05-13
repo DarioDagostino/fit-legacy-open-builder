@@ -214,13 +214,22 @@ export const useWorkoutStore = create<WorkoutState>()(
           : hasFoods
             ? 'meal'
             : 'routine';
+        const trimmedName = currentRoutine.name.trim();
+        const defaultName = templateType === 'meal'
+          ? 'Plan de comidas'
+          : templateType === 'mixed'
+            ? 'Rutina y comidas'
+            : 'Rutina';
+        const shareName = !trimmedName || trimmedName === 'Untitled routine' || trimmedName === 'NUEVA RUTINA'
+          ? defaultName
+          : trimmedName;
         
         // Build the compact share payload used by the public routine link.
         const wirDoc: WirDocument = {
           v: 1,
           t: templateType,
           p: paletteId,
-          n: currentRoutine.name,
+          n: shareName,
           c: currentRoutine.coverImageUrl || undefined,
           e: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.map(ex => ({
             i: ex.id,
@@ -240,8 +249,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           const encoded = encodeWir(wirDoc);
           const baseUrl = window.location.origin;
           
-          // Route can be /r/wir or /api/og - configure as needed
-          return `${baseUrl}/?data=${encoded}`;
+          return `${baseUrl}/r/wir?data=${encoded}`;
         } catch (error) {
           console.error("Failed to encode WIR", error);
           return "";
