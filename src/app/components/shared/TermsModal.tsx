@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { AUTH_LEGAL_NOTICE, TERMS_CONFIRMATION_LABEL, buildLegalUrls } from '@fit-legacy/auth/legal';
 
 interface TermsModalProps {

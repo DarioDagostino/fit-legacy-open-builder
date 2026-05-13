@@ -6,6 +6,7 @@
 
 import { WirDocument, validateWirSchema, WirValidationResult } from './schema';
 import { hasExercise, hasFood } from '@fit-legacy/shared';
+import { getPayloadSize } from './codec';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VALIDATION OPTIONS
@@ -39,7 +40,6 @@ export function validateWir(
   const {
     checkCatalog = true,
     checkSize = true,
-    strict = true,
   } = options;
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -124,8 +124,6 @@ function validateCatalog(doc: WirDocument): string[] {
 
 function validateSize(doc: WirDocument): string[] {
   const warnings: string[] = [];
-  const { encodeWir, getPayloadSize } = require('./codec');
-
   try {
     const sizes = getPayloadSize(doc);
 

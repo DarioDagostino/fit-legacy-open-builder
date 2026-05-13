@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Shield, BarChart3, Target, ChevronRight, Info, Settings2, Lock } from 'lucide-react';
+import { X, Shield, BarChart3, Target, Info, Settings2, Lock } from 'lucide-react';
 import {
   ACCEPT_ALL_COOKIE_PREFERENCES,
   COOKIE_STORAGE_KEYS,
   DEFAULT_COOKIE_PREFERENCES,
+  type CookiePreferences,
 } from '@fit-legacy/auth/legal';
 
 interface CookieSettingsModalProps {
@@ -16,7 +17,7 @@ type TabType = 'overview' | 'essential' | 'analytics' | 'marketing';
 
 export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [preferences, setPreferences] = useState(DEFAULT_COOKIE_PREFERENCES);
+  const [preferences, setPreferences] = useState<CookiePreferences>(DEFAULT_COOKIE_PREFERENCES);
 
   useEffect(() => {
     const stored = localStorage.getItem(COOKIE_STORAGE_KEYS.preferences);

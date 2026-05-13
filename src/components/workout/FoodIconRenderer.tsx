@@ -1,4 +1,4 @@
-ï»¿type FoodIconProps = {
+type FoodIconProps = {
   category?: string;
   name?: string;
   className?: string;
@@ -31,7 +31,7 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
     if (lowercaseName.includes('avena') || lowercaseName.includes('oat')) {
       return pickVariant(moreIconsPath, ['Oat Milk.webp', 'Oat Milk-1.webp', 'Oat Milk-2.webp', 'Oat Milk-3.webp']);
     }
-    if (lowercaseName.includes('hemp') || lowercaseName.includes('canamo') || lowercaseName.includes('cÃÂ¡ÃÂ±amo')) {
+    if (lowercaseName.includes('hemp') || lowercaseName.includes('canamo') || lowercaseName.includes('canamo')) {
       return <img src={`${moreIconsPath}/Hemp Milk.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Hemp Milk" />;
     }
     return pickVariant(moreIconsPath, ['Glass Of Milk.webp', 'Milk.webp']);
@@ -186,5 +186,5 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
   if (lowercaseCategory === 'carbs') return <img src={`${path}/Sandwich.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Carbs" />;
   if (lowercaseCategory === 'fats') return <img src={`${path}/Olive Oil Bottle.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Fats" />;
 
-  return <span className={`${className} flex items-center justify-center text-lg`}>Ã°Å¸ÂÂ½Ã¯Â¸Â</span>;
+  return <span className={`${className} flex items-center justify-center text-lg`}>🍽️</span>;
 }

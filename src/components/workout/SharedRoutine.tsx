@@ -109,7 +109,7 @@ export default function SovereignShared() {
     // Use native share if available (mobile), fallback to wa.me
     if (navigator.share) {
       navigator.share({ title: `Rutina ${decoded.name} — Fit Legacy`, text, url })
-        .catch(() => {}); // User dismissed â€” no error needed
+        .catch(() => {}); // User dismissed, no error needed
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }

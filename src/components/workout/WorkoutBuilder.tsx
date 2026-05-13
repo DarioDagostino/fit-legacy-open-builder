@@ -1,4 +1,4 @@
-ï»¿import { lazy, Suspense, useState, useMemo, useEffect, type ComponentType } from 'react';
+import { lazy, Suspense, useState, useMemo, useEffect, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { 
@@ -99,7 +99,7 @@ const FILTER_LABELS: Record<string, string> = {
   crossfit: 'Crossfit',
   meditation: 'Meditacion',
   custom: 'Personalizado',
-  protein: 'ProteÃÂ­nas',
+  protein: 'Proteínas',
   carbs: 'Carbs',
   fats: 'Grasas',
   fruits: 'Frutas',
@@ -162,7 +162,7 @@ const FoodIcon = ({ category, name = '', className = 'w-6 h-6' }: FoodIconProps)
   }, [Renderer]);
 
   if (!Renderer) {
-    return <span className={`${className} flex items-center justify-center text-lg`}>Ã°Å¸ÂÂ½Ã¯Â¸Â</span>;
+    return <span className={`${className} flex items-center justify-center text-lg`}>🍽️</span>;
   }
 
   return <Renderer category={category} name={name} className={className} />;
@@ -371,10 +371,10 @@ export default function MobileFirstBuilder() {
     const routineName = (currentRoutine.name || 'NUEVA RUTINA').toUpperCase();
     const totalItems = currentRoutine.exercises.length + currentRoutine.foods.length;
     const exerciseLine = `Ejercicios: ${currentRoutine.exercises.length}`;
-    const foodLine = `NutriciÃÂ³n: ${currentRoutine.foods.length}`;
+    const foodLine = `Nutrición: ${currentRoutine.foods.length}`;
     const totalLine = `Items totales: ${totalItems}`;
 
-    return `Ã°Å¸âÂª NUEVA RUTINA: ${routineName}\n\n${exerciseLine}\n${foodLine}\n${totalLine}\n\nToca para abrir tu entrenamiento en Fit Legacy:\n${getShareableLink(selectedWirPalette)}`;
+    return `💪 NUEVA RUTINA: ${routineName}\n\n${exerciseLine}\n${foodLine}\n${totalLine}\n\nToca para abrir tu entrenamiento en Fit Legacy:\n${getShareableLink(selectedWirPalette)}`;
   }, [currentRoutine.name, currentRoutine.exercises.length, currentRoutine.foods.length, getShareableLink, selectedWirPalette]);
 
   const handleCatalogLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -413,8 +413,8 @@ export default function MobileFirstBuilder() {
              <button
                onClick={() => setShowCustomize(v => !v)}
                className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 flex items-center justify-center transition-colors"
-               aria-label="MenÃÂº de opciones"
-               title="MenÃÂº"
+               aria-label="Menú de opciones"
+               title="Menú"
              >
                <Menu className="w-5 h-5 text-white" />
              </button>
@@ -480,7 +480,7 @@ export default function MobileFirstBuilder() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 src={catalogLogo} 
-                alt="Logo del CatÃÂ¡logo" 
+                alt="Logo del Catálogo" 
                 className="w-12 h-12 object-contain rounded-2xl bg-white/10 p-1.5 border border-white/20 shadow-lg" 
               />
             )}
@@ -537,7 +537,7 @@ export default function MobileFirstBuilder() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5b6472]" aria-hidden="true" />
                   <input 
                     type="text"
-                    placeholder={`Buscar ${builderMode === 'workout' ? 'ejercicios' : 'nutriciÃÂ³n'}...`}
+                    placeholder={`Buscar ${builderMode === 'workout' ? 'ejercicios' : 'nutrición'}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full bg-white/65 backdrop-blur-sm border border-white/50 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#35577d] transition-[border-color] font-bold text-sm text-[#102033] placeholder:text-[#5b6472]"
@@ -623,7 +623,7 @@ export default function MobileFirstBuilder() {
                       key={`${builderMode}-${item.id}`}
                       onClick={() => {
                         builderMode === 'workout' ? addExercise(item as any) : addFood(item as any);
-                        toast.success(`${item.name} aÃÂ±adido`);
+                        toast.success(`${item.name} añadido`);
                       }}
                       className="bg-white/72 backdrop-blur-md border border-white/45 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-all group cursor-pointer hover:bg-white/80 shadow-[0_16px_24px_-20px_rgba(20,30,48,0.7)]"
                     >
@@ -657,7 +657,7 @@ export default function MobileFirstBuilder() {
               className="h-full flex flex-col p-6 space-y-6"
             >
               <div className="space-y-1">
-                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#28623a]">Mi NutriciÃÂ³n</h2>
+                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#28623a]">Mi Nutrición</h2>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472]">Gestiona las porciones de tu plan</p>
               </div>
 
@@ -698,7 +698,7 @@ export default function MobileFirstBuilder() {
                     <Apple size={64} className="text-[#28623a]/20 animate-pulse" />
                     <div className="space-y-2">
                       <p className="text-sm font-black uppercase tracking-widest">Sin alimentos</p>
-                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('nutrition'); }} className="text-[10px] font-black text-[#28623a] underline underline-offset-4">IR AL CATÃÂLOGO</button>
+                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('nutrition'); }} className="text-[10px] font-black text-[#28623a] underline underline-offset-4">IR AL CATÁLOGO</button>
                     </div>
                   </div>
                 ) : (
@@ -711,7 +711,7 @@ export default function MobileFirstBuilder() {
                           </div>
                           <div className="flex items-center gap-3">
                              <span className="text-[8px] font-black text-[#28623a] uppercase">{Math.round((food.protein * food.quantity) / 100)}g P</span>
-                             <span className="text-[8px] font-black text-[#5b6472]">Ã¢â¬Â¢</span>
+                             <span className="text-[8px] font-black text-[#5b6472]">•</span>
                              <span className="text-[8px] font-black text-[#5b6472] uppercase">{Math.round((food.calories * food.quantity) / 100)} Kcal</span>
                           </div>
                        </div>
@@ -756,7 +756,7 @@ export default function MobileFirstBuilder() {
                   className="w-full bg-transparent border-none p-0 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-[#9aa9ba]"
                   placeholder="NUEVA RUTINA"
                 />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472] -mt-3">Ajusta los parÃÂ¡metros de tu entrenamiento</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472] -mt-3">Ajusta los parámetros de tu entrenamiento</p>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
@@ -788,8 +788,8 @@ export default function MobileFirstBuilder() {
                   <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6 opacity-60">
                     <Dumbbell size={64} className="text-[#35577d]/20 animate-pulse" />
                     <div className="space-y-2">
-                      <p className="text-sm font-black uppercase tracking-widest">Build vacÃÂ­a</p>
-                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }} className="text-[10px] font-black text-[#35577d] underline underline-offset-4">IR AL CATÃÂLOGO</button>
+                      <p className="text-sm font-black uppercase tracking-widest">Build vacía</p>
+                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }} className="text-[10px] font-black text-[#35577d] underline underline-offset-4">IR AL CATÁLOGO</button>
                     </div>
                   </div>
                 ) : (
@@ -832,7 +832,7 @@ export default function MobileFirstBuilder() {
                         <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#35577d] opacity-40" />
                         <input 
                           type="text"
-                          placeholder="Nota (ej. 90s descanso, lenta excÃÂ©ntrica...)"
+                          placeholder="Nota (ej. 90s descanso, lenta excéntrica...)"
                           value={ex.notes || ''}
                           onChange={(e) => updateExercise(ex.id, { notes: e.target.value })}
                           className="w-full bg-[#f7f9fc] border border-[#e6ecf2] rounded-lg py-2 pl-8 pr-3 text-[10px] font-bold focus:outline-none focus:border-[#35577d] placeholder:italic"
@@ -895,7 +895,7 @@ export default function MobileFirstBuilder() {
                   <button 
                     onClick={() => {
                       if (currentRoutine.exercises.length === 0 && currentRoutine.foods.length === 0) {
-                        toast.error('Tu build estÃÂ¡ vacÃÂ­a');
+                        toast.error('Tu build está vacía');
                         return;
                       }
                       window.open(`https://wa.me/?text=${encodeURIComponent(sharePreviewText)}`, '_blank');
@@ -911,8 +911,8 @@ export default function MobileFirstBuilder() {
                       const link = getShareableLink(selectedWirPalette);
                       if (!link) return;
                       navigator.clipboard.writeText(link);
-                      toast.success('ÃÂ¡Enlace .WIR copiado!', {
-                        icon: 'Ã°Å¸ââ',
+                      toast.success('¡Enlace .WIR copiado!', {
+                        icon: '🔗',
                         style: {
                           background: '#141e30',
                           color: '#fff',
@@ -958,7 +958,7 @@ export default function MobileFirstBuilder() {
             <div className="flex items-center justify-between p-5 border-b border-[#e6ecf2]">
               <div className="flex items-center gap-2">
                 <Palette className="w-4 h-4 text-[#35577d]" />
-                <h2 className="text-sm font-black uppercase tracking-widest text-[#141e30]">Personalizar CatÃÂ¡logo</h2>
+                <h2 className="text-sm font-black uppercase tracking-widest text-[#141e30]">Personalizar Catálogo</h2>
               </div>
               <button onClick={() => setShowCustomize(false)} className="w-7 h-7 rounded-lg bg-[#eff4fa] hover:bg-[#dfe8f2] flex items-center justify-center transition-colors">
                 <X className="w-3.5 h-3.5 text-[#35577d]" />
@@ -1020,7 +1020,7 @@ export default function MobileFirstBuilder() {
         <div className="max-w-md mx-auto bg-white/95 backdrop-blur-3xl border border-[#e6ecf2] rounded-[2.5rem] p-2 flex items-center justify-between shadow-[0_-20px_40px_-22px_rgba(20,30,48,0.35)]">
             <button 
               onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }}
-              aria-label="Ver CatÃÂ¡logo Ejercicios"
+              aria-label="Ver Catálogo Ejercicios"
               className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'catalog' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
               <img
@@ -1029,11 +1029,11 @@ export default function MobileFirstBuilder() {
                 aria-hidden="true"
                 className="w-5 h-5 object-contain"
               />
-              <span className="text-[8px] font-black uppercase tracking-tighter">CatÃÂ¡logo</span>
+              <span className="text-[8px] font-black uppercase tracking-tighter">Catálogo</span>
             </button>
             <button 
               onClick={() => setActiveTab('food')}
-              aria-label={`Ver NutriciÃÂ³n (${currentRoutine.foods.length} items)`}
+              aria-label={`Ver Nutrición (${currentRoutine.foods.length} items)`}
               className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 relative ${activeTab === 'food' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
               <Apple size={18} />
@@ -1091,4 +1091,3 @@ function ExportPreviewFallback() {
     </div>
   );
 }
-

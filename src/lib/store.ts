@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Exercise } from '@fit-legacy/shared';
-import { encodeWir, decodeWir, validateWir, hydrateWir, type WirDocument } from './wir';
+import { encodeWir, validateWir, hydrateWir, type WirDocument } from './wir';
 
 export interface FoodItem {
   id: string;
@@ -16,11 +16,11 @@ export interface FoodItem {
   notes?: string;
 }
 
-export interface SelectedExercise extends Exercise {
+export interface SelectedExercise extends Omit<Exercise, 'section'> {
   sets: number;
   reps: number;
   weight: number;
-  section: string;
+  section: Exercise['section'];
   notes?: string;
 }
 

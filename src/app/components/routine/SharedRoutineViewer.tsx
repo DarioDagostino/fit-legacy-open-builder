@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { AlertTriangle, Share2 } from 'lucide-react';
@@ -8,16 +8,16 @@ import { WirCanvasPreview } from '@/components/wir/WirCanvasPreview';
 
 type Exercise = {
   name: string;
-  sets: number | string;
-  reps: number | string;
-  weight: number | string;
-  rest: number | string;
+  sets: number;
+  reps: number;
+  weight: number;
+  rest: number;
   notes?: string;
 };
 
 type Food = {
   name: string;
-  quantity: number | string;
+  quantity: number;
   protein: number;
   calories: number;
 };
@@ -35,7 +35,6 @@ export function SharedRoutineViewer() {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const [routine, setRoutine] = useState<RoutineData | null>(null);
-  const [profile, setProfile] = useState<{ full_name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
@@ -54,17 +53,17 @@ export function SharedRoutineViewer() {
                palette: hydrated.palette,
                title: hydrated.name || 'Rutina Compartida',
                duration: hydrated.exercises.length * 5, // Rough estimate
-               exercises: hydrated.exercises.map(ex => ({
+               exercises: hydrated.exercises.map((ex) => ({
                  name: ex.name,
-                 sets: ex.sets,
-                 reps: ex.reps,
+                 sets: Number(ex.sets) || 0,
+                 reps: Number(ex.reps) || 0,
                  weight: ex.weight || 0,
                  rest: 60,
                  notes: ''
                })),
-               foods: hydrated.foods.map(food => ({
+               foods: hydrated.foods.map((food) => ({
                  name: food.name,
-                 quantity: food.quantity,
+                 quantity: Number(food.quantity) || 0,
                  protein: food.protein,
                  calories: food.calories
                }))
@@ -94,9 +93,6 @@ export function SharedRoutineViewer() {
           setError(true);
         } else {
           setRoutine(data.routine_data as RoutineData);
-          if (data.profiles) {
-            setProfile(data.profiles as any);
-          }
         }
       } catch (e) {
         setError(true);
@@ -115,12 +111,6 @@ export function SharedRoutineViewer() {
       next.add(id);
     }
     setCheckedItems(next);
-  };
-
-  const getProgress = () => {
-    const total = (routine?.exercises?.length || 0) + (routine?.foods?.length || 0);
-    if (total === 0) return 0;
-    return Math.round((checkedItems.size / total) * 100);
   };
 
   if (loading) {

@@ -3,11 +3,11 @@
  * Legacy compatibility: processWirLink helper
  */
 
-import { decodeWir, validateWir, hydrateWir } from './index';
+import { decodeWir, validateWir, hydrateWir, type HydratedRoutine } from './index';
 
 export interface ProcessWirLinkResult {
   success: boolean;
-  data?: any;
+  data?: HydratedRoutine;
   error?: string;
 }
 
