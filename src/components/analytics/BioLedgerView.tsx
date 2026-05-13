@@ -29,7 +29,7 @@ function MacroRing({ value, max, color, label, icon }: { value: number; max: num
     <div className="flex flex-col items-center gap-2">
       <div className="relative w-16 h-16">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
-          <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
+          <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(53,87,125,0.14)" strokeWidth="5" />
           <motion.circle
             cx="32" cy="32" r="28" fill="none" stroke={color} strokeWidth="5"
             strokeLinecap="round"
@@ -54,12 +54,12 @@ function StatPill({ label, value, icon, accent }: { label: string; value: React.
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="relative bg-zinc-900/60 backdrop-blur border border-white/5 rounded-2xl p-4 overflow-hidden group hover:border-white/10 transition-all"
+      className="relative bg-white/80 backdrop-blur-md border border-[#dbe5f0] rounded-2xl p-4 overflow-hidden group hover:border-[#35577d]/35 transition-all"
     >
       <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity`}
-        style={{ background: `radial-gradient(circle at 20% 50%, ${accent}10 0%, transparent 70%)` }} />
+        style={{ background: `radial-gradient(circle at 20% 50%, ${accent}18 0%, transparent 72%)` }} />
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{label}</span>
+        <span className="text-[9px] font-mono text-[#5b6472] uppercase tracking-widest">{label}</span>
         {icon}
       </div>
       <div className="text-xl font-black tracking-tight">{value}</div>
@@ -80,7 +80,7 @@ function MuscleBar({ group, count, max }: { group: string; count: number; max: n
   return (
     <div className="flex items-center gap-3">
       <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest w-16 shrink-0">{group}</span>
-      <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+      <div className="flex-1 h-1.5 bg-[#e8edf4] rounded-full overflow-hidden">
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: color }}
@@ -144,6 +144,7 @@ export function BioLedgerView() {
 
   const { logo, saveLogo, bgId, bgImage, saveBg, activeBg } = useLedgerConfig();
   const [showCustomize, setShowCustomize] = useState(false);
+  const [showSystemMenu, setShowSystemMenu] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [liveStats, setLiveStats] = useState({ xp: 0, level: 1, coincitos: 0, streak: 0 });
@@ -175,6 +176,12 @@ export function BioLedgerView() {
       onUpdate: v => setScanlineY(v)
     });
     return ctrl.stop;
+  }, []);
+
+  useEffect(() => {
+    const handleToggleCustomize = () => setShowCustomize(v => !v);
+    window.addEventListener('bioledger:toggle-customize', handleToggleCustomize);
+    return () => window.removeEventListener('bioledger:toggle-customize', handleToggleCustomize);
   }, []);
 
   // Fetch Supabase stats
@@ -253,44 +260,78 @@ export function BioLedgerView() {
   ];
 
   return (
-    <div className="relative w-full min-h-screen text-white overflow-hidden" style={activeBg}>
+    <div className="relative w-full min-h-screen text-[#141e30] overflow-hidden" style={activeBg}>
 
       {/* Grid BG */}
       <div className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '48px 48px' }}
+        style={{ backgroundImage: 'linear-gradient(rgba(53,87,125,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(53,87,125,0.06) 1px, transparent 1px)', backgroundSize: '48px 48px' }}
       />
       {/* Scanline */}
       <div className="absolute inset-x-0 h-[1px] bg-cyan-500/20 blur-sm pointer-events-none transition-none"
         style={{ top: `${scanlineY}%` }} />
       {/* Vignette */}
       <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
+        style={{ background: 'radial-gradient(ellipse at center, transparent 45%, rgba(20,30,48,0.22) 100%)' }} />
 
-      {/* ── Status Bar ── */}
-      <div className="relative z-30 bg-black/60 backdrop-blur border-b border-white/5 py-2 px-6 flex items-center gap-8 overflow-hidden">
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-[9px] font-mono text-green-500 uppercase tracking-widest">Bio-Ledger // Online</span>
-        </div>
-        <div className="flex items-center gap-6 text-[9px] font-mono text-zinc-600 uppercase tracking-wider overflow-hidden">
-          <span>Exercises: <span className="text-white">{exercises.length}</span></span>
-          <span>Foods: <span className="text-white">{foods.length}</span></span>
-          <span>Vol: <span className="text-white">{totalVolume.toLocaleString()}kg</span></span>
-          <span>Kcal: <span className="text-amber-500">{Math.round(macros.calories)}</span></span>
-        </div>
-        <div className="ml-auto flex items-center gap-3">
-          <Cpu className="w-3 h-3 text-cyan-500/50" />
-          <span className="text-[9px] font-mono text-cyan-500/50 uppercase tracking-widest hidden sm:block">Neural Link: Stable</span>
-          <button
-            onClick={() => setShowCustomize(v => !v)}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all"
-            aria-label="Personalizar BioLedger"
-          >
-            <Palette className="w-3 h-3 text-purple-400" />
-            <span className="text-[9px] font-mono text-purple-400 uppercase tracking-widest">Personalizar</span>
-          </button>
-        </div>
-      </div>
+      {/* ── Lateral System Menu Trigger ── */}
+      {!showCustomize && (
+        <button
+          onClick={() => setShowSystemMenu(v => !v)}
+          className="fixed right-3 top-36 z-40 flex items-center gap-2 rounded-xl border border-[#e6ecf2] bg-white/95 px-3 py-2 text-[#35577d] shadow-[0_12px_28px_-16px_rgba(20,30,48,0.65)] backdrop-blur"
+          aria-label="Abrir menú lateral de estado"
+        >
+          <Cpu className="w-3.5 h-3.5" />
+          <span className="text-[9px] font-mono uppercase tracking-widest">Estado</span>
+        </button>
+      )}
+
+      <AnimatePresence>
+        {showSystemMenu && (
+          <>
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSystemMenu(false)}
+              className="fixed inset-0 z-40 bg-[#141e30]/20"
+              aria-label="Cerrar menú lateral"
+            />
+            <motion.aside
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              className="fixed right-3 top-48 z-50 w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl border border-[#e6ecf2] bg-white p-4 shadow-[0_22px_50px_-28px_rgba(20,30,48,0.9)]"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-[#28623a] rounded-full animate-pulse" />
+                  <span className="text-[9px] font-mono text-[#28623a] uppercase tracking-widest">Bio-Ledger // Online</span>
+                </div>
+                <button
+                  onClick={() => setShowSystemMenu(false)}
+                  className="w-6 h-6 rounded-md border border-[#e6ecf2] text-[#5b6472] hover:text-[#141e30] hover:bg-[#f7f9fc] flex items-center justify-center"
+                  aria-label="Cerrar"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[10px] font-mono uppercase tracking-wide mb-3">
+                <div className="rounded-lg border border-[#e6ecf2] bg-[#f7f9fc] p-2 text-[#5b6472]">Exercises: <span className="text-[#141e30] font-black">{exercises.length}</span></div>
+                <div className="rounded-lg border border-[#e6ecf2] bg-[#f7f9fc] p-2 text-[#5b6472]">Foods: <span className="text-[#141e30] font-black">{foods.length}</span></div>
+                <div className="rounded-lg border border-[#e6ecf2] bg-[#f7f9fc] p-2 text-[#5b6472]">Vol: <span className="text-[#141e30] font-black">{totalVolume.toLocaleString()}kg</span></div>
+                <div className="rounded-lg border border-[#e6ecf2] bg-[#f7f9fc] p-2 text-[#5b6472]">Kcal: <span className="text-[#6b1e23] font-black">{Math.round(macros.calories)}</span></div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Cpu className="w-3 h-3 text-[#35577d]" />
+                <span className="text-[9px] font-mono text-[#35577d] uppercase tracking-widest">Neural Link: Stable</span>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-8 space-y-8">
 
@@ -309,14 +350,14 @@ export function BioLedgerView() {
                 <h1 className="text-2xl font-black uppercase tracking-tighter leading-none">
                   {currentRoutine.name || 'SESIÓN SIN NOMBRE'}
                 </h1>
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mt-0.5">
-                  Bio-Ledger Protocol // v1.0
+                <p className="text-[10px] font-mono text-[#5b6472] uppercase tracking-widest mt-0.5">
+                  Bio-Ledger Neural Link // v1.0
                 </p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl px-3 py-2">
-            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Session XP</span>
+          <div className="flex items-center gap-2 bg-white/80 border border-[#dbe5f0] rounded-xl px-3 py-2">
+            <span className="text-[9px] font-mono text-[#5b6472] uppercase tracking-widest">Session XP</span>
             <span className="text-sm font-black text-amber-500">+{sessionXP}</span>
           </div>
         </div>
@@ -348,13 +389,13 @@ export function BioLedgerView() {
           <div className="lg:col-span-2 space-y-4">
 
             {/* Muscle Map */}
-            <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-6">
+            <div className="bg-white/78 backdrop-blur-md border border-[#dbe5f0] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <Dumbbell className="w-4 h-4 text-purple-500" />
-                  <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Mapa Muscular</h3>
+                  <h3 className="text-xs font-mono text-[#5b6472] uppercase tracking-widest">Mapa Muscular</h3>
                 </div>
-                <span className="text-[9px] font-mono text-zinc-700 uppercase">{exercises.length} ejercicios</span>
+                <span className="text-[9px] font-mono text-[#7c8798] uppercase">{exercises.length} ejercicios</span>
               </div>
               {muscleGroups.length > 0 ? (
                 <div className="space-y-3">
@@ -364,23 +405,23 @@ export function BioLedgerView() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Lock className="w-8 h-8 text-zinc-800 mb-3" />
-                  <p className="text-xs font-mono text-zinc-700 uppercase tracking-widest">Sin ejercicios cargados</p>
-                  <p className="text-[10px] text-zinc-800 mt-1">Agrega ejercicios en el catálogo</p>
+                  <Lock className="w-8 h-8 text-[#7c8798] mb-3" />
+                  <p className="text-xs font-mono text-[#7c8798] uppercase tracking-widest">Sin ejercicios cargados</p>
+                  <p className="text-[10px] text-[#9aa9ba] mt-1">Agrega ejercicios en el catálogo</p>
                 </div>
               )}
             </div>
 
             {/* Weekly Activity Sparkline */}
-            <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-6">
+            <div className="bg-white/78 backdrop-blur-md border border-[#dbe5f0] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-cyan-500" />
-                  <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Actividad Semanal</h3>
+                  <h3 className="text-xs font-mono text-[#5b6472] uppercase tracking-widest">Actividad Semanal</h3>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" />
-                  <span className="text-[9px] font-mono text-cyan-500 uppercase tracking-wider">Live</span>
+                  <span className="w-1.5 h-1.5 bg-[#35577d] rounded-full animate-pulse" />
+                  <span className="text-[9px] font-mono text-[#35577d] uppercase tracking-wider">Live</span>
                 </div>
               </div>
               <div className="h-28">
@@ -388,16 +429,16 @@ export function BioLedgerView() {
                   <AreaChart data={weekData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
                     <defs>
                       <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#35577d" stopOpacity={0.24} />
+                        <stop offset="95%" stopColor="#35577d" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <Tooltip
-                      contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 11, fontFamily: 'monospace' }}
-                      itemStyle={{ color: '#06b6d4' }}
-                      labelStyle={{ color: '#555', fontSize: 10 }}
+                      contentStyle={{ background: 'rgba(255,255,255,0.96)', border: '1px solid #dbe5f0', borderRadius: 8, fontSize: 11, fontFamily: 'monospace' }}
+                      itemStyle={{ color: '#35577d' }}
+                      labelStyle={{ color: '#5b6472', fontSize: 10 }}
                     />
-                    <Area type="monotone" dataKey="v" stroke="#06b6d4" strokeWidth={2} fill="url(#sparkGrad)" dot={false} />
+                    <Area type="monotone" dataKey="v" stroke="#35577d" strokeWidth={2} fill="url(#sparkGrad)" dot={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -408,10 +449,10 @@ export function BioLedgerView() {
           <div className="space-y-4">
 
             {/* Macros Rings */}
-            <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-6">
+            <div className="bg-white/78 backdrop-blur-md border border-[#dbe5f0] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-5">
                 <Beef className="w-4 h-4 text-rose-500" />
-                <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">Macros</h3>
+                <h3 className="text-xs font-mono text-[#5b6472] uppercase tracking-widest">Macros</h3>
               </div>
               {foods.length > 0 ? (
                 <>
@@ -420,7 +461,7 @@ export function BioLedgerView() {
                     <div className="text-3xl font-black tracking-tighter">
                       <AnimatedNumber value={Math.round(macros.calories)} />
                     </div>
-                    <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">kcal totales</div>
+                    <div className="text-[9px] font-mono text-[#5b6472] uppercase tracking-widest">kcal totales</div>
                   </div>
                   {/* Rings */}
                   <div className="flex justify-around">
@@ -434,28 +475,28 @@ export function BioLedgerView() {
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Lock className="w-8 h-8 text-zinc-800 mb-3" />
-                  <p className="text-xs font-mono text-zinc-700 uppercase tracking-widest">Sin alimentos</p>
-                  <p className="text-[10px] text-zinc-800 mt-1">Agrega comidas al arsenal</p>
+                  <Lock className="w-8 h-8 text-[#7c8798] mb-3" />
+                  <p className="text-xs font-mono text-[#7c8798] uppercase tracking-widest">Sin alimentos</p>
+                  <p className="text-[10px] text-[#9aa9ba] mt-1">Agrega comidas al arsenal</p>
                 </div>
               )}
             </div>
 
             {/* Volume Card */}
-            <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-5 flex justify-between items-center">
+            <div className="bg-white/78 backdrop-blur-md border border-[#dbe5f0] rounded-2xl p-5 flex justify-between items-center">
               <div>
-                <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Volumen Total</p>
-                <p className="text-xl font-black">{totalVolume.toLocaleString()}<span className="text-xs text-zinc-600 ml-1">kg</span></p>
+                <p className="text-[9px] font-mono text-[#5b6472] uppercase tracking-widest mb-1">Volumen Total</p>
+                <p className="text-xl font-black">{totalVolume.toLocaleString()}<span className="text-xs text-[#5b6472] ml-1">kg</span></p>
               </div>
-              <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center">
-                <Activity className="w-5 h-5 text-purple-500" />
+              <div className="w-10 h-10 bg-[#35577d]/10 border border-[#35577d]/25 rounded-xl flex items-center justify-center">
+                <Activity className="w-5 h-5 text-[#35577d]" />
               </div>
             </div>
 
             {/* Shield */}
-            <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-5 flex justify-between items-center">
+            <div className="bg-white/78 backdrop-blur-md border border-[#dbe5f0] rounded-2xl p-5 flex justify-between items-center">
               <div>
-                <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Integridad WIR</p>
+                <p className="text-[9px] font-mono text-[#5b6472] uppercase tracking-widest mb-1">Integridad WIR</p>
                 <p className="text-xs font-black text-green-500 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Verificado
                 </p>
@@ -466,11 +507,11 @@ export function BioLedgerView() {
         </div>
 
         {/* ── Mint CTA ── */}
-        <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-6">
+        <div className="bg-white/78 backdrop-blur-md border border-[#dbe5f0] rounded-2xl p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="text-sm font-black uppercase tracking-tight">Mint Proof of Effort</h3>
-              <p className="text-[10px] font-mono text-zinc-600">
+              <p className="text-[10px] font-mono text-[#5b6472]">
                 {isEmpty
                   ? 'Agrega ejercicios o alimentos para generar tu prueba de esfuerzo.'
                   : `Esta sesión generará +${sessionXP} XP y +${Math.floor(sessionXP / 10)} Coincitos al anclar.`}
@@ -485,7 +526,7 @@ export function BioLedgerView() {
                   mintDone
                     ? 'bg-green-500 text-black'
                     : isEmpty
-                    ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                    ? 'bg-[#eff4fa] text-[#9aa9ba] cursor-not-allowed'
                     : 'bg-white text-black hover:bg-zinc-100'
                 }`}
               >
@@ -512,7 +553,7 @@ export function BioLedgerView() {
                 </AnimatePresence>
               </motion.button>
 
-              <button className="px-5 py-3 border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center gap-2">
+              <button className="px-5 py-3 border border-[#dbe5f0] text-xs font-black uppercase tracking-widest hover:bg-[#f7f9fc] transition-colors flex items-center gap-2">
                 <Share2 className="w-4 h-4" /> .WIR
               </button>
             </div>
@@ -526,9 +567,9 @@ export function BioLedgerView() {
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-4 overflow-hidden"
               >
-                <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-0.5 w-full bg-[#e8edf4] rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-cyan-500"
+                    className="h-full bg-[#35577d]"
                     initial={{ width: '0%' }}
                     animate={{ width: `${((mintStep + 1) / MINT_STEPS.length) * 100}%` }}
                     transition={{ duration: 0.4 }}
@@ -536,7 +577,7 @@ export function BioLedgerView() {
                 </div>
                 <div className="flex justify-between mt-2">
                   {MINT_STEPS.map((step, i) => (
-                    <span key={step} className={`text-[8px] font-mono uppercase tracking-widest transition-colors ${i <= mintStep ? 'text-cyan-500' : 'text-zinc-700'}`}>
+                    <span key={step} className={`text-[8px] font-mono uppercase tracking-widest transition-colors ${i <= mintStep ? 'text-[#35577d]' : 'text-[#9aa9ba]'}`}>
                       {i <= mintStep ? '✓' : '○'}
                     </span>
                   ))}

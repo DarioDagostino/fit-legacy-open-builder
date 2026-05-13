@@ -1,5 +1,14 @@
 # 🎉 INTEGRATION SUCCESS
 
+## 🆕 Update (Mayo 2026)
+
+- Se agregó template `mixed` como tercer canvas oficial.
+- El cálculo de template al compartir ahora persiste `mixed` cuando hay ejercicios y comidas.
+- `Sync` muestra el mismo render que verá el receptor (paridad visual 1:1).
+- Se introdujo `WirCanvasPreview` como componente único para render de canvas.
+- Se actualizó naming de rutina por defecto a `NUEVA RUTINA` y edición libre en Arsenal.
+- Se alineó tipografía/paleta del producto para mejorar legibilidad móvil y coherencia visual.
+
 ## ✅ Build Status: PASSING ✅
 
 ```

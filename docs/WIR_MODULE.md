@@ -27,6 +27,7 @@ import { toWirUrl } from 'src/lib/wir';
 
 const routine = {
   v: 1,
+  t: 'mixed',
   n: 'PUSH_DAY',
   e: [
     { i: 'press_banca', s: 4, r: 10, w: 100 },
@@ -40,7 +41,7 @@ const routine = {
 
 // Generar URL para compartir
 const shareUrl = toWirUrl(routine);
-// → https://builder.fitlegacy.app/r/wir?data=eyJ2IjoxLCJu...
+// → https://builder.fitlegacy.app/?data=eyJ2IjoxLCJu...
 ```
 
 #### 2. Validar rutina
@@ -97,7 +98,7 @@ Genera una URL completa lista para compartir.
 
 ```typescript
 const url = toWirUrl(routine);
-// → "https://builder.fitlegacy.app/r/wir?data=eyJ2..."
+// → "https://builder.fitlegacy.app/?data=eyJ2..."
 
 const customUrl = toWirUrl(routine, 'https://example.com/wir');
 // → "https://example.com/wir?data=eyJ2..."
@@ -108,8 +109,22 @@ const customUrl = toWirUrl(routine, 'https://example.com/wir');
 Extrae y decodifica un documento de una URL.
 
 ```typescript
-const routine = parseWirUrl('https://builder.fitlegacy.app/r/wir?data=eyJ2...');
+const routine = parseWirUrl('https://builder.fitlegacy.app/?data=eyJ2...');
 ```
+
+### Campo `t` (template)
+
+El documento `.wir` admite el campo opcional `t` para indicar el canvas de destino:
+
+```typescript
+type WirTemplate = 'routine' | 'meal' | 'mixed';
+```
+
+- `routine`: render enfocado en ejercicios
+- `meal`: render enfocado en nutrición
+- `mixed`: render híbrido (entrenamiento + nutrición)
+
+Si `t` no está presente, el cliente puede inferir la plantilla según el contenido (`e` y `f`).
 
 ### `validateWir(data: unknown, options?: WirValidationOptions): FullWirValidationResult`
 

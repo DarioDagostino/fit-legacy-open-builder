@@ -5,11 +5,13 @@ export const WirExerciseSchema = z.object({
   s: z.number().int().min(1).max(10), // Sets
   r: z.number().int().min(1).max(100), // Reps
   w: z.number().min(0), // Weight
+  m: z.string().max(100).optional(), // Message/Notes
 });
 
 export const WirFoodSchema = z.object({
   i: z.string(), // ID
   q: z.number().min(0), // Quantity
+  m: z.string().max(100).optional(), // Message/Notes
 });
 
 export const WirProtocolSchema = z.object({
@@ -34,6 +36,7 @@ export interface ExpandedExercise {
   sets: number;
   reps: number;
   weight: number;
+  notes?: string;
 }
 
 export interface ExpandedFood {
@@ -45,6 +48,7 @@ export interface ExpandedFood {
   carbs: number;
   fat: number;
   quantity: number;
+  notes?: string;
 }
 
 export interface HydratedWirProtocol {

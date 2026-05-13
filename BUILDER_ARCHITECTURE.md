@@ -16,11 +16,16 @@ src/
 ├── main.tsx                # Punto de entrada (React Root)
 ├── app/
 │   ├── App.tsx             # Router principal (Rutas: /, /arsenal, /builder/*)
+│   └── components/
+│       └── routine/
+│           └── SharedRoutineViewer.tsx  # Viewer del receptor (.wir)
 │   └── fitlegacyfullapp/   # Módulos heredados del HUD de Atleta
 │       └── components/
 │           └── builder/
 │               └── AthleteBuilder.tsx  # El constructor complejo (55KB)
 ├── components/
+│   ├── wir/
+│   │   └── WirCanvasPreview.tsx # Canvas compartido (Sync + receptor)
 │   └── workout/
 │       ├── WorkoutBuilder.tsx  # Interfaz Mobile-First (Actualización principal)
 │       └── SharedRoutine.tsx   # Visualizador de rutinas compartidas
@@ -47,9 +52,22 @@ Integración con `NvidiaImageService` (vía `@fit-legacy/ai`) para generar porta
 
 ### 3. Sincronización (Sync)
 - **Exportación**: Genera links `.WIR` (Workout Identity Resource).
+- **Mirror 1:1**: El Sync usa el mismo canvas reusable que el receptor (`WirCanvasPreview`).
+- **Plantillas**: Soporta `routine`, `meal` y `mixed` según contenido.
 - **Redirección OG**: Usa una ruta `/api/og` para que WhatsApp/RRSS muestren una tarjeta visual, pero redirige al usuario real a la app.
 
-### 4. Fuentes de Datos
+### 4. Sistema Visual y Renderizado "Elite Noir"
+- **Iconografía 3D (Icon-First Strategy):** Se reemplazaron por completo los emojis genéricos (🍎, 🥦) por un catálogo dinámico de íconos 3D de alta fidelidad (`/public/meat/`, `/public/more_icons_for_all_food/`, etc.).
+- **Variantes Dinámicas:** Se implementó una lógica (`pickVariant`) que asigna variantes de íconos pseudoaleatorias basadas en la longitud del nombre para evitar repeticiones visuales en alimentos recurrentes.
+- **Fallbacks Estéticos:** Si un elemento no se mapea exactamente, se muestra un ícono 3D genérico de su categoría con `drop-shadow` y opacidad, manteniendo la coherencia premium.
+- **Tipografías**: `Manrope` (UI) + `Sora` (display/headings).
+- **Paleta por template**:
+    - `routine`: base oscura + acento naranja
+    - `meal`: base oscura + acento verde
+    - `mixed`: base oscura + acento azul
+- **Consistencia**: Tokens en `src/styles/theme.css` y fuentes en `src/styles/fonts.css`.
+
+### 5. Fuentes de Datos
 Utiliza los paquetes compartidos del monorepo:
 - `@fit-legacy/shared`: Contiene `UNIFIED_EXERCISES` y `UNIFIED_FOODS` (La base de datos maestra).
 

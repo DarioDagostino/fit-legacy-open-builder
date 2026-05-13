@@ -8,6 +8,7 @@ export {
   WirDocumentSchema,
   WirExerciseSchema,
   WirFoodSchema,
+  WirPaletteSchema,
   validateWirSchema,
   isWirDocument,
   isWirExerciseItem,
@@ -15,6 +16,7 @@ export {
   type WirDocument,
   type WirExerciseItem,
   type WirFoodItem,
+  type WirPalette,
   type WirValidationResult,
 } from './schema';
 

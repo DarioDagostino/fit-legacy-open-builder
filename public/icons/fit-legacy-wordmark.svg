@@ -1,0 +1,22 @@
+<svg width="420" height="96" viewBox="0 0 420 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="badge" x1="0" y1="0" x2="96" y2="96" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#000000"/>
+      <stop offset="1" stop-color="#1E1E1E"/>
+    </linearGradient>
+    <linearGradient id="fl" x1="48" y1="20" x2="48" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2E6C4"/>
+      <stop offset="1" stop-color="#B6934B"/>
+    </linearGradient>
+    <linearGradient id="text" x1="116" y1="16" x2="396" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2E6C4"/>
+      <stop offset="1" stop-color="#B6934B"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="96" height="96" rx="28" fill="url(#badge)"/>
+  <path d="M43.7746 72H33.9542V35.9833C33.9542 33.0869 34.5612 30.705 35.775 28.8374C36.9888 26.9699 38.7216 25.5468 40.9732 24.5681C43.2249 23.5894 45.9074 23.1 49.0208 23.1C50.34 23.1 51.9788 23.1549 53.937 23.2648C55.9052 23.3747 57.8627 23.4945 59.8096 23.6344C61.766 23.7742 63.496 23.924 65 24.0839L60.8662 31.8085C58.9953 31.5089 57.2049 31.2642 55.4957 31.0744C53.7865 30.8947 52.1378 30.8048 50.5494 30.8048C49.2887 30.8048 48.223 30.9846 47.3523 31.3441C46.4912 31.6936 45.8265 32.2238 45.3582 32.9348C44.8992 33.6457 44.6696 34.5457 44.6696 35.6348V72H43.7746ZM55.2236 72V24.0839H65V72H55.2236ZM50.7937 38.6552V45.301H29V38.6552H50.7937Z" fill="url(#fl)"/>
+
+  <text x="118" y="43" fill="url(#text)" font-family="Sora, Manrope, sans-serif" font-size="30" font-weight="700" letter-spacing="0.08em">FIT LEGACY</text>
+  <text x="120" y="68" fill="#9AA9BA" font-family="Manrope, sans-serif" font-size="12" font-weight="700" letter-spacing="0.25em">TACTICAL PERFORMANCE</text>
+</svg>

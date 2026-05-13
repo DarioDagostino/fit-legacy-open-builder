@@ -32,6 +32,7 @@ const WITH_FOODS: WirDocument = {
 
 const MIXED_ROUTINE: WirDocument = {
   v: 1,
+  p: 'navy',
   n: 'COMPLETE_PROTOCOL',
   c: 'https://example.com/image.jpg',
   e: [
@@ -106,6 +107,7 @@ describe('decodeWir', () => {
     const encoded = encodeWir(MIXED_ROUTINE);
     const decoded = decodeWir(encoded);
     expect(decoded).toEqual(MIXED_ROUTINE);
+    expect(decoded.p).toBe('navy');
   });
 
   it('should throw on invalid base64', () => {

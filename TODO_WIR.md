@@ -1,6 +1,6 @@
 # 📋 WIR Implementation Checklist
 
-## ✅ Completado (8/15)
+## ✅ Completado (11/15)
 
 - [x] Catálogo (55 ejercicios, 40 alimentos)
 - [x] Schema Zod formal
@@ -10,19 +10,15 @@
 - [x] CLI (8 comandos)
 - [x] Specification con ejemplos
 - [x] Documentación de módulo
+- [x] Integración de componentes y Catálogos en `WorkoutBuilder.tsx`
+- [x] Pruebas de compilación (`pnpm build`)
+- [x] End-to-end Manual Test (Renderizado correcto de catálogos e Iconografía 3D)
 
 ---
 
-## 🔄 Por hacer (7/15)
+## 🔄 Por hacer (4/15)
 
-### **Inmediato (Esta semana)**
-
-- [ ] Verificar `pnpm build` sin errores
-- [ ] Verificar imports en `WorkoutBuilder.tsx`
-- [ ] Test manual end-to-end (generar URL y decodificar)
-- [ ] Asegurar que `src/lib/wir/index.ts` exporta todo
-
-### **API & Catálogo**
+### **API & OpenGraph (Opcional pero Recomendado)**
 
 - [ ] Crear `/api/wir/validate` endpoint
 - [ ] Crear `/api/wir/encode` endpoint
@@ -37,102 +33,25 @@
 
 ## 🎯 Detalles por sección
 
-### **1. Build & Integration (Prioridad ALTA)**
+### **1. API Endpoints / OpenGraph (Prioridad MEDIA)**
 
 **Status:** 🔴 Pendiente
 
-```bash
-# Verifica que build funciona
-pnpm install
-pnpm build
-```
+**Nota de Arquitectura:** Todo el enconding/decoding de la URL `.wir` ya funciona perfectamente de manera **Isomórfica en el Cliente (Client-Side)**. No es necesario ni recomendable hacer ping al servidor para validar el payload, ya que agrega latencia de red. 
 
-**Qué buscar:**
-- ✅ No errors en `UNIFIED_EXERCISES` import
-- ✅ No errors en `UNIFIED_FOODS` import
-- ✅ Archivos `src/lib/wir/*.ts` se compilan
+Sin embargo, crear endpoints es clave para la **Generación de OpenGraph (Tarjetas en WhatsApp)**.
 
-**Archivos clave:**
-- `_consolidated_workout_nutrition/packages/shared/index.ts` (catálogo)
-- `src/lib/wir/index.ts` (exports)
-- `src/components/workout/WorkoutBuilder.tsx` (consumer)
-
----
-
-### **2. Manual Testing (Prioridad ALTA)**
-
-**Status:** 🔴 Pendiente
-
-**Test steps:**
-1. Abrir builder en http://localhost:5178
-2. Agregar 3-4 ejercicios (press_banca, sentadilla, dominadas)
-3. Agregar 2 alimentos (pollo, arroz)
-4. Click "SYNC" → "COPIAR ACCESO .WIR"
-5. Verificar que no hay error y URL se copia
-6. Abrir URL en otra pestaña
-7. Debería mostrar la rutina decodificada
-
-**Resultado esperado:**
-```
-✅ URL tipo: https://builder.fitlegacy.app/r/wir?data=eyJ2IjoxLCJu...
-✅ Al abrir: Muestra rutina correcta
-✅ No crashes
-```
-
----
-
-### **3. CLI Testing (Prioridad MEDIA)**
-
-**Status:** 🟡 Código listo, pero no testeado
-
-```bash
-# Instalar y probar CLI
-pnpm install
-npm run wir validate docs/examples/simple.json
-npm run wir encode docs/examples/simple.json
-npm run wir catalog exercise press_banca
-```
-
-**Expected:**
-```
-✅ validate: Retorna "válido" o lista de errores
-✅ encode: Retorna URL shareable
-✅ catalog: Retorna detalles del ejercicio
-```
-
----
-
-### **4. API Endpoints (Prioridad MEDIA)**
-
-**Status:** 🔴 Pendiente
-
-Crear 3 endpoints simples:
+Ejemplo propuesto para `/api/og/wir`:
 
 ```typescript
-// api/wir/validate.ts
+// api/og/wir.tsx (Vercel Edge Function o Supabase Edge)
+// Intercepta la petición y devuelve una imagen generada dinámicamente
+// usando @vercel/og o satori, basada en el payload WIR de la query string.
 export default async function (req, res) {
-  const { validateWir } = require('../../src/lib/wir');
-  const result = validateWir(req.body);
-  res.json(result);
-}
-
-// api/wir/encode.ts
-export default async function (req, res) {
-  const { toWirUrl } = require('../../src/lib/wir');
-  const url = toWirUrl(req.body);
-  res.json({ url });
-}
-
-// api/wir/catalog/[type]/[id].ts
-export default async function (req, res) {
-  const { getExerciseById, getFoodById } = require('@fit-legacy/shared');
-  const { type, id } = req.query;
-  
-  if (type === 'exercise') {
-    res.json(getExerciseById(id));
-  } else {
-    res.json(getFoodById(id));
-  }
+  const { searchParams } = new URL(req.url);
+  const data = searchParams.get('data');
+  // ... lógica para parsear data con el codec WIR ...
+  // ... renderizar tarjeta visual con el título de la rutina ...
 }
 ```
 
@@ -191,20 +110,20 @@ Pendiente:
 ## 📊 Progress
 
 ```
-████████░░ 8/15 completado (53%)
+████████████░ 11/15 completado (73%)
 
-Semana 1: Build + Integration (Semana 2: API + Catálogo)
-Semana 3: Documentación pública
+Fase 1: Build + Integration + Client-Side (COMPLETADO)
+Fase 2: CLI & Exportación de JSONs (En progreso)
+Fase 3: Edge Functions OpenGraph (Pendiente)
 ```
 
 ---
 
 ## 🎯 Timeline sugerido
 
-**Hoy/Mañana:** Build verification + manual testing  
-**Esta semana:** API endpoints  
-**Próxima semana:** Documentación pública + ejemplos  
-**Mes 1:** Release formal de `.wir v1`
+**Fase Actual:** Refinar soporte OpenGraph y Documentación  
+**Últimos Pasos:** Implementar generación dinámica en Edge de la OG Image para WhatsApp.  
+**Meta:** Release formal de `.wir v1.0`
 
 ---
 
@@ -283,5 +202,5 @@ pnpm build
 
 ---
 
-**Last updated:** 2025-04-09  
-**Next review:** After build verification
+**Last updated:** 2026-05-12  
+**Next review:** OpenGraph Integration and Documentation Finalization

@@ -28,6 +28,30 @@ export default defineConfig({
   },
   server: {
     port: 5178,
-    strictPort: true,
+    strictPort: false,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+
+          if (id.includes('/react@') || id.includes('/react-dom@') || id.includes('/scheduler@')) return 'react-core'
+
+          if (id.includes('@supabase/supabase-js') || id.includes('/@supabase+')) return 'backend-clients'
+          if (id.includes('@neondatabase/serverless') || id.includes('/@neondatabase+')) return 'backend-clients'
+          if (id.includes('/openai@')) return 'ai-clients'
+
+          if (id.includes('/@mui+') || id.includes('/@emotion+')) return 'mui'
+          if (id.includes('/@radix-ui+')) return 'radix'
+
+          if (id.includes('/recharts@')) return 'charts'
+          if (id.includes('/react-dnd@') || id.includes('/dnd-core@') || id.includes('/react-dnd-html5-backend@')) return 'dnd'
+          if (id.includes('/framer-motion@') || id.includes('/motion@')) return 'motion'
+
+          return 'vendor'
+        },
+      },
+    },
   },
 })

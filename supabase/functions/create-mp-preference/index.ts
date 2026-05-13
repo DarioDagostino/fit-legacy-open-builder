@@ -18,9 +18,6 @@ const corsHeaders = {
 
 const MP_API_URL = "https://api.mercadopago.com/checkout/preferences";
 
-// Token de prueba por defecto si no hay variable de entorno configurada
-const DEFAULT_TEST_TOKEN = "TEST-7603247046260746-091513-5036060144574706560746-1481746";
-
 serve(async (req: Request) => {
     // Handle CORS preflight
     if (req.method === "OPTIONS") {
@@ -28,7 +25,13 @@ serve(async (req: Request) => {
     }
 
     try {
-        const accessToken = Deno.env.get("MP_ACCESS_TOKEN") || DEFAULT_TEST_TOKEN;
+        const accessToken = Deno.env.get("MP_ACCESS_TOKEN");
+        if (!accessToken) {
+            return new Response(
+                JSON.stringify({ error: "Falta configurar MP_ACCESS_TOKEN en secretos de entorno" }),
+                { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
         const isSandbox = accessToken.startsWith("TEST-");
 
         const {
@@ -40,11 +43,22 @@ serve(async (req: Request) => {
             userId,
             planType = "monthly", // "monthly" | "annual" | "lifetime"
             source = "web",       // "web" | "mobile"
+            donationMode = false,
         } = await req.json();
 
-        if (!title || !price || !userEmail) {
+        const isDonation = Boolean(donationMode || planType === "donation");
+        const numericPrice = Number(price);
+
+        if (!title || !price || (!isDonation && !userEmail)) {
             return new Response(
-                JSON.stringify({ error: "Faltan campos requeridos: title, price, userEmail" }),
+                JSON.stringify({ error: isDonation ? "Faltan campos requeridos: title, price" : "Faltan campos requeridos: title, price, userEmail" }),
+                { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
+
+        if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+            return new Response(
+                JSON.stringify({ error: "El campo price debe ser un numero mayor a 0" }),
                 { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
         }
@@ -70,25 +84,34 @@ serve(async (req: Request) => {
                     description: description || title,
                     quantity: 1,
                     currency_id: currency,
-                    unit_price: Number(price),
+                    unit_price: numericPrice,
                 },
             ],
-            payer: {
-                email: userEmail,
-                ...(userId && { external_reference: userId }),
-            },
+            ...(userEmail
+                ? {
+                    payer: {
+                        email: userEmail,
+                        ...(userId && { external_reference: userId }),
+                    },
+                }
+                : {}),
             back_urls: backUrls,
             auto_return: "approved",
-            payment_methods: {
-                excluded_payment_types: [
-                    { id: "ticket" }, // Excluye efectivo para suscripciones
-                ],
-                installments: 1,
-            },
+            ...(!isDonation
+                ? {
+                    payment_methods: {
+                        excluded_payment_types: [
+                            { id: "ticket" }, // Excluye efectivo para suscripciones
+                        ],
+                        installments: 1,
+                    },
+                }
+                : {}),
             statement_descriptor: "FIT LEGACY PRO",
-            external_reference: userId || "anonymous",
+            external_reference: userId || (isDonation ? "donation-anonymous" : "anonymous"),
             metadata: {
-                plan_type: planType,
+                plan_type: isDonation ? "donation" : planType,
+                donation_mode: isDonation,
                 source,
                 user_id: userId || null,
             },

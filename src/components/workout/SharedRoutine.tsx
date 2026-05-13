@@ -1,25 +1,45 @@
-import React, { useMemo, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Dumbbell, 
-  Share2, 
   Apple, 
-  Utensils,
-  Zap,
   ShieldCheck,
-  Target,
-  Copy,
-  LayoutGrid,
   Crown,
-  Flame,
   ArrowRight,
   Trophy,
   Ghost,
   MessageCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { FoodIconRenderer as FoodIcon } from './FoodIconRenderer';
+
+const ICON_MAP: Record<string, string> = {
+  pecho: 'icono_pecho.svg',
+  espalda: 'icono_espalda.svg',
+  hombros: 'icono_hombros.svg',
+  brazos: 'icono_brazos.svg',
+  legs: 'icono_legs.svg',
+  cardio: 'icono_cardio.svg',
+  cycling: 'icono_ciclismo.svg',
+  crossfit: 'icono_crossfit.svg',
+  fullbody: 'icono_fullbody.svg',
+  meditation: 'icono_meditacion.svg',
+  boxing: 'icono_boxeo.svg',
+  custom: 'icono_personalizado.svg',
+  calisthenics: 'icono_calistenia.svg'
+};
+
+const ExerciseIcon = ({ section, className = "w-4 h-4" }: { section: string, className?: string }) => {
+  const iconFile = ICON_MAP[section.toLowerCase()] || 'icono_personalizado.svg';
+  return (
+    <img 
+      src={`/assets/icons/workouts/${iconFile}`} 
+      className={`${className} object-contain`} 
+      alt={section}
+    />
+  );
+};
 
 export default function SovereignShared() {
   const [searchParams] = useSearchParams();
@@ -78,17 +98,17 @@ export default function SovereignShared() {
   if (!decoded) return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center space-y-4">
        <Ghost className="w-12 h-12 text-zinc-800 animate-pulse" />
-       <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">Protocolo no encontrado o corrupto</p>
+       <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">Rutina no encontrada o corrupta</p>
     </div>
   );
 
   const shareToWhatsApp = () => {
     const url = window.location.href;
-    const text = `ðŸ”± Estoy ejecutando el Protocolo *${decoded.name}* en Fit Legacy.\n\nMirÃ¡lo y enÃ¡ tu propio legado:\n${url}\n\n#TheRoad #FitLegacy`;
+    const text = `🔳 Estoy ejecutando la Rutina *${decoded.name}* en Fit Legacy.\n\nMírala y forja tu propio legado:\n${url}\n\n#TheRoad #FitLegacy`;
     
     // Use native share if available (mobile), fallback to wa.me
     if (navigator.share) {
-      navigator.share({ title: `Protocolo ${decoded.name} â€” Fit Legacy`, text, url })
+      navigator.share({ title: `Rutina ${decoded.name} — Fit Legacy`, text, url })
         .catch(() => {}); // User dismissed â€” no error needed
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
@@ -107,7 +127,7 @@ export default function SovereignShared() {
             transition={{ duration: 2 }}
             src={decoded.coverImageUrl} 
             className="absolute inset-0 w-full h-full object-cover" 
-            alt="Fondo cinemÃ¡tico del protocolo"
+            alt="Fondo cinemático de la rutina"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-black" aria-hidden="true" />
@@ -121,11 +141,11 @@ export default function SovereignShared() {
           className="relative z-10 space-y-8 max-w-5xl"
         >
           <div className="inline-flex items-center gap-3 px-6 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-xl">
-            <Crown className="w-4 h-4 text-amber-400" aria-label="Sello de VerificaciÃ³n" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400">Verified Sovereign Protocol</span>
+            <Crown className="w-4 h-4 text-amber-400" aria-label="Sello de Verificación" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400">Verified Sovereign Neural Link</span>
           </div>
           
-          <h1 className="text-7xl md:text-[10rem] font-black italic uppercase leading-none tracking-tighter drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+          <h1 className="font-brand-display text-7xl md:text-[10rem] font-black italic uppercase leading-none tracking-tighter drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
             {decoded.name}
           </h1>
           
@@ -150,7 +170,7 @@ export default function SovereignShared() {
 
       <main className="max-w-[1400px] mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-12 gap-20" role="main">
         
-        {/* Protocol Manifest */}
+        {/* Routine Manifest */}
         <div className="lg:col-span-8 space-y-24">
           
           {/* Training Module */}
@@ -174,9 +194,18 @@ export default function SovereignShared() {
                   >
                     <div className="flex items-center gap-10">
                       <span className="text-5xl font-black italic text-zinc-800 group-hover:text-purple-500/20 transition-colors" aria-hidden="true">{(idx + 1).toString().padStart(2, '0')}</span>
+                      <div className="w-20 h-20 bg-black rounded-3xl flex items-center justify-center border border-white/5 shadow-2xl">
+                        <ExerciseIcon section={ex.section} className="w-12 h-12" />
+                      </div>
                       <div>
                         <h3 className="text-2xl font-black uppercase italic">{ex.name}</h3>
-                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2">{ex.section} Protocol</p>
+                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2">{ex.section} Routine</p>
+                        {ex.notes && (
+                          <div className="flex items-center gap-2 mt-3 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-lg w-fit">
+                             <MessageCircle className="w-3 h-3 text-purple-400" />
+                             <p className="text-[10px] text-purple-300 font-bold italic">{ex.notes}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-16 text-right">
@@ -206,7 +235,7 @@ export default function SovereignShared() {
               </div>
               
               <div className="grid grid-cols-1 gap-6">
-                {decoded.foods.map((food: any, idx: number) => (
+                {decoded.foods.map((food: any) => (
                   <motion.div 
                     key={food.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -215,12 +244,18 @@ export default function SovereignShared() {
                     className="bg-emerald-500/[0.02] border border-emerald-500/10 rounded-[2.5rem] p-10 hover:bg-emerald-500/[0.05] transition-[background-color,border-color,transform] duration-500 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-10">
-                      <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center text-emerald-500 border border-emerald-500/20">
-                        <Utensils className="w-6 h-6" aria-hidden="true" />
+                      <div className="w-20 h-20 bg-black rounded-3xl flex items-center justify-center text-emerald-500 border border-emerald-500/10 shadow-2xl">
+                        <FoodIcon category={food.category} name={food.name} className="w-10 h-10" />
                       </div>
                       <div>
                         <h3 className="text-2xl font-black uppercase italic">{food.name}</h3>
                         <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2">{food.category}</p>
+                        {food.notes && (
+                          <div className="flex items-center gap-2 mt-3 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg w-fit">
+                             <MessageCircle className="w-3 h-3 text-emerald-400" />
+                             <p className="text-[10px] text-emerald-300 font-bold italic">{food.notes}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-16 text-right">
@@ -244,25 +279,25 @@ export default function SovereignShared() {
         <aside className="lg:col-span-4 space-y-8" role="complementary">
            <div className="bg-white/5 border border-white/10 rounded-[3rem] p-12 backdrop-blur-3xl sticky top-12 space-y-12 shadow-2xl">
               <div className="space-y-4">
-                 <h3 className="text-xs font-black uppercase tracking-[0.5em] text-zinc-500">PROTOCOL ACTION</h3>
+                 <h3 className="text-xs font-black uppercase tracking-[0.5em] text-zinc-500">ROUTINE ACTION</h3>
                  <button 
                   onClick={() => window.location.href = `/?data=${data}`}
-                  aria-label="Importar este protocolo a mi arsenal"
+                  aria-label="Importar esta rutina a mi build"
                   className="w-full h-24 bg-white text-black font-black text-xl italic uppercase rounded-3xl flex items-center justify-center gap-4 hover:bg-purple-500 hover:text-white transition-[background-color,color,transform] hover:scale-[1.02] active:scale-[0.98]"
                  >
-                   IMPORTAR AL ARSENAL
+                   IMPORTAR AL BUILD
                    <ArrowRight className="w-6 h-6" aria-hidden="true" />
                  </button>
                  <button 
                   onClick={shareToWhatsApp}
-                  aria-label="Compartir protocolo por WhatsApp"
+                  aria-label="Compartir rutina por WhatsApp"
                   className="w-full h-16 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-black text-sm italic uppercase rounded-2xl flex items-center justify-center gap-3 hover:bg-[#25D366]/20 hover:border-[#25D366]/60 transition-all active:scale-[0.98]"
                  >
                    <MessageCircle className="w-5 h-5" aria-hidden="true" />
-                   DESAFÃAR POR WHATSAPP
+                   DESAFÍAR POR WHATSAPP
                  </button>
                  <button 
-                  onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Protocolo Copiado'); }}
+                  onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Rutina Copiada'); }}
                   aria-label="Copiar link de acceso .WIR"
                   className="w-full py-6 bg-transparent border border-white/10 text-white font-black text-sm uppercase italic rounded-2xl hover:bg-white/5 transition-[background-color,border-color,transform]"
                  >
@@ -276,7 +311,7 @@ export default function SovereignShared() {
                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Sovereign Performance</p>
                  </div>
                  <p className="text-sm text-zinc-500 leading-relaxed italic">
-                   Este protocolo ha sido validado por el motor de Fit Legacy. DiseÃ±ado para optimizaciÃ³n metabÃ³lica y fuerza mÃ¡xima.
+                   Este entrenamiento ha sido validado por el motor de Fit Legacy. Diseñado para optimización metabólica y fuerza máxima.
                  </p>
               </div>
 

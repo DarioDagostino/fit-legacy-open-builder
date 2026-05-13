@@ -16,7 +16,7 @@ const BASE_URL = 'https://builders.fitlegacy.app';
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-wir-card.png`;
 const DEFAULT_TITLE = 'PROTOCOLO LEGACY';
 const DEFAULT_DESC =
-  'Protocolo de entrenamiento Fit Legacy. Toca para ver los detalles y añadirlo a tu arsenal.';
+  'Protocolo Fit Legacy. Toca para ver los detalles y añadirlo a tu arsenal.';
 
 const BOT_AGENTS = [
   'whatsapp',
@@ -32,7 +32,7 @@ const BOT_AGENTS = [
   'w3c_validator',
 ];
 
-function decodeWIR(encoded: string): { name: string; coverImageUrl: string | null } {
+function decodeWIR(encoded: string): { name: string; coverImageUrl: string | null; template: 'routine' | 'meal' | 'mixed' } {
   try {
     const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
     const binString = atob(base64);
@@ -43,9 +43,10 @@ function decodeWIR(encoded: string): { name: string; coverImageUrl: string | nul
     return {
       name: (json.n || json.name || DEFAULT_TITLE).toUpperCase(),
       coverImageUrl: json.c || json.coverImageUrl || null,
+      template: json.t === 'meal' ? 'meal' : json.t === 'mixed' ? 'mixed' : 'routine',
     };
   } catch {
-    return { name: DEFAULT_TITLE, coverImageUrl: null };
+    return { name: DEFAULT_TITLE, coverImageUrl: null, template: 'routine' };
   }
 }
 
@@ -59,11 +60,18 @@ function esc(s: string): string {
 
 function buildOGHtml(
   routineName: string,
+  template: 'routine' | 'meal' | 'mixed',
   ogImage: string,
   canonicalUrl: string,
   targetUrl: string
 ): string {
-  const title = `MISIÓN: ${routineName}`;
+  const prefix = template === 'meal' ? 'COMIDA' : template === 'mixed' ? 'PLAN' : 'RUTINA';
+  const title = `${prefix}: ${routineName}`;
+  const description = template === 'meal'
+    ? 'Plan de comida Fit Legacy. Toca para abrirlo y seguir los bloques nutricionales.'
+    : template === 'mixed'
+      ? 'Plan mixto Fit Legacy con entrenamiento y nutricion. Toca para abrirlo.'
+      : 'Protocolo de entrenamiento Fit Legacy. Toca para abrirlo y ejecutarlo.';
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -73,7 +81,7 @@ function buildOGHtml(
 
     <!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
     <meta property="og:title" content="${esc(title)}" />
-    <meta property="og:description" content="${esc(DEFAULT_DESC)}" />
+    <meta property="og:description" content="${esc(description)}" />
     <meta property="og:image" content="${esc(ogImage)}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -84,7 +92,7 @@ function buildOGHtml(
     <!-- Twitter / X Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${esc(title)}" />
-    <meta name="twitter:description" content="${esc(DEFAULT_DESC)}" />
+    <meta name="twitter:description" content="${esc(description)}" />
     <meta name="twitter:image" content="${esc(ogImage)}" />
 
     <!-- Redirect real users (bots ignoran JS y meta-refresh) -->
@@ -108,7 +116,7 @@ export default async function handler(req: Request): Promise<Response> {
   const ua = (req.headers.get('user-agent') || '').toLowerCase();
   const isBot = BOT_AGENTS.some((bot) => ua.includes(bot));
 
-  const { name, coverImageUrl } = decodeWIR(data);
+  const { name, coverImageUrl, template } = decodeWIR(data);
   const ogImage = coverImageUrl || DEFAULT_OG_IMAGE;
 
   // URL de destino = la vista SovereignShared en el SPA
@@ -122,7 +130,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   // Bot → HTML con meta-tags OG
-  const html = buildOGHtml(name, ogImage, canonicalUrl, targetUrl);
+  const html = buildOGHtml(name, template, ogImage, canonicalUrl, targetUrl);
 
   return new Response(html, {
     status: 200,

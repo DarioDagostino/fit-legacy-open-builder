@@ -1,5 +1,21 @@
 # ✅ Integration Complete: .wir + BioLedger
 
+## 🆕 Update (Mayo 2026)
+
+### Canvas y Templates
+- ✅ Soporte de templates `.wir` en payload con campo `t`: `routine`, `meal`, `mixed`.
+- ✅ Template `mixed` habilitado como modo híbrido explícito cuando existen ejercicios y comidas.
+- ✅ `SharedRoutineViewer` y `Sync` reutilizan el mismo canvas (`WirCanvasPreview`) para experiencia espejo 1:1.
+
+### UX y Naming
+- ✅ Default de nombre cambiado de `NUEVO_PROTOCOLO` a `NUEVA RUTINA`.
+- ✅ Editor de nombre reforzado en Arsenal (input editable + hint visual).
+
+### Sistema Visual
+- ✅ Tipografías de producto actualizadas (`Manrope` para UI, `Sora` para display).
+- ✅ Paleta por template ajustada para legibilidad y consistencia de marca (incluye `mixed` con acento azul).
+
+
 ## 📋 Qué se integró
 
 ### **1. .wir Format (Encode/Decode)**

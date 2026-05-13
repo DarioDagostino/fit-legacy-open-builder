@@ -46,7 +46,20 @@ export function encodeWir(doc: WirDocument): string {
  */
 export function toWirUrl(doc: WirDocument, baseUrl = 'https://builder.fitlegacy.app'): string {
   const encoded = encodeWir(doc);
-  return `${baseUrl}/r/wir?data=${encoded}`;
+  const normalizedBase = baseUrl.replace(/\/$/, '');
+
+  // If caller already provides a path (e.g. https://example.com/wir),
+  // append only query params. Otherwise use the default receiver route.
+  try {
+    const parsed = new URL(normalizedBase);
+    const hasCustomPath = parsed.pathname && parsed.pathname !== '/';
+    return hasCustomPath
+      ? `${normalizedBase}?data=${encoded}`
+      : `${normalizedBase}/r/wir?data=${encoded}`;
+  } catch {
+    // Fallback for non-URL strings keeps previous behavior.
+    return `${normalizedBase}/r/wir?data=${encoded}`;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

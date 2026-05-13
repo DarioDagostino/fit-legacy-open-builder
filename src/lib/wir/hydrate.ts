@@ -7,6 +7,8 @@ import { WirDocument } from './schema';
 import { getExerciseById, getFoodById } from '@fit-legacy/shared';
 
 export interface HydratedRoutine {
+  template: 'routine' | 'meal' | 'mixed';
+  palette?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember';
   name: string;
   coverImageUrl: string | null;
   exercises: Array<{
@@ -16,6 +18,7 @@ export interface HydratedRoutine {
     sets: number;
     reps: number;
     weight: number;
+    notes?: string;
   }>;
   foods: Array<{
     id: string;
@@ -26,6 +29,7 @@ export interface HydratedRoutine {
     fats: number;
     category?: string;
     quantity: number;
+    notes?: string;
   }>;
 }
 
@@ -48,6 +52,7 @@ export function hydrateWir(doc: WirDocument): HydratedRoutine {
       sets: e.s,
       reps: e.r,
       weight: e.w,
+      notes: e.m,
     };
   });
 
@@ -67,10 +72,13 @@ export function hydrateWir(doc: WirDocument): HydratedRoutine {
       fats: foodData.fats,
       category: foodData.category,
       quantity: f.q,
+      notes: f.m,
     };
   });
 
   return {
+    template: doc.t || (exercises.length > 0 && foods.length > 0 ? 'mixed' : foods.length > 0 ? 'meal' : 'routine'),
+    palette: doc.p,
     name: doc.n,
     coverImageUrl: doc.c || null,
     exercises,

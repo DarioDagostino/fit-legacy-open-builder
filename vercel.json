@@ -1,12 +1,7 @@
 {
-  "buildCommand": "cd ../.. && pnpm --filter fit-legacy-app build",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install --frozen-lockfile",
   "outputDirectory": "dist",
-  "functions": {
-    "api/og.ts": {
-      "runtime": "edge"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/og",

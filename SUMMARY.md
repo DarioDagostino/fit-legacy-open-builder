@@ -1,5 +1,15 @@
 # 🚀 WIR Core Implementation — Complete Summary
 
+## 🆕 Actualización Mayo 2026
+
+- Se implementaron 3 plantillas visuales `.wir`: `routine`, `meal` y `mixed`.
+- El modo `mixed` ahora es explícito cuando hay ejercicios y comidas (no cae en rutina/comida por heurística anterior).
+- `Sync` ahora funciona como preview espejo 1:1 del receptor usando el componente compartido `WirCanvasPreview`.
+- Se consolidó un sistema visual por template (paleta + tipografía) para mejorar consistencia mobile.
+- Nombre por defecto de rutina actualizado a `NUEVA RUTINA`.
+- En Arsenal, el nombre es editable y se comunica en UI que el usuario puede personalizarlo.
+
+
 ## 📦 What We Built (8 Files, ~50KB Code)
 
 ### 1. **Catálogo Maestro** (27KB)

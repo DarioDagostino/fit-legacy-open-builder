@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import { lazy, Suspense, useState, useMemo, useEffect, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { 
@@ -7,58 +7,111 @@ import {
   Trash2, 
   Plus, 
   Share2, 
-  ChevronRight, 
-  Sparkles,
   Image as ImageIcon,
-  Loader2,
   Minus,
   Apple,
-  Beef,
-  Wheat,
-  Droplet,
-  Utensils,
-  Zap,
-  Target,
-  ShieldCheck,
-  Lock,
-  Unlock,
-  Info,
-  Crown,
-  LayoutGrid,
-  ClipboardList,
-  ArrowRight,
-  TrendingUp,
+  Palette,
   X,
-  Flame,
   Ghost,
-  Activity
+  Menu,
+  MessageCircle
 } from 'lucide-react';
 import { UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { useWorkoutStore } from '../../lib/store';
 import { toast } from 'sonner';
-import { NvidiaImageService } from '@fit-legacy/ai';
-import { BioLedgerView } from '../analytics/BioLedgerView';
 
-type TabType = 'catalog' | 'arsenal' | 'export' | 'ledger';
+const WirCanvasPreview = lazy(() =>
+  import('../wir/WirCanvasPreview').then((module) => ({ default: module.WirCanvasPreview }))
+);
 
-const MUSCLE_GROUPS = [
-  { id: 'all', label: 'Todo' },
-  { id: 'chest', label: 'Pecho' },
-  { id: 'back', label: 'Espalda' },
-  { id: 'legs', label: 'Piernas' },
-  { id: 'shoulders', label: 'Hombros' },
-  { id: 'arms', label: 'Brazos' },
-  { id: 'core', label: 'Core' },
+type FoodIconProps = {
+  category: string;
+  name?: string;
+  className?: string;
+};
+
+let cachedFoodIconRenderer: ComponentType<FoodIconProps> | null = null;
+let foodIconRendererPromise: Promise<ComponentType<FoodIconProps>> | null = null;
+
+function loadFoodIconRenderer() {
+  if (!foodIconRendererPromise) {
+    foodIconRendererPromise = import('./FoodIconRenderer').then((module) => {
+      cachedFoodIconRenderer = module.FoodIconRenderer;
+      return module.FoodIconRenderer;
+    });
+  }
+  return foodIconRendererPromise;
+}
+
+type TabType = 'catalog' | 'food' | 'build' | 'export';
+
+const CUSTOMIZE_KEY = 'catalog-customize-config';
+const CATALOG_BG_PRESETS = [
+  {
+    id: 'clean',
+    label: 'Clean',
+    style: {
+      background: 'radial-gradient(circle at 12% 18%, rgba(255,255,255,0.96), rgba(243,246,252,0.92) 48%, rgba(231,238,247,0.9) 100%)',
+    },
+  },
+  {
+    id: 'mist',
+    label: 'Mist',
+    style: {
+      background: 'linear-gradient(145deg, #f8fcff 0%, #dceaf7 45%, #c6dbf0 100%)',
+    },
+  },
+  {
+    id: 'navy',
+    label: 'Navy',
+    style: {
+      background: 'linear-gradient(145deg, #0f1a2c 0%, #1f3f66 52%, #2f5f8f 100%)',
+    },
+  },
+  {
+    id: 'forest',
+    label: 'Forest',
+    style: {
+      background: 'linear-gradient(145deg, #ecfaf0 0%, #d8efdf 45%, #c2e4cf 100%)',
+    },
+  },
+  {
+    id: 'ember',
+    label: 'Ember',
+    style: {
+      background: 'linear-gradient(145deg, #fff4f1 0%, #ffdcd2 45%, #ffc2b2 100%)',
+    },
+  },
 ];
 
-const FOOD_CATEGORIES = [
-  { id: 'all', label: 'Todo' },
-  { id: 'protein', label: 'Proteínas' },
-  { id: 'carbs', label: 'Carbs' },
-  { id: 'fats', label: 'Grasas' },
-  { id: 'fruits', label: 'Frutas' },
-  { id: 'vegetables', label: 'Verduras' },
-];
+const FILTER_LABELS: Record<string, string> = {
+  all: 'Todo',
+  chest: 'Pecho',
+  back: 'Espalda',
+  legs: 'Piernas',
+  shoulders: 'Hombros',
+  arms: 'Brazos',
+  core: 'Core',
+  cardio: 'Cardio',
+  boxing: 'Boxeo',
+  calisthenics: 'Calistenia',
+  cycling: 'Ciclismo',
+  crossfit: 'Crossfit',
+  meditation: 'Meditacion',
+  custom: 'Personalizado',
+  protein: 'ProteÃ­nas',
+  carbs: 'Carbs',
+  fats: 'Grasas',
+  fruits: 'Frutas',
+  vegetables: 'Verduras',
+};
+
+function normalizeFilterId(value?: string) {
+  const normalized = (value || '').toLowerCase().trim();
+  if (normalized === 'fruit') return 'fruits';
+  if (normalized === 'vegetable') return 'vegetables';
+  return normalized;
+}
 
 // Exercise Icon Mapping
 const ICON_MAP: Record<string, string> = {
@@ -78,13 +131,13 @@ const ICON_MAP: Record<string, string> = {
   calisthenics: 'icono_calistenia.svg'
 };
 
-const ExerciseIcon = ({ section, className = "w-7 h-7" }: { section: string, className?: string }) => {
+const ExerciseIcon = ({ section, className = "w-10 h-10" }: { section: string, className?: string }) => {
   const iconFile = ICON_MAP[section.toLowerCase()] || 'icono_personalizado.svg';
   return (
     <img 
       src={`/assets/icons/workouts/${iconFile}`} 
       alt={`Icono de ${section}`} 
-      className={`${className} object-contain invert group-hover:invert-0 transition-[filter,transform] duration-300`} 
+      className={`${className} object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]`} 
       onError={(e) => {
         (e.target as HTMLImageElement).src = '/assets/icons/workouts/icono_personalizado.svg';
       }}
@@ -92,17 +145,33 @@ const ExerciseIcon = ({ section, className = "w-7 h-7" }: { section: string, cla
   );
 };
 
-const FoodIcon = ({ category, className = "w-6 h-6", colored = true }: { category: string, className?: string, colored?: boolean }) => {
-  switch (category?.toLowerCase()) {
-    case 'protein': return <Beef className={`${className} ${colored ? 'text-rose-500' : ''}`} />;
-    case 'carbs': return <Wheat className={`${className} ${colored ? 'text-amber-500' : ''}`} />;
-    case 'fats': return <Droplet className={`${className} ${colored ? 'text-yellow-500' : ''}`} />;
-    case 'fruit': return <Apple className={`${className} ${colored ? 'text-red-500' : ''}`} />;
-    default: return <Utensils className={`${className} ${colored ? 'text-emerald-500' : ''}`} />;
+const FoodIcon = ({ category, name = '', className = 'w-6 h-6' }: FoodIconProps) => {
+  const [Renderer, setRenderer] = useState<ComponentType<FoodIconProps> | null>(() => cachedFoodIconRenderer);
+
+  useEffect(() => {
+    if (Renderer) return;
+    let active = true;
+    loadFoodIconRenderer().then((loaded) => {
+      if (active) {
+        setRenderer(() => loaded);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [Renderer]);
+
+  if (!Renderer) {
+    return <span className={`${className} flex items-center justify-center text-lg`}>ðŸ½ï¸</span>;
   }
+
+  return <Renderer category={category} name={name} className={className} />;
 };
 
 export default function MobileFirstBuilder() {
+  const donationUrl = import.meta.env.VITE_MP_DONATION_URL as string | undefined;
+  const hasValidDonationUrl = !!donationUrl && /^https?:\/\//i.test(donationUrl);
+
   const { 
     currentRoutine, 
     builderMode,
@@ -114,7 +183,6 @@ export default function MobileFirstBuilder() {
     removeFood,
     updateFood,
     updateRoutineName,
-    setCoverImage,
     getShareableLink,
     loadRoutine 
   } = useWorkoutStore();
@@ -123,7 +191,34 @@ export default function MobileFirstBuilder() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
+  const [customExerciseName, setCustomExerciseName] = useState('');
+  const [customSeries, setCustomSeries] = useState(3);
+  const [customReps, setCustomReps] = useState(10);
+  const [customWeight, setCustomWeight] = useState(0);
+  const [showCustomize, setShowCustomize] = useState(false);
+  const [catalogLogo, setCatalogLogo] = useState<string | null>(null);
+  const [catalogBgId, setCatalogBgId] = useState<string>('clean');
+  const [catalogBgImage, setCatalogBgImage] = useState<string | null>(null);
+
+  const workoutFilters = useMemo(() => {
+    return [
+      { id: 'all', label: FILTER_LABELS.all },
+      ...Object.keys(UNIFIED_EXERCISES).map((id) => ({
+        id,
+        label: FILTER_LABELS[id] || id,
+      })),
+    ];
+  }, []);
+
+  const foodFilters = useMemo(() => {
+    return [
+      { id: 'all', label: FILTER_LABELS.all },
+      ...Object.keys(UNIFIED_FOODS).map((id) => ({
+        id,
+        label: FILTER_LABELS[id] || id,
+      })),
+    ];
+  }, []);
 
   // Pre-compute exercise and food arrays (only once, never changes)
   const allExercises = useMemo(() => {
@@ -132,7 +227,9 @@ export default function MobileFirstBuilder() {
         categories.flatMap(cat => 
           cat.exercises.map(ex => ({ ...ex, section }))
         )
-      );
+      )
+      // "Personalizado" should be user-created only, not pre-seeded catalog items.
+      .filter((ex) => normalizeFilterId((ex as any).section) !== 'custom');
   }, []);
 
   const allFoods = useMemo(() => {
@@ -148,12 +245,27 @@ export default function MobileFirstBuilder() {
   }, []);
 
   useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem(CUSTOMIZE_KEY) || '{}');
+    setCatalogLogo(stored.logo || null);
+    setCatalogBgId(stored.bgId || 'clean');
+    setCatalogBgImage(stored.bgImage || null);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(CUSTOMIZE_KEY, JSON.stringify({
+      logo: catalogLogo,
+      bgId: catalogBgId,
+      bgImage: catalogBgImage,
+    }));
+  }, [catalogLogo, catalogBgId, catalogBgImage]);
+
+  useEffect(() => {
     const data = searchParams.get('data');
     if (data) {
       try {
         const decoded = JSON.parse(decodeURIComponent(escape(atob(data))));
         loadRoutine(decoded);
-        setActiveTab('arsenal');
+        setActiveTab('build');
       } catch (e) {}
     }
   }, [searchParams, loadRoutine]);
@@ -167,14 +279,47 @@ export default function MobileFirstBuilder() {
   // Efficient filtering without re-flattening
   const filteredItems = useMemo(() => {
     const items = builderMode === 'workout' ? allExercises : allFoods;
+    const normalizedFilter = normalizeFilterId(activeFilter);
+    const normalizedSearch = search.toLowerCase().trim();
 
     return items.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = item.name.toLowerCase().includes(normalizedSearch);
       const cat = builderMode === 'workout' ? (item as any).section : (item as any).category;
-      const matchesFilter = activeFilter === 'all' || cat === activeFilter;
+      const normalizedCat = normalizeFilterId(cat);
+      const matchesFilter = normalizedFilter === 'all' || normalizedCat === normalizedFilter;
       return matchesSearch && matchesFilter;
     });
   }, [search, activeFilter, builderMode, allExercises, allFoods]);
+
+  const isCustomWorkoutFilter = useMemo(() => {
+    return builderMode === 'workout' && normalizeFilterId(activeFilter) === 'custom';
+  }, [builderMode, activeFilter]);
+
+  const addCustomExercise = () => {
+    const trimmedName = customExerciseName.trim();
+    if (!trimmedName) {
+      toast.error('Escribe un nombre para el ejercicio');
+      return;
+    }
+
+    const customId = `custom_${Date.now()}`;
+    addExercise({
+      id: customId,
+      name: trimmedName,
+      section: 'custom',
+      difficulty: 'beginner',
+      sets: customSeries,
+      reps: customReps,
+      weight: customWeight,
+    });
+
+    toast.success(`${trimmedName} agregado`);
+    setCustomExerciseName('');
+    setCustomSeries(3);
+    setCustomReps(10);
+    setCustomWeight(0);
+    setActiveTab('build');
+  };
 
   const totalMacros = useMemo(() => {
     return currentRoutine.foods.reduce((acc, food) => {
@@ -188,41 +333,162 @@ export default function MobileFirstBuilder() {
     }, { calories: 0, protein: 0, carbs: 0, fats: 0 });
   }, [currentRoutine.foods]);
 
-  const handleGenerateCover = async () => {
-    if (currentRoutine.exercises.length === 0 && currentRoutine.foods.length === 0) {
-      toast.error('Arsenal vacío');
-      return;
+  const totalSets = useMemo(() => {
+    return currentRoutine.exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 0), 0);
+  }, [currentRoutine.exercises]);
+
+  const totalVolume = useMemo(() => {
+    return currentRoutine.exercises.reduce((acc, ex) => {
+      const sets = Number(ex.sets) || 0;
+      const reps = Number(ex.reps) || 0;
+      const weight = Number(ex.weight) || 0;
+      return acc + sets * reps * weight;
+    }, 0);
+  }, [currentRoutine.exercises]);
+
+  const shareTemplate = useMemo<'routine' | 'meal' | 'mixed'>(() => {
+    const hasExercises = currentRoutine.exercises.length > 0;
+    const hasFoods = currentRoutine.foods.length > 0;
+
+    if (hasExercises && hasFoods) {
+      return 'mixed';
     }
-    setIsGeneratingCover(true);
-    try {
-      const service = new NvidiaImageService();
-      const focus = currentRoutine.exercises[0]?.name || currentRoutine.foods[0]?.name || 'elite fitness';
-      const prompt = `Hyper-realistic portrait of ${focus} in a premium noir gym. 8k resolution.`;
-      const result = await service.generate({ prompt, style: 'ultra-realistic', model: 'proteus' });
-      setCoverImage(result.url);
-      toast.success('Identidad visual forjada');
-    } catch (e) {
-      toast.error('Fallo en la IA');
-    } finally {
-      setIsGeneratingCover(false);
+    if (hasFoods) {
+      return 'meal';
     }
+    return 'routine';
+  }, [currentRoutine.exercises.length, currentRoutine.foods.length]);
+
+  const selectedWirPalette = useMemo<'clean' | 'mist' | 'navy' | 'forest' | 'ember' | undefined>(() => {
+    if (catalogBgImage) {
+      return undefined;
+    }
+    const allowed = ['clean', 'mist', 'navy', 'forest', 'ember'] as const;
+    return (allowed as readonly string[]).includes(catalogBgId) ? (catalogBgId as (typeof allowed)[number]) : undefined;
+  }, [catalogBgId, catalogBgImage]);
+
+  const sharePreviewText = useMemo(() => {
+    const routineName = (currentRoutine.name || 'NUEVA RUTINA').toUpperCase();
+    const totalItems = currentRoutine.exercises.length + currentRoutine.foods.length;
+    const exerciseLine = `Ejercicios: ${currentRoutine.exercises.length}`;
+    const foodLine = `NutriciÃ³n: ${currentRoutine.foods.length}`;
+    const totalLine = `Items totales: ${totalItems}`;
+
+    return `ðŸ’ª NUEVA RUTINA: ${routineName}\n\n${exerciseLine}\n${foodLine}\n${totalLine}\n\nToca para abrir tu entrenamiento en Fit Legacy:\n${getShareableLink(selectedWirPalette)}`;
+  }, [currentRoutine.name, currentRoutine.exercises.length, currentRoutine.foods.length, getShareableLink, selectedWirPalette]);
+
+  const handleCatalogLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setCatalogLogo(ev.target?.result as string);
+    reader.readAsDataURL(file);
   };
 
+  const handleCatalogBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      setCatalogBgImage(ev.target?.result as string);
+      setCatalogBgId('custom');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const catalogActiveBg = useMemo(() => {
+    if (catalogBgImage) {
+      return { background: `url(${catalogBgImage}) center/cover no-repeat` };
+    }
+    return CATALOG_BG_PRESETS.find(p => p.id === catalogBgId)?.style || CATALOG_BG_PRESETS[0].style;
+  }, [catalogBgId, catalogBgImage]);
+
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-purple-500/30 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-white text-[#141e30] font-sans selection:bg-[#35577d]/20 flex flex-col overflow-hidden">
       
       {/* Dynamic Header */}
-      <header className="p-6 pt-10 shrink-0 z-10" role="banner">
-        <div className="flex items-center justify-between mb-6">
-           <div className="flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-500">System Online</span>
+      <header className="p-4 pt-6 shrink-0 z-10 bg-gradient-to-r from-[#141e30] to-[#35577d] text-white border-b border-[#e6ecf2] shadow-[0_16px_36px_-24px_rgba(20,30,48,0.6)]" role="banner">
+        <div className="flex items-center justify-between mb-4">
+           <div className="flex items-center gap-3">
+             <button
+               onClick={() => setShowCustomize(v => !v)}
+               className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 flex items-center justify-center transition-colors"
+               aria-label="MenÃº de opciones"
+               title="MenÃº"
+             >
+               <Menu className="w-5 h-5 text-white" />
+             </button>
+             <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/10 bg-black/40 flex items-center justify-center">
+               <img src="/icons/fit-legacy-mark.svg" alt="FL" className="w-full h-full object-cover opacity-90" />
+             </div>
+             <div className="flex flex-col">
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Fit Legacy</span>
+               <div className="flex items-center gap-1.5 opacity-60">
+                 <div className="w-1.2 h-1.2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                 <span className="text-[7px] font-mono uppercase tracking-widest font-black">System Online</span>
+               </div>
+             </div>
            </div>
-           <Crown className="w-4 h-4 text-amber-500" aria-label="Miembro Elite" />
+           {activeTab === 'catalog' ? (
+             <motion.button
+               onClick={() => {
+                 if (!hasValidDonationUrl) {
+                   toast.info('Configura VITE_MP_DONATION_URL para habilitar donaciones');
+                   return;
+                 }
+                 window.open(donationUrl, '_blank', 'noopener,noreferrer');
+               }}
+               whileHover={{ scale: 1.1 }}
+               whileTap={{ scale: 0.95 }}
+               animate={{ y: [0, -2, 0] }}
+               transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+               className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/15 hover:bg-white/25 border border-white/40 flex items-center justify-center transition-colors shadow-lg"
+               aria-label="Donar con MercadoPago"
+               title="Donar para hacer crecer la comunidad"
+             >
+               <img src="/mercadopago/Group%2016.webp" className="w-8 h-8 md:w-9 md:h-9 object-contain" alt="Donar" />
+             </motion.button>
+           ) : activeTab === 'food' ? (
+             <motion.button
+               onClick={() => {
+                 if (!hasValidDonationUrl) {
+                   toast.info('Configura VITE_MP_DONATION_URL para habilitar donaciones');
+                   return;
+                 }
+                 window.open(donationUrl, '_blank', 'noopener,noreferrer');
+               }}
+               whileHover={{ scale: 1.1 }}
+               whileTap={{ scale: 0.95 }}
+               animate={{ y: [0, -2, 0] }}
+               transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+               className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/15 hover:bg-white/25 border border-white/40 flex items-center justify-center transition-colors shadow-lg"
+               aria-label="Donar con MercadoPago"
+               title="Donar para hacer crecer la comunidad"
+             >
+               <img src="/mercadopago/Group%2016.webp" className="w-8 h-8 md:w-9 md:h-9 object-contain" alt="Donar" />
+             </motion.button>
+           ) : (
+             <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center" aria-hidden="true">
+               <div className="w-2 h-2 rounded-full bg-[#28623a]" />
+             </div>
+           )}
         </div>
-        <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-          {activeTab === 'catalog' ? 'CATÁLOGO' : activeTab === 'arsenal' ? 'ARSENAL' : activeTab === 'ledger' ? 'LEDGER' : 'SYNC'}
-        </h1>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            {(activeTab === 'catalog' || activeTab === 'food') && catalogLogo && (
+              <motion.img 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                src={catalogLogo} 
+                alt="Logo del CatÃ¡logo" 
+                className="w-12 h-12 object-contain rounded-2xl bg-white/10 p-1.5 border border-white/20 shadow-lg" 
+              />
+            )}
+            <h1 className="text-4xl font-black italic uppercase tracking-tighter">
+              {activeTab === 'catalog' ? 'EXPLORAR' : activeTab === 'food' ? 'NUTRIR' : activeTab === 'build' ? 'BUILD' : 'ENVIAR'}
+            </h1>
+          </div>
+        </div>
       </header>
 
       {/* Main Viewport */}
@@ -230,64 +496,60 @@ export default function MobileFirstBuilder() {
         <AnimatePresence mode="wait">
           {activeTab === 'catalog' && (
             <motion.div 
-              key="catalog"
+              key={`catalog-${builderMode}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="h-full flex flex-col p-6 space-y-6"
+              className="h-full flex flex-col p-6 space-y-6 rounded-3xl"
+              style={catalogActiveBg}
             >
-              {/* Premium Mode Toggle */}
-              <div className="relative bg-zinc-900/80 p-1 rounded-2xl border border-white/5 flex items-center h-14 overflow-hidden" role="tablist">
+              {/* Internal Discovery Toggle */}
+              <div className="relative bg-white/60 backdrop-blur-md p-1 rounded-2xl border border-white/45 shadow-[0_10px_22px_-16px_rgba(20,30,48,0.6)] flex items-center h-14 overflow-hidden" role="tablist">
                  <motion.div 
                     initial={false}
                     animate={{ x: builderMode === 'workout' ? 0 : '100%' }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    className="absolute top-1 left-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-xl shadow-xl z-0"
+                    className="absolute top-1 left-1 bottom-1 w-[calc(50%-4px)] bg-[#141e30] rounded-xl shadow-[0_10px_24px_-16px_rgba(20,30,48,0.9)] z-0"
                  />
                  
                  <button 
                   onClick={() => setBuilderMode('workout')} 
                   role="tab"
                   aria-selected={builderMode === 'workout'}
-                  aria-label="Ver catálogo de ejercicios"
-                  className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${builderMode === 'workout' ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-                 >
-                   <Dumbbell size={18} aria-hidden="true" />
-                   EJERCICIOS
-                 </button>
-                 
-                 <button 
+                  className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${builderMode === 'workout' ? 'text-white' : 'text-[#35577d] hover:text-[#141e30]'}`}
+                >
+                  <Dumbbell size={16} />
+                  EJERCICIOS
+                </button>
+                <button 
                   onClick={() => setBuilderMode('nutrition')} 
                   role="tab"
                   aria-selected={builderMode === 'nutrition'}
-                  aria-label="Ver catálogo de comidas"
-                  className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${builderMode === 'nutrition' ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-                 >
-                   <Apple size={18} aria-hidden="true" />
-                   COMIDAS
-                 </button>
+                  className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${builderMode === 'nutrition' ? 'text-white' : 'text-[#35577d] hover:text-[#141e30]'}`}
+                >
+                  <Apple size={16} />
+                  COMIDAS
+                </button>
               </div>
 
               <div className="space-y-4">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" aria-hidden="true" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5b6472]" aria-hidden="true" />
                   <input 
                     type="text"
-                    placeholder="Rastrear en catálogo..."
+                    placeholder={`Buscar ${builderMode === 'workout' ? 'ejercicios' : 'nutriciÃ³n'}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    aria-label="Buscar ejercicios o comidas"
-                    className="w-full bg-zinc-900/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-white/20 transition-[border-color] font-bold text-sm"
+                    className="w-full bg-white/65 backdrop-blur-sm border border-white/50 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#35577d] transition-[border-color] font-bold text-sm text-[#102033] placeholder:text-[#5b6472]"
                   />
                 </div>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2" role="group" aria-label="Filtros de categoría">
-                   {(builderMode === 'workout' ? MUSCLE_GROUPS : FOOD_CATEGORIES).map(f => (
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                   {(builderMode === 'workout' ? workoutFilters : foodFilters).map(f => (
                      <button
                        key={f.id}
                        onClick={() => setActiveFilter(f.id)}
-                       aria-pressed={activeFilter === f.id}
-                       className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-[background-color,border-color,color,box-shadow] whitespace-nowrap ${
-                         activeFilter === f.id ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/20' : 'bg-white/5 border-white/5 text-zinc-500'
+                       className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${
+                         activeFilter === f.id ? 'bg-[#141e30] border-[#141e30] text-white shadow-lg shadow-[#141e30]/20' : 'bg-white/62 backdrop-blur-sm border-white/45 text-[#254667]'
                        }`}
                      >
                        {f.label}
@@ -297,36 +559,86 @@ export default function MobileFirstBuilder() {
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
+                {isCustomWorkoutFilter && (
+                  <div className="bg-white/76 backdrop-blur-md border border-white/50 rounded-2xl p-4 space-y-3 shadow-[0_16px_24px_-20px_rgba(20,30,48,0.7)]">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#254667]">Agregar nuevo</p>
+                      <ExerciseIcon section="custom" className="w-6 h-6" />
+                    </div>
+
+                    <input
+                      type="text"
+                      value={customExerciseName}
+                      onChange={(e) => setCustomExerciseName(e.target.value)}
+                      placeholder="Nombre del ejercicio"
+                      className="w-full bg-white/80 border border-white/60 rounded-xl py-2.5 px-3 text-xs font-bold text-[#102033] placeholder:text-[#5b6472] focus:outline-none focus:border-[#35577d]"
+                    />
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black uppercase text-[#5b6472]">Series</p>
+                        <div className="flex items-center justify-between bg-white/70 border border-white/60 rounded-lg px-2 py-1.5">
+                          <button onClick={() => setCustomSeries(v => Math.max(1, v - 1))} className="text-[#254667]"><Minus size={14} /></button>
+                          <span className="text-xs font-black text-[#102033]">{customSeries}</span>
+                          <button onClick={() => setCustomSeries(v => Math.min(20, v + 1))} className="text-[#254667]"><Plus size={14} /></button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black uppercase text-[#5b6472]">Reps</p>
+                        <div className="flex items-center justify-between bg-white/70 border border-white/60 rounded-lg px-2 py-1.5">
+                          <button onClick={() => setCustomReps(v => Math.max(1, v - 1))} className="text-[#254667]"><Minus size={14} /></button>
+                          <span className="text-xs font-black text-[#102033]">{customReps}</span>
+                          <button onClick={() => setCustomReps(v => Math.min(100, v + 1))} className="text-[#254667]"><Plus size={14} /></button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black uppercase text-[#5b6472]">Peso</p>
+                        <div className="flex items-center justify-between bg-white/70 border border-white/60 rounded-lg px-2 py-1.5">
+                          <button onClick={() => setCustomWeight(v => Math.max(0, v - 2.5))} className="text-[#254667]"><Minus size={14} /></button>
+                          <span className="text-xs font-black text-[#102033]">{customWeight}</span>
+                          <button onClick={() => setCustomWeight(v => Math.min(500, Number((v + 2.5).toFixed(1))))} className="text-[#254667]"><Plus size={14} /></button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={addCustomExercise}
+                      className="w-full bg-[#141e30] text-white rounded-xl py-2.5 text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-transform"
+                    >
+                      Agregar nuevo
+                    </button>
+                  </div>
+                )}
+
                 {filteredItems.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center opacity-40 text-center space-y-4">
-                    <Ghost size={48} aria-hidden="true" />
+                    <Ghost size={48} />
                     <p className="text-[10px] font-black uppercase tracking-[0.3em]">Sin resultados</p>
                   </div>
                 ) : (
                   filteredItems.map(item => (
                     <motion.div
-                      key={`${item.id}`}
+                      key={`${builderMode}-${item.id}`}
                       onClick={() => {
                         builderMode === 'workout' ? addExercise(item as any) : addFood(item as any);
-                        toast.success(`${item.name} añadido`);
+                        toast.success(`${item.name} aÃ±adido`);
                       }}
-                      className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-[transform,background-color,border-color] group cursor-pointer"
+                      className="bg-white/72 backdrop-blur-md border border-white/45 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-all group cursor-pointer hover:bg-white/80 shadow-[0_16px_24px_-20px_rgba(20,30,48,0.7)]"
                     >
                       <div className="flex items-center gap-4">
-                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${builderMode === 'workout' ? 'bg-purple-500/10' : 'bg-zinc-900/80 border border-white/5'}`}>
-                           {builderMode === 'workout' ? <ExerciseIcon section={(item as any).section} className="w-7 h-7" /> : <FoodIcon category={(item as any).category} className="w-6 h-6" />}
+                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${builderMode === 'workout' ? 'bg-white/45 border border-white/50' : 'bg-white/45 border border-white/55'}`}>
+                           {builderMode === 'workout' ? <ExerciseIcon section={(item as any).section} className="w-10 h-10" /> : <FoodIcon category={(item as any).category} name={item.name} className="w-6 h-6" />}
                          </div>
                          <div>
-                           <p className="font-black italic uppercase text-sm group-active:text-white transition-colors">{item.name}</p>
-                           <p className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">
+                           <p className="font-black italic uppercase text-sm text-[#0f1b2d] group-active:text-[#0f1b2d]">{item.name}</p>
+                           <p className="text-[8px] font-bold text-[#3f556f] uppercase tracking-widest">
                              {builderMode === 'workout' ? (item as any).section : (item as any).category}
                            </p>
                          </div>
                       </div>
-                      <button 
-                        className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center group-active:bg-white group-active:text-black transition-colors"
-                        aria-label={`Añadir ${item.name}`}
-                      >
+                      <button className="w-8 h-8 bg-white/65 border border-white/50 rounded-full flex items-center justify-center text-[#254667] group-active:bg-[#141e30] group-active:text-white transition-colors">
                          <Plus size={18} />
                       </button>
                     </motion.div>
@@ -336,119 +648,199 @@ export default function MobileFirstBuilder() {
             </motion.div>
           )}
 
-          {activeTab === 'arsenal' && (
+          {activeTab === 'food' && (
             <motion.div 
-              key="arsenal"
+              key="food-management"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="h-full flex flex-col p-6 space-y-6"
             >
-              <input 
-                type="text"
-                value={currentRoutine.name}
-                onChange={(e) => updateRoutineName(e.target.value)}
-                aria-label="Nombre del protocolo"
-                className="w-full bg-transparent border-none p-0 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-zinc-800 transition-colors"
-                placeholder="NUEVO_ARSENAL"
-              />
+              <div className="space-y-1">
+                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#28623a]">Mi NutriciÃ³n</h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472]">Gestiona las porciones de tu plan</p>
+              </div>
 
-              <div className="grid grid-cols-4 gap-2" role="region" aria-label="Resumen de nutrición">
-                 <div className="p-3 bg-zinc-900/50 rounded-xl border border-white/5 text-center">
-                    <p className="text-[7px] font-black text-zinc-600 uppercase">Kcal</p>
-                    <p className="text-sm font-black">{Math.round(totalMacros.calories)}</p>
-                 </div>
-                 <div className="p-3 bg-zinc-900/50 rounded-xl border border-white/5 text-center">
-                    <p className="text-[7px] font-black text-purple-500 uppercase">Prot</p>
-                    <p className="text-sm font-black text-purple-400">{Math.round(totalMacros.protein)}g</p>
-                 </div>
-                 <div className="p-3 bg-zinc-900/50 rounded-xl border border-white/5 text-center">
-                    <p className="text-[7px] font-black text-blue-500 uppercase">Carb</p>
-                    <p className="text-sm font-black text-blue-400">{Math.round(totalMacros.carbs)}g</p>
-                 </div>
-                 <div className="p-3 bg-zinc-900/50 rounded-xl border border-white/5 text-center">
-                    <p className="text-[7px] font-black text-emerald-500 uppercase">Fat</p>
-                    <p className="text-sm font-black text-emerald-400">{Math.round(totalMacros.fats)}g</p>
-                 </div>
+              <div className="grid grid-cols-4 gap-2">
+                  <div className="p-3 bg-[#f3faf5] rounded-xl border border-[#e6f4ea] text-center shadow-sm">
+                    <div className="mb-1 flex justify-center">
+                      <FoodIcon category="carbs" name="rice" className="w-4 h-4" />
+                    </div>
+                    <p className="text-[7px] font-black text-[#5b6472] uppercase">Kcal</p>
+                    <p className="text-sm font-black text-[#28623a]">{Math.round(totalMacros.calories)}</p>
+                  </div>
+                  <div className="p-3 bg-[#f3faf5] rounded-xl border border-[#e6f4ea] text-center shadow-sm">
+                    <div className="mb-1 flex justify-center">
+                      <FoodIcon category="protein" name="egg" className="w-4 h-4" />
+                    </div>
+                    <p className="text-[7px] font-black text-[#6b1e23] uppercase">Prot</p>
+                    <p className="text-sm font-black text-[#6b1e23]">{Math.round(totalMacros.protein)}g</p>
+                  </div>
+                  <div className="p-3 bg-[#f3faf5] rounded-xl border border-[#e6f4ea] text-center shadow-sm">
+                    <div className="mb-1 flex justify-center">
+                      <FoodIcon category="carbs" name="noodles" className="w-4 h-4" />
+                    </div>
+                    <p className="text-[7px] font-black text-[#35577d] uppercase">Carb</p>
+                    <p className="text-sm font-black text-[#35577d]">{Math.round(totalMacros.carbs)}g</p>
+                  </div>
+                  <div className="p-3 bg-[#f3faf5] rounded-xl border border-[#e6f4ea] text-center shadow-sm">
+                    <div className="mb-1 flex justify-center">
+                      <FoodIcon category="fats" name="avocado" className="w-4 h-4" />
+                    </div>
+                    <p className="text-[7px] font-black text-[#28623a] uppercase">Fat</p>
+                    <p className="text-sm font-black text-[#28623a]">{Math.round(totalMacros.fats)}g</p>
+                  </div>
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
-                {currentRoutine.exercises.length === 0 && currentRoutine.foods.length === 0 && (
-                   <div className="h-full flex flex-col items-center justify-center opacity-20 text-center space-y-4">
-                      <Ghost size={48} aria-hidden="true" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">Arsenal vacío</p>
-                   </div>
+                {currentRoutine.foods.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6 opacity-60">
+                    <Apple size={64} className="text-[#28623a]/20 animate-pulse" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-black uppercase tracking-widest">Sin alimentos</p>
+                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('nutrition'); }} className="text-[10px] font-black text-[#28623a] underline underline-offset-4">IR AL CATÃLOGO</button>
+                    </div>
+                  </div>
+                ) : (
+                  currentRoutine.foods.map(food => (
+                    <div key={food.id} className="bg-[#f3faf5] border border-[#e6f4ea] rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                       <div className="space-y-1">
+                          <div className="flex items-center gap-2 mb-1">
+                             <FoodIcon category={food.category || 'all'} name={food.name} className="w-5 h-5" />
+                            <h4 className="font-black italic uppercase text-xs">{food.name}</h4>
+                          </div>
+                          <div className="flex items-center gap-3">
+                             <span className="text-[8px] font-black text-[#28623a] uppercase">{Math.round((food.protein * food.quantity) / 100)}g P</span>
+                             <span className="text-[8px] font-black text-[#5b6472]">â€¢</span>
+                             <span className="text-[8px] font-black text-[#5b6472] uppercase">{Math.round((food.calories * food.quantity) / 100)} Kcal</span>
+                          </div>
+                       </div>
+                        <div className="flex flex-col gap-3">
+                           <div className="flex items-center gap-3 bg-white rounded-xl p-2 border border-[#e6ecf2] shadow-sm">
+                              <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} className="p-1"><Minus size={16} /></button>
+                              <span className="text-xs font-black w-10 text-center">{food.quantity}g</span>
+                              <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} className="p-1"><Plus size={16} /></button>
+                              <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#e6ecf2] text-[#5b6472] hover:text-red-500"><Trash2 size={16} /></button>
+                           </div>
+                           <div className="relative">
+                              <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#28623a] opacity-40" />
+                              <input 
+                                type="text"
+                                placeholder="Nota..."
+                                value={food.notes || ''}
+                                onChange={(e) => updateFood(food.id, { notes: e.target.value })}
+                                className="w-full bg-white/50 border border-[#e6ecf2] rounded-lg py-1.5 pl-8 pr-3 text-[10px] font-bold focus:outline-none focus:border-[#28623a] placeholder:italic"
+                              />
+                           </div>
+                        </div>
+                     </div>
+                  ))
                 )}
+              </div>
+            </motion.div>
+          )}
 
-                {currentRoutine.exercises.map(ex => (
-                  <div key={ex.id} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 space-y-5 transition-colors">
-                    <div className="flex justify-between items-center">
-                       <div className="flex items-center gap-3">
-                          <ExerciseIcon section={ex.section} className="w-6 h-6 opacity-40" />
-                          <h4 className="font-black italic uppercase text-xs tracking-tight">{ex.name}</h4>
-                       </div>
-                       <button 
-                        onClick={() => removeExercise(ex.id)} 
-                        aria-label={`Eliminar ${ex.name}`}
-                        className="p-2 -mr-2 text-zinc-600 active:text-red-500 transition-colors"
-                       >
-                         <X size={16} />
-                       </button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                       <div className="space-y-1">
-                          <label className="text-[7px] font-black text-zinc-600 uppercase">Sets</label>
-                          <div className="flex items-center justify-between bg-black/40 rounded-lg p-2 border border-white/5">
-                             <button onClick={() => updateExercise(ex.id, { sets: Math.max(1, ex.sets - 1) })} aria-label="Menos series"><Minus size={14} /></button>
-                             <span className="text-xs font-black">{ex.sets}</span>
-                             <button onClick={() => updateExercise(ex.id, { sets: ex.sets + 1 })} aria-label="Más series"><Plus size={14} /></button>
-                          </div>
-                       </div>
-                       <div className="space-y-1">
-                          <label className="text-[7px] font-black text-zinc-600 uppercase">Reps</label>
-                          <div className="flex items-center justify-between bg-black/40 rounded-lg p-2 border border-white/5">
-                             <button onClick={() => updateExercise(ex.id, { reps: Math.max(1, ex.reps - 1) })} aria-label="Menos repeticiones"><Minus size={14} /></button>
-                             <span className="text-xs font-black">{ex.reps}</span>
-                             <button onClick={() => updateExercise(ex.id, { reps: ex.reps + 1 })} aria-label="Más repeticiones"><Plus size={14} /></button>
-                          </div>
-                       </div>
-                       <div className="space-y-1">
-                          <label className="text-[7px] font-black text-zinc-600 uppercase">kg</label>
-                          <div className="flex items-center justify-between bg-black/40 rounded-lg p-2 border border-white/5">
-                             <button onClick={() => updateExercise(ex.id, { weight: Math.max(0, ex.weight - 2.5) })} aria-label="Menos peso"><Minus size={14} /></button>
-                             <span className="text-xs font-black">{ex.weight}</span>
-                             <button onClick={() => updateExercise(ex.id, { weight: ex.weight + 2.5 })} aria-label="Más peso"><Plus size={14} /></button>
-                          </div>
-                       </div>
+          {activeTab === 'build' && (
+            <motion.div 
+              key="build-management"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="h-full flex flex-col p-6 space-y-6"
+            >
+              <div className="space-y-4">
+                <input 
+                  type="text"
+                  value={currentRoutine.name}
+                  onChange={(e) => updateRoutineName(e.target.value)}
+                  className="w-full bg-transparent border-none p-0 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-[#9aa9ba]"
+                  placeholder="NUEVA RUTINA"
+                />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472] -mt-3">Ajusta los parÃ¡metros de tu entrenamiento</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="p-3 bg-[#eff4fa] rounded-xl border border-[#e6ecf2] text-center shadow-sm">
+                  <div className="mb-1 flex justify-center">
+                    <ExerciseIcon section="fullbody" className="w-5 h-5" />
+                  </div>
+                  <p className="text-[7px] font-black text-[#5b6472] uppercase">Ejercicios</p>
+                  <p className="text-sm font-black text-[#141e30]">{currentRoutine.exercises.length}</p>
+                </div>
+                <div className="p-3 bg-[#eff4fa] rounded-xl border border-[#e6ecf2] text-center shadow-sm">
+                  <div className="mb-1 flex justify-center">
+                    <ExerciseIcon section="arms" className="w-5 h-5" />
+                  </div>
+                  <p className="text-[7px] font-black text-[#5b6472] uppercase">Sets</p>
+                  <p className="text-sm font-black text-[#141e30]">{totalSets}</p>
+                </div>
+                <div className="p-3 bg-[#eff4fa] rounded-xl border border-[#e6ecf2] text-center shadow-sm">
+                  <div className="mb-1 flex justify-center">
+                    <ExerciseIcon section="legs" className="w-5 h-5" />
+                  </div>
+                  <p className="text-[7px] font-black text-[#5b6472] uppercase">Volumen</p>
+                  <p className="text-sm font-black text-[#141e30]">{Math.round(totalVolume)}</p>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
+                {currentRoutine.exercises.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6 opacity-60">
+                    <Dumbbell size={64} className="text-[#35577d]/20 animate-pulse" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-black uppercase tracking-widest">Build vacÃ­a</p>
+                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }} className="text-[10px] font-black text-[#35577d] underline underline-offset-4">IR AL CATÃLOGO</button>
                     </div>
                   </div>
-                ))}
-                
-                {currentRoutine.foods.map(food => (
-                  <div key={food.id} className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-5 flex items-center justify-between transition-colors">
-                     <div className="space-y-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FoodIcon category={food.category || 'all'} className="w-4 h-4 opacity-80" />
-                          <h4 className="font-black italic uppercase text-xs text-zinc-300">{food.name}</h4>
-                        </div>
-                        <div className="flex items-center gap-3">
-                           <span className="text-[8px] font-black text-emerald-600 uppercase">{Math.round((food.protein * food.quantity) / 100)}g P</span>
-                        </div>
-                     </div>
-                     <div className="flex items-center gap-3 bg-black/40 rounded-xl p-2 border border-white/5">
-                        <button onClick={() => updateFood(food.id, Math.max(25, food.quantity - 25))} className="p-1" aria-label="Menos cantidad"><Minus size={16} /></button>
-                        <span className="text-xs font-black w-10 text-center">{food.quantity}g</span>
-                        <button onClick={() => updateFood(food.id, food.quantity + 25)} className="p-1" aria-label="Más cantidad"><Plus size={16} /></button>
-                        <button 
-                          onClick={() => removeFood(food.id)} 
-                          aria-label={`Eliminar ${food.name}`}
-                          className="ml-1 pl-3 border-l border-white/10 active:text-red-500 transition-colors"
-                        >
-                          <Trash2 size={16} className="text-zinc-700 hover:text-red-500" />
-                        </button>
-                     </div>
-                  </div>
-                ))}
+                ) : (
+                  currentRoutine.exercises.map(ex => (
+                    <div key={ex.id} className="bg-white border border-[#e6ecf2] rounded-2xl p-5 space-y-5 shadow-sm">
+                      <div className="flex justify-between items-center">
+                         <div className="flex items-center gap-3">
+                            <ExerciseIcon section={ex.section} className="w-8 h-8" />
+                            <h4 className="font-black italic uppercase text-xs tracking-tight">{ex.name}</h4>
+                         </div>
+                         <button onClick={() => removeExercise(ex.id)} className="p-2 -mr-2 text-[#5b6472] hover:text-red-500"><X size={16} /></button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                         <div className="space-y-1">
+                            <label className="text-[7px] font-black text-[#5b6472] uppercase">Sets</label>
+                            <div className="flex items-center justify-between bg-[#f7f9fc] rounded-lg p-2 border border-[#e6ecf2]">
+                               <button onClick={() => updateExercise(ex.id, { sets: Math.max(1, ex.sets - 1) })}><Minus size={14} /></button>
+                               <span className="text-xs font-black">{ex.sets}</span>
+                               <button onClick={() => updateExercise(ex.id, { sets: ex.sets + 1 })}><Plus size={14} /></button>
+                            </div>
+                         </div>
+                         <div className="space-y-1">
+                            <label className="text-[7px] font-black text-[#5b6472] uppercase">Reps</label>
+                            <div className="flex items-center justify-between bg-[#f7f9fc] rounded-lg p-2 border border-[#e6ecf2]">
+                               <button onClick={() => updateExercise(ex.id, { reps: Math.max(1, ex.reps - 1) })}><Minus size={14} /></button>
+                               <span className="text-xs font-black">{ex.reps}</span>
+                               <button onClick={() => updateExercise(ex.id, { reps: ex.reps + 1 })}><Plus size={14} /></button>
+                            </div>
+                         </div>
+                         <div className="space-y-1">
+                            <label className="text-[7px] font-black text-[#5b6472] uppercase">kg</label>
+                            <div className="flex items-center justify-between bg-[#f7f9fc] rounded-lg p-2 border border-[#e6ecf2]">
+                               <button onClick={() => updateExercise(ex.id, { weight: Math.max(0, ex.weight - 2.5) })}><Minus size={14} /></button>
+                               <span className="text-xs font-black">{ex.weight}</span>
+                               <button onClick={() => updateExercise(ex.id, { weight: ex.weight + 2.5 })}><Plus size={14} /></button>
+                            </div>
+                         </div>
+                      </div>
+                      <div className="relative mt-4">
+                        <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#35577d] opacity-40" />
+                        <input 
+                          type="text"
+                          placeholder="Nota (ej. 90s descanso, lenta excÃ©ntrica...)"
+                          value={ex.notes || ''}
+                          onChange={(e) => updateExercise(ex.id, { notes: e.target.value })}
+                          className="w-full bg-[#f7f9fc] border border-[#e6ecf2] rounded-lg py-2 pl-8 pr-3 text-[10px] font-bold focus:outline-none focus:border-[#35577d] placeholder:italic"
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </motion.div>
           )}
@@ -461,72 +853,84 @@ export default function MobileFirstBuilder() {
               exit={{ opacity: 0, scale: 0.98 }}
               className="h-full overflow-y-auto p-6 pb-44"
             >
-              <div className="w-full max-w-5xl mx-auto space-y-6">
-                <button 
-                  className="aspect-video w-full rounded-[2rem] bg-zinc-900 border border-white/10 overflow-hidden relative group active:scale-[0.98] transition-[transform,border-color]"
-                  onClick={handleGenerateCover}
-                  aria-label="Generar portada con IA"
+              <div className="w-full max-w-3xl mx-auto space-y-6">
+                {/* Full receiver canvas preview */}
+                <div className="flex justify-center">
+                  <div className="w-full max-w-sm">
+                    <Suspense fallback={<ExportPreviewFallback />}>
+                      <WirCanvasPreview
+                        template={shareTemplate}
+                        palette={selectedWirPalette}
+                        title={currentRoutine.name || 'Tu Rutina'}
+                        exercises={currentRoutine.exercises.map((ex) => ({
+                          name: ex.name,
+                          sets: ex.sets || 0,
+                          reps: ex.reps || 0,
+                          weight: ex.weight || 0,
+                          notes: ex.notes,
+                          section: ex.section,
+                        }))}
+                        foods={currentRoutine.foods.map((food) => ({
+                          name: food.name,
+                          quantity: food.quantity || 0,
+                          protein: food.protein || 0,
+                          calories: food.calories || 0,
+                          notes: food.notes,
+                          category: food.category,
+                        }))}
+                        isPreview={true}
+                      />
+                    </Suspense>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setActiveTab('build')}
+                  className="w-full py-4 bg-white border border-[#e6ecf2] text-[#141e30] rounded-2xl font-black text-sm uppercase tracking-[0.14em] active:scale-[0.98] transition-[transform,background-color]"
                 >
-                   {currentRoutine.coverImageUrl ? (
-                     <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-700">
-                       <img src={currentRoutine.coverImageUrl} className="w-full h-full object-cover grayscale-[0.3] contrast-[1.2] brightness-90" alt="Portada de la rutina" />
-                       {/* Glitch & Scanlines Overlay */}
-                       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4px_4px] pointer-events-none" />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                       {/* HUD Elements */}
-                       <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-                         <div>
-                           <p className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest mb-1 flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" /> ASSET DECRYPTED
-                           </p>
-                           <h3 className="text-xl font-black italic uppercase text-white tracking-tighter leading-none">{currentRoutine.name || "NUEVO ARSENAL"}</h3>
-                         </div>
-                         <div className="text-right">
-                           <div className="flex gap-1 mb-1 justify-end">
-                             <span className="w-1.5 h-3 bg-purple-500"></span>
-                             <span className="w-1.5 h-3 bg-cyan-500"></span>
-                             <span className="w-1.5 h-3 bg-emerald-500"></span>
-                           </div>
-                           <p className="text-[8px] font-mono text-zinc-400 uppercase tracking-[0.2em]">WIR // VERIFIED</p>
-                         </div>
-                       </div>
-                     </div>
-                   ) : (
-                     <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center space-y-4">
-                        {isGeneratingCover ? (
-                          <Loader2 className="animate-spin text-purple-500" size={32} />
-                        ) : (
-                          <>
-                            <ImageIcon className="text-zinc-800" size={48} aria-hidden="true" />
-                            <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Generar Identidad IA</p>
-                          </>
-                        )}
-                     </div>
-                   )}
+                  RETOCAR EN BUILD
                 </button>
 
-                <div className="space-y-4">
-                   <button 
-                     onClick={() => { 
-                       const shareText = `💪 NUEVA MISIÓN: ${currentRoutine.name.toUpperCase()}\n\nToca para abrir tu protocolo de entrenamiento en Fit Legacy:\n\n${getShareableLink()}`;
-                       window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank'); 
-                     }}
-                     className="w-full h-20 bg-white text-black rounded-3xl font-black text-xl italic uppercase flex items-center justify-center gap-2 active:scale-[0.95] transition-[transform,background-color] shadow-[0_20px_40px_-10px_rgba(255,255,255,0.3)]"
-                   >
-                      <Share2 size={30} aria-hidden="true" />
-                      WHATSAPP SYNC
-                   </button>
-                   <button 
-                     onClick={() => { navigator.clipboard.writeText(getShareableLink()); toast.success('Link copiado'); }}
-                     className="w-full py-6 bg-zinc-900/70 rounded-2xl font-black text-sm text-zinc-100 uppercase tracking-[0.14em] border border-white/15 active:bg-white/10 transition-[background-color,border-color,color]"
-                   >
-                     COPIAR ACCESO .WIR
-                   </button>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => {
+                      if (currentRoutine.exercises.length === 0 && currentRoutine.foods.length === 0) {
+                        toast.error('Tu build estÃ¡ vacÃ­a');
+                        return;
+                      }
+                      window.open(`https://wa.me/?text=${encodeURIComponent(sharePreviewText)}`, '_blank');
+                    }}
+                    className="w-full h-16 bg-[#28623a] text-white rounded-[1.5rem] font-black text-lg italic uppercase flex items-center justify-center gap-2 active:scale-[0.98] transition-[transform,background-color] shadow-[0_20px_40px_-14px_rgba(40,98,58,0.4)]"
+                  >
+                    <Share2 size={24} aria-hidden="true" />
+                    Enviar por WhatsApp
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      const link = getShareableLink(selectedWirPalette);
+                      if (!link) return;
+                      navigator.clipboard.writeText(link);
+                      toast.success('Â¡Enlace .WIR copiado!', {
+                        icon: 'ðŸ”—',
+                        style: {
+                          background: '#141e30',
+                          color: '#fff',
+                          border: '1px solid #35577d'
+                        }
+                      });
+                    }}
+                    className="w-full py-4 bg-white border-2 border-[#141e30] text-[#141e30] rounded-[1.5rem] font-black text-xs uppercase tracking-widest active:scale-[0.98] transition-[transform,background-color] flex items-center justify-center gap-2"
+                  >
+                    COPIAR ENLACE .WIR
+                  </button>
                 </div>
               </div>
             </motion.div>
           )}
 
+          {/*
+          Ledger temporalmente comentado por solicitud.
           {activeTab === 'ledger' && (
             <motion.div 
               key="ledger"
@@ -538,48 +942,140 @@ export default function MobileFirstBuilder() {
               <BioLedgerView />
             </motion.div>
           )}
+          */}
         </AnimatePresence>
       </main>
 
+      <AnimatePresence>
+        {showCustomize && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+            className="fixed inset-y-0 right-0 z-50 w-80 bg-white/95 backdrop-blur-xl border-l border-[#e6ecf2] flex flex-col"
+          >
+            <div className="flex items-center justify-between p-5 border-b border-[#e6ecf2]">
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-[#35577d]" />
+                <h2 className="text-sm font-black uppercase tracking-widest text-[#141e30]">Personalizar CatÃ¡logo</h2>
+              </div>
+              <button onClick={() => setShowCustomize(false)} className="w-7 h-7 rounded-lg bg-[#eff4fa] hover:bg-[#dfe8f2] flex items-center justify-center transition-colors">
+                <X className="w-3.5 h-3.5 text-[#35577d]" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-8">
+              <div className="space-y-3">
+                <p className="text-[10px] font-mono text-[#5b6472] uppercase tracking-widest">Logo / Icono</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl border border-[#dbe5f0] bg-[#f7f9fc] flex items-center justify-center overflow-hidden shrink-0">
+                    {catalogLogo ? <img src={catalogLogo} alt="Logo" className="w-full h-full object-cover" /> : <Palette className="w-6 h-6 text-[#35577d]" />}
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <label className="flex items-center gap-2 px-3 py-2 bg-[#eff4fa] hover:bg-[#dfe8f2] border border-[#dbe5f0] rounded-xl cursor-pointer transition-all text-xs font-bold uppercase tracking-widest text-[#141e30]">
+                      <ImageIcon className="w-3.5 h-3.5" /> Subir imagen
+                      <input type="file" accept="image/*" className="hidden" onChange={handleCatalogLogoUpload} />
+                    </label>
+                    {catalogLogo && <button onClick={() => setCatalogLogo(null)} className="w-full px-3 py-1.5 text-[10px] font-mono text-[#5b6472] hover:text-red-500 border border-[#dbe5f0] rounded-xl transition-colors">Restaurar default</button>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-[10px] font-mono text-[#5b6472] uppercase tracking-widest">Fondo</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {CATALOG_BG_PRESETS.map(preset => (
+                    <button
+                      key={preset.id}
+                      onClick={() => {
+                        setCatalogBgId(preset.id);
+                        setCatalogBgImage(null);
+                      }}
+                      className={`relative h-12 rounded-xl border transition-all overflow-hidden ${catalogBgId === preset.id && !catalogBgImage ? 'border-[#35577d] shadow-[0_0_10px_rgba(53,87,125,0.35)]' : 'border-[#dbe5f0] hover:border-[#35577d]/40'}`}
+                      style={preset.style}
+                    >
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-[9px] font-mono uppercase tracking-widest text-[#141e30]/80">{preset.label}</span>
+                      </span>
+                      {catalogBgId === preset.id && !catalogBgImage && <span className="absolute top-1 right-1 w-2 h-2 bg-[#35577d] rounded-full" />}
+                    </button>
+                  ))}
+                </div>
+
+                <label className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl cursor-pointer transition-all text-xs font-bold uppercase tracking-widest ${catalogBgImage ? 'bg-[#35577d]/10 border-[#35577d]/35 text-[#35577d]' : 'bg-[#eff4fa] hover:bg-[#dfe8f2] border-[#dbe5f0]'}`}>
+                  <ImageIcon className="w-3.5 h-3.5" /> {catalogBgImage ? 'Imagen activa' : 'Imagen personalizada'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleCatalogBgUpload} />
+                </label>
+
+                {catalogBgImage && <button onClick={() => { setCatalogBgImage(null); setCatalogBgId('clean'); }} className="w-full px-3 py-1.5 text-[10px] font-mono text-[#5b6472] hover:text-red-500 border border-[#dbe5f0] rounded-xl transition-colors">Quitar imagen</button>}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent shrink-0 z-50" role="navigation">
-         <div className="max-w-md mx-auto bg-zinc-900/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-2 flex items-center justify-between shadow-[0_-20px_40px_-10px_rgba(0,0,0,0.5)]">
+      <nav className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/95 to-transparent shrink-0 z-50" role="navigation">
+        <div className="max-w-md mx-auto bg-white/95 backdrop-blur-3xl border border-[#e6ecf2] rounded-[2.5rem] p-2 flex items-center justify-between shadow-[0_-20px_40px_-22px_rgba(20,30,48,0.35)]">
             <button 
-              onClick={() => setActiveTab('catalog')}
-              aria-label="Ver Catálogo"
-              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'catalog' ? 'bg-white text-black shadow-xl' : 'text-zinc-600 hover:text-zinc-400'}`}
+              onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }}
+              aria-label="Ver CatÃ¡logo Ejercicios"
+              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'catalog' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
-              <LayoutGrid size={22} aria-hidden="true" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Catálogo</span>
+              <img
+                src="/icons/fit-legacy-mark.svg"
+                alt=""
+                aria-hidden="true"
+                className="w-5 h-5 object-contain"
+              />
+              <span className="text-[8px] font-black uppercase tracking-tighter">CatÃ¡logo</span>
             </button>
             <button 
-              onClick={() => setActiveTab('arsenal')}
-              aria-label={`Ver Arsenal (${currentRoutine.exercises.length + currentRoutine.foods.length} items)`}
-              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 relative ${activeTab === 'arsenal' ? 'bg-white text-black shadow-xl' : 'text-zinc-600 hover:text-zinc-400'}`}
+              onClick={() => setActiveTab('food')}
+              aria-label={`Ver NutriciÃ³n (${currentRoutine.foods.length} items)`}
+              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 relative ${activeTab === 'food' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
-              <Dumbbell size={22} aria-hidden="true" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Arsenal</span>
-              {(currentRoutine.exercises.length + currentRoutine.foods.length) > 0 && (
-                <div className="absolute top-2 right-4 w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center border-2 border-zinc-900" aria-hidden="true">
-                  <span className="text-[8px] font-black text-white">{currentRoutine.exercises.length + currentRoutine.foods.length}</span>
+              <Apple size={18} />
+              <span className="text-[8px] font-black uppercase tracking-tighter">Nutrir</span>
+              {currentRoutine.foods.length > 0 && (
+                <div className="absolute top-2 right-4 w-4 h-4 bg-[#28623a] rounded-full flex items-center justify-center border-2 border-white" aria-hidden="true">
+                  <span className="text-[8px] font-black text-white">{currentRoutine.foods.length}</span>
                 </div>
               )}
             </button>
             <button 
-              onClick={() => setActiveTab('ledger')}
-              aria-label="Ver BioLedger"
-              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'ledger' ? 'bg-cyan-500 text-black shadow-xl shadow-cyan-500/20' : 'text-zinc-600 hover:text-cyan-400'}`}
+              onClick={() => setActiveTab('build')}
+              aria-label={`Ver Build (${currentRoutine.exercises.length} items)`}
+              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 relative ${activeTab === 'build' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
-              <Activity size={22} aria-hidden="true" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Ledger</span>
+              {activeTab === 'build' && (
+                <motion.div 
+                  layoutId="activeTabNav"
+                  className="absolute inset-0 bg-[#141e30] rounded-[2rem] -z-10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <ExerciseIcon section="fullbody" className="w-5 h-5 relative z-10" />
+              <span className="text-[8px] font-black uppercase tracking-tighter">Build</span>
+              {currentRoutine.exercises.length > 0 && (
+                <div className="absolute top-2 right-4 w-4 h-4 bg-[#6b1e23] rounded-full flex items-center justify-center border-2 border-white" aria-hidden="true">
+                  <span className="text-[8px] font-black text-white">{currentRoutine.exercises.length}</span>
+                </div>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab('export')}
-              aria-label="Sincronizar y compartir"
-              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'export' ? 'bg-white text-black shadow-xl' : 'text-zinc-600 hover:text-zinc-400'}`}
+              aria-label="Enviar y compartir"
+              className={`flex flex-col items-center justify-center gap-1 w-20 py-4 rounded-[2rem] transition-[background-color,color,box-shadow] duration-300 ${activeTab === 'export' ? 'bg-[#141e30] text-white shadow-xl' : 'text-[#35577d] hover:text-[#141e30]'}`}
             >
-              <Share2 size={22} aria-hidden="true" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">Sync</span>
+              <img
+                src="/icons/fl-1.svg"
+                alt=""
+                aria-hidden="true"
+                className="w-4 h-5 object-contain"
+              />
+              <span className="text-[8px] font-black uppercase tracking-tighter">Enviar</span>
             </button>
          </div>
       </nav>
@@ -587,3 +1083,12 @@ export default function MobileFirstBuilder() {
     </div>
   );
 }
+
+function ExportPreviewFallback() {
+  return (
+    <div className="w-full max-w-sm aspect-[9/16] rounded-[1.5rem] border border-[#e6ecf2] bg-white flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-[#35577d] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+

@@ -13,6 +13,7 @@ export interface FoodItem {
   portion: string;
   quantity: number;
   category?: string;
+  notes?: string;
 }
 
 export interface SelectedExercise extends Exercise {
@@ -20,6 +21,7 @@ export interface SelectedExercise extends Exercise {
   reps: number;
   weight: number;
   section: string;
+  notes?: string;
 }
 
 interface WorkoutState {
@@ -37,18 +39,18 @@ interface WorkoutState {
   updateExercise: (id: string, updates: Partial<SelectedExercise>) => void;
   addFood: (food: FoodItem) => void;
   removeFood: (id: string) => void;
-  updateFood: (id: string, quantity: number) => void;
+  updateFood: (id: string, updates: Partial<FoodItem>) => void;
   setCoverImage: (url: string) => void;
   clearRoutine: () => void;
   loadRoutine: (data: any) => void;
-  getShareableLink: () => string;
+  getShareableLink: (paletteId?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember') => string;
 }
 
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
     (set, get) => ({
       currentRoutine: {
-        name: 'NUEVO_PROTOCOLO',
+        name: 'NUEVA RUTINA',
         exercises: [],
         foods: [],
         coverImageUrl: null,
@@ -66,11 +68,21 @@ export const useWorkoutStore = create<WorkoutState>()(
           const exists = state.currentRoutine.exercises.find((i) => i.id === exercise.id);
           if (exists) return state;
 
+          const resolvedSets = Number.isFinite(Number(exercise.sets)) && Number(exercise.sets) > 0
+            ? Number(exercise.sets)
+            : 3;
+          const resolvedReps = Number.isFinite(Number(exercise.reps)) && Number(exercise.reps) > 0
+            ? Number(exercise.reps)
+            : 10;
+          const resolvedWeight = Number.isFinite(Number(exercise.weight)) && Number(exercise.weight) >= 0
+            ? Number(exercise.weight)
+            : 0;
+
           const newExercise: SelectedExercise = {
             ...exercise,
-            sets: 3,
-            reps: 10,
-            weight: 0,
+            sets: resolvedSets,
+            reps: resolvedReps,
+            weight: resolvedWeight,
             section: exercise.section || 'custom'
           };
 
@@ -120,10 +132,10 @@ export const useWorkoutStore = create<WorkoutState>()(
         }
       })),
 
-      updateFood: (id: string, quantity: number) => set((state) => ({
+      updateFood: (id: string, updates: Partial<FoodItem>) => set((state) => ({
         currentRoutine: {
           ...state.currentRoutine,
-          foods: state.currentRoutine.foods.map(f => f.id === id ? { ...f, quantity } : f)
+          foods: state.currentRoutine.foods.map(f => f.id === id ? { ...f, ...updates } : f)
         }
       })),
 
@@ -138,7 +150,7 @@ export const useWorkoutStore = create<WorkoutState>()(
 
       clearRoutine: () => {
         set({
-          currentRoutine: { name: "NUEVO_PROTOCOLO", exercises: [], foods: [], coverImageUrl: null }
+          currentRoutine: { name: "NUEVA RUTINA", exercises: [], foods: [], coverImageUrl: null }
         });
       },
 
@@ -181,7 +193,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           // Fallback: Legacy format
           set({
             currentRoutine: {
-              name: data?.name || "Protocolo Cargado",
+              name: data?.name || "Rutina Importada",
               exercises: data?.exercises || [],
               foods: data?.foods || [],
               coverImageUrl: data?.coverImageUrl || null,
@@ -192,23 +204,35 @@ export const useWorkoutStore = create<WorkoutState>()(
         }
       },
 
-      getShareableLink: () => {
+      getShareableLink: (paletteId) => {
         const { currentRoutine } = get();
+        const hasExercises = currentRoutine.exercises.length > 0;
+        const hasFoods = currentRoutine.foods.length > 0;
+
+        const templateType: 'routine' | 'meal' | 'mixed' = hasExercises && hasFoods
+          ? 'mixed'
+          : hasFoods
+            ? 'meal'
+            : 'routine';
         
         // Build WIR document
         const wirDoc: WirDocument = {
           v: 1,
+          t: templateType,
+          p: paletteId,
           n: currentRoutine.name,
           c: currentRoutine.coverImageUrl || undefined,
           e: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.map(ex => ({
             i: ex.id,
             s: ex.sets,
             r: ex.reps,
-            w: ex.weight
+            w: ex.weight,
+            m: ex.notes
           })) : undefined,
           f: currentRoutine.foods.length > 0 ? currentRoutine.foods.map(f => ({
             i: f.id,
-            q: f.quantity
+            q: f.quantity,
+            m: f.notes
           })) : undefined
         };
 

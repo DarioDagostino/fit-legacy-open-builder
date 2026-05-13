@@ -1,17 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { CookieBanner } from '@/app/components/shared/CookieBanner';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
-import { PaymentResultPage } from '@/app/payment/PaymentResultPage';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import WorkoutBuilder from '../components/workout/WorkoutBuilder';
-import SharedRoutine from '../components/workout/SharedRoutine';
-import { SharedPostPage } from './community/SharedPostPage';
-
-import { initStatsig } from '@/lib/integrations/statsig';
-import { AiMentorChat } from '@/app/components/integrations/AiMentorChat';
-import { SharedRoutineViewer } from '@/app/components/routine/SharedRoutineViewer';
+import { initGoogleAnalytics } from '@/lib/analytics/google';
+const SharedRoutine = lazy(() => import('../components/workout/SharedRoutine'));
+const SharedPostPage = lazy(() =>
+  import('./community/SharedPostPage').then((module) => ({ default: module.SharedPostPage }))
+);
+const SharedRoutineViewer = lazy(() =>
+  import('./components/routine/SharedRoutineViewer').then((module) => ({ default: module.SharedRoutineViewer }))
+);
+const PaymentResultPage = lazy(() =>
+  import('./payment/PaymentResultPage').then((module) => ({ default: module.PaymentResultPage }))
+);
 
 
 
@@ -19,8 +22,16 @@ export default function App() {
   const enableTelemetry = !import.meta.env.DEV;
 
   useEffect(() => {
-    initStatsig(); 
-  }, []);
+    if (enableTelemetry) {
+      initGoogleAnalytics();
+    }
+
+    import('@/lib/integrations/statsig')
+      .then(({ initStatsig }) => initStatsig())
+      .catch((error) => {
+        console.warn('Statsig init failed:', error);
+      });
+  }, [enableTelemetry]);
 
   return (
     <BrowserRouter>
@@ -28,18 +39,61 @@ export default function App() {
       {enableTelemetry ? <SpeedInsights /> : null}
       <Toaster position="top-center" richColors theme="dark" />
       <Routes>
-        {/* New Arsenal Builder (Main Tool) */}
+        {/* New Build Builder (Main Tool) */}
         <Route path="/" element={<WorkoutBuilder />} />
+        <Route path="/build" element={<WorkoutBuilder />} />
         <Route path="/arsenal" element={<WorkoutBuilder />} />
-        <Route path="/shared-routine" element={<SharedRoutine />} />
+        <Route
+          path="/shared-routine"
+          element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <SharedRoutine />
+            </Suspense>
+          }
+        />
         
         {/* Mercado Pago payment result pages */}
-        <Route path="/payment/success" element={<PaymentResultPage status="success" />} />
-        <Route path="/payment/failure" element={<PaymentResultPage status="failure" />} />
-        <Route path="/payment/pending" element={<PaymentResultPage status="pending" />} />
+        <Route
+          path="/payment/success"
+          element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <PaymentResultPage status="success" />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/payment/failure"
+          element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <PaymentResultPage status="failure" />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/payment/pending"
+          element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <PaymentResultPage status="pending" />
+            </Suspense>
+          }
+        />
         
-        <Route path="/community/post/:postId" element={<SharedPostPage />} />
-        <Route path="/r/:slug" element={<SharedRoutineViewer />} />
+        <Route
+          path="/community/post/:postId"
+          element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <SharedPostPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/r/:slug"
+          element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <SharedRoutineViewer />
+            </Suspense>
+          }
+        />
         
         {/* Local Dev Redirect for Edge Function */}
         <Route path="/api/og" element={<OgRedirect />} />
@@ -53,4 +107,12 @@ export default function App() {
 
 function OgRedirect() {
   return <Navigate to={`/r/wir?${window.location.search.substring(1)}`} replace />;
+}
+
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#0C0C0E] flex items-center justify-center text-[#F0EEF8]">
+      <div className="w-8 h-8 border-4 border-[#E8873A] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 }

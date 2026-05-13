@@ -11,7 +11,7 @@
 export interface Exercise {
   id: string;
   name: string;
-  section: 'chest' | 'back' | 'legs' | 'shoulders' | 'arms' | 'core' | 'cardio';
+  section: 'chest' | 'back' | 'legs' | 'shoulders' | 'arms' | 'core' | 'cardio' | 'boxing' | 'calisthenics' | 'cycling' | 'crossfit' | 'meditation' | 'custom';
   muscleGroup?: string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   icon?: string;
@@ -34,6 +34,11 @@ const CHEST_PRESS: ExerciseCategory = {
     { id: 'press_declinado', name: 'Press Banca Declinado', section: 'chest', difficulty: 'intermediate' },
     { id: 'press_mancuerna', name: 'Press Mancuerna Plano', section: 'chest', difficulty: 'beginner' },
     { id: 'press_mancuerna_inclinado', name: 'Press Mancuerna Inclinado', section: 'chest', difficulty: 'beginner' },
+    { id: 'press_mancuerna_declinado', name: 'Press Mancuerna Declinado', section: 'chest', difficulty: 'intermediate' },
+    { id: 'press_agarre_apretado', name: 'Press Banca Agarre Apretado', section: 'chest', difficulty: 'intermediate' },
+    { id: 'press_suelo', name: 'Press de Suelo', section: 'chest', difficulty: 'beginner' },
+    { id: 'press_smith', name: 'Press Smith Machine', section: 'chest', difficulty: 'beginner' },
+    { id: 'press_landmine', name: 'Press Landmine', section: 'chest', difficulty: 'beginner' },
   ]
 };
 
@@ -43,6 +48,8 @@ const CHEST_FLIES: ExerciseCategory = {
     { id: 'flies_pecho', name: 'Flies Máquina Pecho', section: 'chest', difficulty: 'beginner' },
     { id: 'flies_mancuerna', name: 'Flies Mancuerna', section: 'chest', difficulty: 'intermediate' },
     { id: 'peck_deck', name: 'Peck Deck Machine', section: 'chest', difficulty: 'beginner' },
+    { id: 'flies_cable', name: 'Flies Cable Cruzado', section: 'chest', difficulty: 'beginner' },
+    { id: 'flies_mancuerna_banco_declinado', name: 'Flies Mancuerna Banco Declinado', section: 'chest', difficulty: 'intermediate' },
   ]
 };
 
@@ -53,6 +60,10 @@ const CHEST_BODYWEIGHT: ExerciseCategory = {
     { id: 'flexiones_inclinadas', name: 'Flexiones Inclinadas', section: 'chest', difficulty: 'beginner' },
     { id: 'flexiones_diamante', name: 'Flexiones Diamante', section: 'chest', difficulty: 'advanced' },
     { id: 'fondos_pecho', name: 'Fondos Pecho', section: 'chest', difficulty: 'intermediate' },
+    { id: 'flexiones_declinadas', name: 'Flexiones Declinadas', section: 'chest', difficulty: 'intermediate' },
+    { id: 'flexiones_explosivas', name: 'Flexiones Explosivas', section: 'chest', difficulty: 'advanced' },
+    { id: 'flexiones_manos_juntas', name: 'Flexiones Manos Juntas', section: 'chest', difficulty: 'advanced' },
+    { id: 'pseudo_planche', name: 'Pseudo Planche', section: 'chest', difficulty: 'advanced' },
   ]
 };
 
@@ -65,12 +76,17 @@ const BACK_PULL: ExerciseCategory = {
   exercises: [
     { id: 'peso_muerto', name: 'Peso Muerto Convencional', section: 'back', difficulty: 'advanced' },
     { id: 'peso_muerto_sumo', name: 'Peso Muerto Sumo', section: 'back', difficulty: 'advanced' },
+    { id: 'peso_muerto_deficit', name: 'Peso Muerto Déficit', section: 'back', difficulty: 'advanced' },
     { id: 'dominadas', name: 'Dominadas', section: 'back', difficulty: 'intermediate' },
     { id: 'dominadas_agarre_ancho', name: 'Dominadas Agarre Ancho', section: 'back', difficulty: 'intermediate' },
+    { id: 'dominadas_agarre_cerrado', name: 'Dominadas Agarre Cerrado', section: 'back', difficulty: 'intermediate' },
     { id: 'poleas_dorsales', name: 'Poleas Dorsales', section: 'back', difficulty: 'beginner' },
+    { id: 'poleas_dorsales_agarre_cerrado', name: 'Poleas Dorsales Agarre Cerrado', section: 'back', difficulty: 'beginner' },
     { id: 'remo_barra', name: 'Remo con Barra', section: 'back', difficulty: 'intermediate' },
+    { id: 'remo_barra_agarre_apretado', name: 'Remo Barra Agarre Apretado', section: 'back', difficulty: 'intermediate' },
     { id: 'remo_mancuerna', name: 'Remo Mancuerna', section: 'back', difficulty: 'intermediate' },
     { id: 'remo_maquina', name: 'Remo Máquina', section: 'back', difficulty: 'beginner' },
+    { id: 'remo_pendlay', name: 'Remo Pendlay', section: 'back', difficulty: 'intermediate' },
   ]
 };
 
@@ -79,6 +95,8 @@ const BACK_PULL_LOW: ExerciseCategory = {
   exercises: [
     { id: 'remo_bajo_cable', name: 'Remo Bajo Cable', section: 'back', difficulty: 'beginner' },
     { id: 'remo_bajo_maquina', name: 'Remo Bajo Máquina', section: 'back', difficulty: 'beginner' },
+    { id: 'remo_bajo_agarre_ancho', name: 'Remo Bajo Agarre Ancho', section: 'back', difficulty: 'beginner' },
+    { id: 'remo_t_bar', name: 'Remo T-Bar', section: 'back', difficulty: 'intermediate' },
   ]
 };
 
@@ -87,6 +105,9 @@ const BACK_BODYWEIGHT: ExerciseCategory = {
   exercises: [
     { id: 'dominadas_peso_corporal', name: 'Dominadas Peso Corporal', section: 'back', difficulty: 'intermediate' },
     { id: 'Australian_pullups', name: 'Australian Pullups', section: 'back', difficulty: 'beginner' },
+    { id: 'dominadas_arco', name: 'Dominadas Arquero', section: 'back', difficulty: 'advanced' },
+    { id: 'muscle_up', name: 'Muscle Up', section: 'back', difficulty: 'advanced' },
+    { id: 'escápulas_tirón', name: 'Escápulas Tirón', section: 'back', difficulty: 'intermediate' },
   ]
 };
 
@@ -99,9 +120,13 @@ const LEGS_SQUAT: ExerciseCategory = {
   exercises: [
     { id: 'sentadilla', name: 'Sentadilla con Barra', section: 'legs', difficulty: 'intermediate' },
     { id: 'sentadilla_frente', name: 'Sentadilla Frontal', section: 'legs', difficulty: 'advanced' },
+    { id: 'sentadilla_pausa', name: 'Sentadilla Pausa', section: 'legs', difficulty: 'advanced' },
     { id: 'sentadilla_mancuerna', name: 'Sentadilla Mancuerna', section: 'legs', difficulty: 'beginner' },
     { id: 'sentadilla_goblet', name: 'Goblet Squat', section: 'legs', difficulty: 'beginner' },
     { id: 'sentadilla_maquina', name: 'Sentadilla en Máquina', section: 'legs', difficulty: 'beginner' },
+    { id: 'sentadilla_smith', name: 'Sentadilla Smith Machine', section: 'legs', difficulty: 'beginner' },
+    { id: 'sentadilla_bulgara', name: 'Sentadilla Búlgara', section: 'legs', difficulty: 'intermediate' },
+    { id: 'sentadilla_split', name: 'Split Squat', section: 'legs', difficulty: 'intermediate' },
   ]
 };
 
@@ -109,7 +134,10 @@ const LEGS_HINGE: ExerciseCategory = {
   category: 'Peso Muerto / Bisagra',
   exercises: [
     { id: 'peso_muerto_rumano', name: 'Peso Muerto Rumano', section: 'legs', difficulty: 'intermediate' },
+    { id: 'peso_muerto_rumano_1pierna', name: 'Peso Muerto Rumano 1 Pierna', section: 'legs', difficulty: 'advanced' },
     { id: 'buenos_dias', name: 'Buenos Días', section: 'legs', difficulty: 'advanced' },
+    { id: 'buenos_dias_mancuerna', name: 'Buenos Días Mancuerna', section: 'legs', difficulty: 'intermediate' },
+    { id: 'nordico_pierna', name: 'Curl Nórdico', section: 'legs', difficulty: 'advanced' },
   ]
 };
 
@@ -119,6 +147,9 @@ const LEGS_QUADS: ExerciseCategory = {
     { id: 'extensiones_pierna', name: 'Extensiones de Pierna', section: 'legs', difficulty: 'beginner' },
     { id: 'leg_press', name: 'Leg Press', section: 'legs', difficulty: 'beginner' },
     { id: 'prensa_45', name: 'Prensa 45°', section: 'legs', difficulty: 'beginner' },
+    { id: 'leg_press_horizontal', name: 'Leg Press Horizontal', section: 'legs', difficulty: 'beginner' },
+    { id: 'sentadilla_hack', name: 'Hack Squat Machine', section: 'legs', difficulty: 'beginner' },
+    { id: 'v_squat', name: 'V-Squat Machine', section: 'legs', difficulty: 'beginner' },
   ]
 };
 
@@ -127,7 +158,9 @@ const LEGS_HAMSTRING: ExerciseCategory = {
   exercises: [
     { id: 'curl_pierna_acostado', name: 'Curl Pierna Acostado', section: 'legs', difficulty: 'beginner' },
     { id: 'curl_pierna_sentado', name: 'Curl Pierna Sentado', section: 'legs', difficulty: 'beginner' },
+    { id: 'curl_pierna_maquina', name: 'Curl Pierna Máquina', section: 'legs', difficulty: 'beginner' },
     { id: 'curl_nórdico', name: 'Curl Nórdico', section: 'legs', difficulty: 'advanced' },
+    { id: 'glute_ham_raise', name: 'Glute Ham Raise', section: 'legs', difficulty: 'advanced' },
   ]
 };
 
@@ -136,6 +169,9 @@ const LEGS_CALVES: ExerciseCategory = {
   exercises: [
     { id: 'elevaciones_talones', name: 'Elevaciones de Talones', section: 'legs', difficulty: 'beginner' },
     { id: 'elevaciones_sentado', name: 'Elevaciones Talones Sentado', section: 'legs', difficulty: 'beginner' },
+    { id: 'elevaciones_maquina', name: 'Elevaciones Talones Máquina', section: 'legs', difficulty: 'beginner' },
+    { id: 'elevaciones_barra', name: 'Elevaciones Talones con Barra', section: 'legs', difficulty: 'intermediate' },
+    { id: 'elevaciones_1pierna', name: 'Elevaciones Talones 1 Pierna', section: 'legs', difficulty: 'intermediate' },
   ]
 };
 
@@ -144,8 +180,11 @@ const LEGS_BODYWEIGHT: ExerciseCategory = {
   exercises: [
     { id: 'sentadilla_peso_corporal', name: 'Sentadilla Peso Corporal', section: 'legs', difficulty: 'beginner' },
     { id: 'estocadas', name: 'Estocadas', section: 'legs', difficulty: 'beginner' },
+    { id: 'estocadas_caminando', name: 'Estocadas Caminando', section: 'legs', difficulty: 'intermediate' },
     { id: 'pistol_squat', name: 'Pistol Squat', section: 'legs', difficulty: 'advanced' },
     { id: 'saltos', name: 'Saltos', section: 'legs', difficulty: 'intermediate' },
+    { id: 'saltos_caja', name: 'Saltos Caja', section: 'legs', difficulty: 'intermediate' },
+    { id: 'zancadas_reversa', name: 'Zancadas Reversa', section: 'legs', difficulty: 'beginner' },
   ]
 };
 
@@ -160,6 +199,9 @@ const SHOULDERS_PRESS: ExerciseCategory = {
     { id: 'press_mancuerna', name: 'Press Mancuerna Hombro', section: 'shoulders', difficulty: 'beginner' },
     { id: 'press_maquina', name: 'Press Máquina Hombro', section: 'shoulders', difficulty: 'beginner' },
     { id: 'arnold_press', name: 'Arnold Press', section: 'shoulders', difficulty: 'intermediate' },
+    { id: 'press_smith', name: 'Press Smith Hombro', section: 'shoulders', difficulty: 'beginner' },
+    { id: 'press_landmine_hombro', name: 'Press Landmine Hombro', section: 'shoulders', difficulty: 'beginner' },
+    { id: 'press_pecho_inclinado', name: 'Press Pecho Inclinado', section: 'shoulders', difficulty: 'intermediate' },
   ]
 };
 
@@ -169,6 +211,9 @@ const SHOULDERS_LATERAL: ExerciseCategory = {
     { id: 'elevaciones_laterales', name: 'Elevaciones Laterales Mancuerna', section: 'shoulders', difficulty: 'beginner' },
     { id: 'elevaciones_laterales_cable', name: 'Elevaciones Laterales Cable', section: 'shoulders', difficulty: 'beginner' },
     { id: 'elevaciones_laterales_maquina', name: 'Elevaciones Laterales Máquina', section: 'shoulders', difficulty: 'beginner' },
+    { id: 'elevaciones_laterales_platos', name: 'Elevaciones Laterales Platos', section: 'shoulders', difficulty: 'intermediate' },
+    { id: 'elevaciones_frontales', name: 'Elevaciones Frontales', section: 'shoulders', difficulty: 'beginner' },
+    { id: 'elevaciones_frontales_cable', name: 'Elevaciones Frontales Cable', section: 'shoulders', difficulty: 'beginner' },
   ]
 };
 
@@ -176,8 +221,11 @@ const SHOULDERS_REAR: ExerciseCategory = {
   category: 'Deltoides Posterior',
   exercises: [
     { id: 'flies_posterior', name: 'Flies Posterior', section: 'shoulders', difficulty: 'beginner' },
+    { id: 'flies_posterior_mancuerna', name: 'Flies Posterior Mancuerna', section: 'shoulders', difficulty: 'beginner' },
     { id: 'remo_vertical', name: 'Remo Vertical', section: 'shoulders', difficulty: 'intermediate' },
     { id: 'reverse_peck_deck', name: 'Reverse Peck Deck', section: 'shoulders', difficulty: 'beginner' },
+    { id: 'remo_horizontal_posterior', name: 'Remo Horizontal Posterior', section: 'shoulders', difficulty: 'intermediate' },
+    { id: 'face_pulls', name: 'Face Pulls', section: 'shoulders', difficulty: 'beginner' },
   ]
 };
 
@@ -189,11 +237,15 @@ const ARMS_BICEPS: ExerciseCategory = {
   category: 'Bíceps',
   exercises: [
     { id: 'curl_barra', name: 'Curl Barra Z', section: 'arms', difficulty: 'beginner' },
+    { id: 'curl_barra_apretado', name: 'Curl Barra Agarre Apretado', section: 'arms', difficulty: 'intermediate' },
     { id: 'curl_mancuerna', name: 'Curl Mancuerna', section: 'arms', difficulty: 'beginner' },
+    { id: 'curl_mancuerna_alterno', name: 'Curl Mancuerna Alternado', section: 'arms', difficulty: 'beginner' },
     { id: 'curl_cable', name: 'Curl Cable', section: 'arms', difficulty: 'beginner' },
     { id: 'curl_martillo', name: 'Curl Martillo', section: 'arms', difficulty: 'beginner' },
     { id: 'curl_predicador', name: 'Curl Predicador', section: 'arms', difficulty: 'beginner' },
     { id: 'curl_sentado_inclinado', name: 'Curl Sentado Inclinado', section: 'arms', difficulty: 'intermediate' },
+    { id: 'curl_maquina', name: 'Curl Máquina', section: 'arms', difficulty: 'beginner' },
+    { id: 'curl_concentrado', name: 'Curl Concentrado', section: 'arms', difficulty: 'beginner' },
   ]
 };
 
@@ -202,10 +254,14 @@ const ARMS_TRICEPS: ExerciseCategory = {
   exercises: [
     { id: 'fondos', name: 'Fondos en Paralelas', section: 'arms', difficulty: 'intermediate' },
     { id: 'fondos_banco', name: 'Fondos en Banco', section: 'arms', difficulty: 'beginner' },
+    { id: 'fondos_mancuerna', name: 'Fondos Mancuerna', section: 'arms', difficulty: 'intermediate' },
     { id: 'extension_triceps', name: 'Extensión Tríceps Polea', section: 'arms', difficulty: 'beginner' },
     { id: 'extension_triceps_mancuerna', name: 'Extensión Tríceps Mancuerna', section: 'arms', difficulty: 'beginner' },
+    { id: 'extension_triceps_cuerda', name: 'Extensión Tríceps Cuerda', section: 'arms', difficulty: 'beginner' },
     { id: 'presion_banco_apretado', name: 'Press Banca Agarre Apretado', section: 'arms', difficulty: 'intermediate' },
     { id: 'kickback_triceps', name: 'Kickback Tríceps', section: 'arms', difficulty: 'beginner' },
+    { id: 'triceps_maquina', name: 'Triceps Máquina', section: 'arms', difficulty: 'beginner' },
+    { id: 'dips_asistido', name: 'Dips Asistido', section: 'arms', difficulty: 'beginner' },
   ]
 };
 
@@ -213,7 +269,11 @@ const ARMS_FOREARMS: ExerciseCategory = {
   category: 'Antebrazos',
   exercises: [
     { id: 'curl_muñeca', name: 'Curl Muñeca', section: 'arms', difficulty: 'beginner' },
+    { id: 'curl_muñeca_barra', name: 'Curl Muñeca Barra', section: 'arms', difficulty: 'beginner' },
     { id: 'extension_muñeca', name: 'Extensión Muñeca', section: 'arms', difficulty: 'beginner' },
+    { id: 'extension_muñeca_barra', name: 'Extensión Muñeca Barra', section: 'arms', difficulty: 'beginner' },
+    { id: 'agarre_grip', name: 'Entrenador de Agarre', section: 'arms', difficulty: 'beginner' },
+    { id: 'wrist_roller', name: 'Wrist Roller', section: 'arms', difficulty: 'intermediate' },
   ]
 };
 
@@ -226,10 +286,14 @@ const CORE_ABS: ExerciseCategory = {
   exercises: [
     { id: 'crunches', name: 'Crunches', section: 'core', difficulty: 'beginner' },
     { id: 'crunches_maquina', name: 'Crunches Máquina', section: 'core', difficulty: 'beginner' },
+    { id: 'crunches_declinado', name: 'Crunches Declinado', section: 'core', difficulty: 'intermediate' },
     { id: 'flexiones_cable', name: 'Flexión de Cable', section: 'core', difficulty: 'beginner' },
     { id: 'abdominales_rueda', name: 'Abdominales Rueda', section: 'core', difficulty: 'advanced' },
     { id: 'hanging_leg_raise', name: 'Hanging Leg Raise', section: 'core', difficulty: 'intermediate' },
+    { id: 'hanging_knee_raise', name: 'Hanging Knee Raise', section: 'core', difficulty: 'beginner' },
     { id: 'candelabro', name: 'Candelabro', section: 'core', difficulty: 'advanced' },
+    { id: 'situps', name: 'Sit-Ups', section: 'core', difficulty: 'beginner' },
+    { id: 'decline_situps', name: 'Decline Sit-Ups', section: 'core', difficulty: 'intermediate' },
   ]
 };
 
@@ -237,8 +301,13 @@ const CORE_PLANK: ExerciseCategory = {
   category: 'Planchas',
   exercises: [
     { id: 'plancha_frente', name: 'Plancha Frontal', section: 'core', difficulty: 'beginner' },
+    { id: 'plancha_frente_mancuerna', name: 'Plancha Frontal Mancuerna', section: 'core', difficulty: 'intermediate' },
     { id: 'plancha_lateral', name: 'Plancha Lateral', section: 'core', difficulty: 'beginner' },
+    { id: 'plancha_lateral_rotacion', name: 'Plancha Lateral Rotación', section: 'core', difficulty: 'intermediate' },
     { id: 'plancha_rotacion', name: 'Plancha con Rotación', section: 'core', difficulty: 'intermediate' },
+    { id: 'plancha_dinamica', name: 'Plancha Dinámica', section: 'core', difficulty: 'intermediate' },
+    { id: 'plancha_inversa', name: 'Plancha Inversa', section: 'core', difficulty: 'intermediate' },
+    { id: 'plancha_1brazo', name: 'Plancha 1 Brazo', section: 'core', difficulty: 'advanced' },
   ]
 };
 
@@ -250,14 +319,87 @@ const CARDIO: ExerciseCategory = {
   category: 'Cardio',
   exercises: [
     { id: 'cinta_correr', name: 'Cinta de Correr', section: 'cardio', difficulty: 'beginner' },
+    { id: 'cinta_correr_inclinada', name: 'Cinta Inclinada', section: 'cardio', difficulty: 'intermediate' },
     { id: 'bicicleta_fija', name: 'Bicicleta Fija', section: 'cardio', difficulty: 'beginner' },
+    { id: 'bicicleta_estatica', name: 'Bicicleta Estática', section: 'cardio', difficulty: 'beginner' },
+    { id: 'bicicleta_reclinada', name: 'Bicicleta Reclinada', section: 'cardio', difficulty: 'beginner' },
     { id: 'eliptica', name: 'Elíptica', section: 'cardio', difficulty: 'beginner' },
     { id: 'remo_maquina', name: 'Máquina de Remo', section: 'cardio', difficulty: 'beginner' },
     { id: 'escalera', name: 'Máquina Escalera', section: 'cardio', difficulty: 'intermediate' },
     { id: 'saltar_cuerda', name: 'Saltar Cuerda', section: 'cardio', difficulty: 'beginner' },
+    { id: 'saltar_cuerda_doble', name: 'Saltar Cuerda Doble Impulso', section: 'cardio', difficulty: 'intermediate' },
     { id: 'burpees', name: 'Burpees', section: 'cardio', difficulty: 'intermediate' },
     { id: 'mountain_climbers', name: 'Mountain Climbers', section: 'cardio', difficulty: 'beginner' },
+    { id: 'jumping_jacks', name: 'Jumping Jacks', section: 'cardio', difficulty: 'beginner' },
+    { id: 'box_jumps', name: 'Box Jumps', section: 'cardio', difficulty: 'intermediate' },
+    { id: 'sprints', name: 'Sprints', section: 'cardio', difficulty: 'intermediate' },
     { id: 'HIIT', name: 'HIIT Genérico', section: 'cardio', difficulty: 'advanced' },
+  ]
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SPECIALTY CATEGORIES
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BOXING: ExerciseCategory = {
+  category: 'Boxeo',
+  exercises: [
+    { id: 'shadow_boxing', name: 'Shadow Boxing', section: 'boxing', difficulty: 'beginner' },
+    { id: 'heavy_bag', name: 'Bolsa Pesada', section: 'boxing', difficulty: 'intermediate' },
+    { id: 'speed_bag', name: 'Speed Bag', section: 'boxing', difficulty: 'intermediate' },
+    { id: 'mitt_work', name: 'Trabajo con Manoplas', section: 'boxing', difficulty: 'intermediate' },
+    { id: 'boxing_footwork', name: 'Footwork de Boxeo', section: 'boxing', difficulty: 'beginner' },
+  ]
+};
+
+const CALISTHENICS: ExerciseCategory = {
+  category: 'Calistenia',
+  exercises: [
+    { id: 'pullups_calisthenics', name: 'Pull-Ups', section: 'calisthenics', difficulty: 'intermediate' },
+    { id: 'pushups_calisthenics', name: 'Push-Ups', section: 'calisthenics', difficulty: 'beginner' },
+    { id: 'dips_calisthenics', name: 'Dips', section: 'calisthenics', difficulty: 'intermediate' },
+    { id: 'l_sit', name: 'L-Sit', section: 'calisthenics', difficulty: 'advanced' },
+    { id: 'handstand_hold', name: 'Handstand Hold', section: 'calisthenics', difficulty: 'advanced' },
+  ]
+};
+
+const CYCLING: ExerciseCategory = {
+  category: 'Ciclismo',
+  exercises: [
+    { id: 'cycling_easy', name: 'Ciclismo Suave', section: 'cycling', difficulty: 'beginner' },
+    { id: 'cycling_intervals', name: 'Intervalos en Bicicleta', section: 'cycling', difficulty: 'intermediate' },
+    { id: 'cycling_hill', name: 'Subidas en Bicicleta', section: 'cycling', difficulty: 'intermediate' },
+    { id: 'cycling_endurance', name: 'Rodaje de Resistencia', section: 'cycling', difficulty: 'advanced' },
+  ]
+};
+
+const CROSSFIT: ExerciseCategory = {
+  category: 'Crossfit',
+  exercises: [
+    { id: 'thrusters', name: 'Thrusters', section: 'crossfit', difficulty: 'intermediate' },
+    { id: 'wall_balls', name: 'Wall Balls', section: 'crossfit', difficulty: 'intermediate' },
+    { id: 'kettlebell_swings', name: 'Kettlebell Swings', section: 'crossfit', difficulty: 'intermediate' },
+    { id: 'box_jump_overs', name: 'Box Jump Overs', section: 'crossfit', difficulty: 'intermediate' },
+    { id: 'double_unders', name: 'Double Unders', section: 'crossfit', difficulty: 'advanced' },
+  ]
+};
+
+const MEDITATION: ExerciseCategory = {
+  category: 'Meditación',
+  exercises: [
+    { id: 'breathwork_box', name: 'Respiración Box', section: 'meditation', difficulty: 'beginner' },
+    { id: 'body_scan', name: 'Body Scan', section: 'meditation', difficulty: 'beginner' },
+    { id: 'guided_meditation', name: 'Meditación Guiada', section: 'meditation', difficulty: 'beginner' },
+    { id: 'mindfulness_10', name: 'Mindfulness 10 min', section: 'meditation', difficulty: 'beginner' },
+  ]
+};
+
+const CUSTOM: ExerciseCategory = {
+  category: 'Personalizado',
+  exercises: [
+    { id: 'custom_interval', name: 'Intervalo Personalizado', section: 'custom', difficulty: 'beginner' },
+    { id: 'custom_strength', name: 'Bloque de Fuerza Personalizado', section: 'custom', difficulty: 'intermediate' },
+    { id: 'custom_skill', name: 'Práctica Técnica Personalizada', section: 'custom', difficulty: 'intermediate' },
   ]
 };
 
@@ -273,6 +415,12 @@ export const UNIFIED_EXERCISES = {
   arms: [ARMS_BICEPS, ARMS_TRICEPS, ARMS_FOREARMS],
   core: [CORE_ABS, CORE_PLANK],
   cardio: [CARDIO],
+  boxing: [BOXING],
+  calisthenics: [CALISTHENICS],
+  cycling: [CYCLING],
+  crossfit: [CROSSFIT],
+  meditation: [MEDITATION],
+  custom: [CUSTOM],
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -306,6 +454,10 @@ const PROTEIN_SOURCES: Food[] = [
   { id: 'yogur_griego', name: 'Yogur Griego', protein: 10, carbs: 3.3, fats: 5, calories: 100, category: 'protein' },
   { id: 'leche', name: 'Leche Descremada', protein: 3.2, carbs: 4.8, fats: 0.1, calories: 35, category: 'protein' },
   { id: 'proteina_whey', name: 'Proteína Whey Polvo', protein: 80, carbs: 5, fats: 2, calories: 373, category: 'protein' },
+  { id: 'leche_avena', name: 'Leche de Avena', protein: 1.2, carbs: 6.6, fats: 1.5, calories: 46, category: 'protein' },
+  { id: 'leche_coco', name: 'Leche de Coco', protein: 0.5, carbs: 2.7, fats: 2.4, calories: 25, category: 'protein' },
+  { id: 'leche_hemp', name: 'Leche de Cañamo', protein: 2.5, carbs: 1.2, fats: 4.5, calories: 60, category: 'protein' },
+  { id: 'sushi', name: 'Sushi', protein: 6.1, carbs: 28, fats: 0.9, calories: 143, category: 'protein' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -325,6 +477,9 @@ const CARB_SOURCES: Food[] = [
   { id: 'lentejas', name: 'Lentejas Cocidas', protein: 9, carbs: 20, fats: 0.4, calories: 116, category: 'carbs' },
   { id: 'garbanzos', name: 'Garbanzos Cocidos', protein: 8.9, carbs: 27, fats: 2.6, calories: 164, category: 'carbs' },
   { id: 'frijoles', name: 'Frijoles Cocidos', protein: 8.7, carbs: 24, fats: 0.4, calories: 127, category: 'carbs' },
+  { id: 'cereal', name: 'Cereal', protein: 8, carbs: 79, fats: 2, calories: 379, category: 'carbs' },
+  { id: 'porridge', name: 'Porridge de Avena', protein: 2.4, carbs: 12, fats: 1.4, calories: 71, category: 'carbs' },
+  { id: 'pancakes', name: 'Pancakes', protein: 6.1, carbs: 37, fats: 10, calories: 227, category: 'carbs' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -340,6 +495,8 @@ const FAT_SOURCES: Food[] = [
   { id: 'mantequilla_cacahuete', name: 'Mantequilla de Cacahuete', protein: 25.8, carbs: 20, fats: 50.4, calories: 588, category: 'fats' },
   { id: 'tahini', name: 'Tahini', protein: 17.7, carbs: 21.3, fats: 53.1, calories: 595, category: 'fats' },
   { id: 'coco_rallado', name: 'Coco Rallado', protein: 3.3, carbs: 9.4, fats: 35.3, calories: 354, category: 'fats' },
+  { id: 'mantequilla_almendra', name: 'Mantequilla de Almendra', protein: 21.2, carbs: 18.8, fats: 55.5, calories: 614, category: 'fats' },
+  { id: 'nuez_brasil', name: 'Nuez de Brasil', protein: 14.3, carbs: 12.3, fats: 66.4, calories: 659, category: 'fats' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -373,6 +530,8 @@ const FRUITS: Food[] = [
   { id: 'pera', name: 'Pera', protein: 0.4, carbs: 15.2, fats: 0.1, calories: 57, category: 'fruits' },
   { id: 'uvas', name: 'Uvas', protein: 0.6, carbs: 18.2, fats: 0.2, calories: 67, category: 'fruits' },
   { id: 'kiwi', name: 'Kiwi', protein: 0.8, carbs: 14.7, fats: 0.5, calories: 61, category: 'fruits' },
+  { id: 'frutilla', name: 'Frutilla', protein: 0.7, carbs: 7.7, fats: 0.3, calories: 32, category: 'fruits' },
+  { id: 'blueberry', name: 'Blueberry', protein: 0.7, carbs: 14.5, fats: 0.3, calories: 57, category: 'fruits' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

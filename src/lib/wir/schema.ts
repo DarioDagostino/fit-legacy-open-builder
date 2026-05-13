@@ -14,6 +14,7 @@ export const WirExerciseSchema = z.object({
   s: z.number().int().min(1).max(10).describe('Sets (1-10)'),
   r: z.number().int().min(1).max(100).describe('Reps (1-100)'),
   w: z.number().min(0).max(500).describe('Weight in kg (0 = bodyweight)'),
+  m: z.string().max(100).optional().describe('Exercise notes'),
 });
 
 export type WirExerciseItem = z.infer<typeof WirExerciseSchema>;
@@ -25,9 +26,16 @@ export type WirExerciseItem = z.infer<typeof WirExerciseSchema>;
 export const WirFoodSchema = z.object({
   i: z.string().min(1).max(50).describe('Food ID'),
   q: z.number().int().min(25).max(1000).describe('Quantity in grams (25-1000)'),
+  m: z.string().max(100).optional().describe('Food notes'),
 });
 
 export type WirFoodItem = z.infer<typeof WirFoodSchema>;
+
+export const WirTemplateSchema = z.enum(['routine', 'meal', 'mixed']);
+export type WirTemplate = z.infer<typeof WirTemplateSchema>;
+
+export const WirPaletteSchema = z.enum(['clean', 'mist', 'navy', 'forest', 'ember']);
+export type WirPalette = z.infer<typeof WirPaletteSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN DOCUMENT SCHEMA
@@ -36,6 +44,8 @@ export type WirFoodItem = z.infer<typeof WirFoodSchema>;
 export const WirDocumentSchema = z.object({
   v: z.literal(1).describe('Format version (always 1)'),
   n: z.string().min(1).max(100).describe('Routine name'),
+  t: WirTemplateSchema.optional().describe('Recipient canvas template type'),
+  p: WirPaletteSchema.optional().describe('Shared UI palette id'),
   c: z.string().url().or(z.null()).optional().describe('Cover image URL'),
   e: z.array(WirExerciseSchema).optional().describe('Exercises array'),
   f: z.array(WirFoodSchema).optional().describe('Foods array'),
