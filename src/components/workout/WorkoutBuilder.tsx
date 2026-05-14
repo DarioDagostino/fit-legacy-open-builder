@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { useWorkoutStore } from '../../lib/store';
+import { createPersistentWirShare } from '../../lib/share';
 import { toast } from 'sonner';
 
 const WirCanvasPreview = lazy(() =>
@@ -181,6 +182,7 @@ export default function MobileFirstBuilder() {
     removeFood,
     updateFood,
     updateRoutineName,
+    getShareableWir,
     getShareableLink,
     loadRoutine 
   } = useWorkoutStore();
@@ -436,20 +438,41 @@ export default function MobileFirstBuilder() {
     return `${intro}: ${routineDisplayName}${summary}\n\nAbrilo sin instalar nada:\n${link}`;
   }, [routineDisplayName, shareTemplate, currentRoutine.exercises.length, currentRoutine.foods.length, getShareableLink, selectedWirPalette]);
 
-  const handleShareToWhatsApp = () => {
+  const getBestShareTarget = async () => {
+    const fallbackLink = getShareableLink(selectedWirPalette);
+    const wir = getShareableWir(selectedWirPalette);
+    if (!wir) return fallbackLink;
+
+    const persisted = await createPersistentWirShare(wir, routineDisplayName);
+    return persisted?.ogUrl || fallbackLink;
+  };
+
+  const handleShareToWhatsApp = async () => {
     if (!hasRoutineItems) {
       toast.error('Add at least one item before sharing');
       return;
     }
-    window.open(`https://wa.me/?text=${encodeURIComponent(sharePreviewText)}`, '_blank');
+
+    const toastId = toast.loading('Creating share link...');
+    const link = await getBestShareTarget();
+    toast.dismiss(toastId);
+
+    const message = sharePreviewText.replace(getShareableLink(selectedWirPalette), link);
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  const handleCopyShareLink = () => {
+  const handleCopyShareLink = async () => {
     if (!hasRoutineItems) {
       toast.error('Add at least one item before copying a link');
       return;
     }
-    const link = getShareableLink(selectedWirPalette);
+
+    const toastId = toast.loading('Creating share link...');
+    const wir = getShareableWir(selectedWirPalette);
+    const persisted = wir ? await createPersistentWirShare(wir, routineDisplayName) : null;
+    toast.dismiss(toastId);
+
+    const link = persisted?.url || getShareableLink(selectedWirPalette);
     if (!link) return;
     navigator.clipboard.writeText(link);
     toast.success('Link copied', {

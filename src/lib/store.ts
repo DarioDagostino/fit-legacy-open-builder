@@ -43,6 +43,7 @@ interface WorkoutState {
   setCoverImage: (url: string) => void;
   clearRoutine: () => void;
   loadRoutine: (data: any) => void;
+  getShareableWir: (paletteId?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember') => WirDocument | null;
   getShareableLink: (paletteId?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember') => string;
 }
 
@@ -204,10 +205,14 @@ export const useWorkoutStore = create<WorkoutState>()(
         }
       },
 
-      getShareableLink: (paletteId) => {
+      getShareableWir: (paletteId) => {
         const { currentRoutine } = get();
         const hasExercises = currentRoutine.exercises.length > 0;
         const hasFoods = currentRoutine.foods.length > 0;
+
+        if (!hasExercises && !hasFoods) {
+          return null;
+        }
 
         const templateType: 'routine' | 'meal' | 'mixed' = hasExercises && hasFoods
           ? 'mixed'
@@ -245,11 +250,21 @@ export const useWorkoutStore = create<WorkoutState>()(
           })) : undefined
         };
 
+        return wirDoc;
+      },
+
+      getShareableLink: (paletteId) => {
+        const wirDoc = get().getShareableWir(paletteId);
+        if (!wirDoc) return "";
+
         try {
           const encoded = encodeWir(wirDoc);
-          const baseUrl = window.location.origin;
-          
-          return `${baseUrl}/r/wir?data=${encoded}`;
+          const publicShareBaseUrl =
+            import.meta.env.VITE_PUBLIC_SHARE_BASE_URL ||
+            import.meta.env.VITE_LANDING_URL ||
+            'https://fitlegacy.app';
+
+          return `${publicShareBaseUrl.replace(/\/$/, '')}/api/og?data=${encoded}`;
         } catch (error) {
           console.error("Failed to encode WIR", error);
           return "";
