@@ -2,11 +2,17 @@ export type NvidiaGenerateInput = {
   prompt: string;
   style?: string;
   model?: string;
+  category?: string;
+  tags?: string[];
 };
 
 export type NvidiaGenerateOutput = {
   url: string;
+  isFallback?: boolean;
+  source?: 'local-premium';
 };
+
+import { getPremiumFallbackImage } from './imageRouter';
 
 /**
  * Fallback local para mantener el flujo del builder funcionando en dev.
@@ -14,10 +20,10 @@ export type NvidiaGenerateOutput = {
  */
 export class NvidiaImageService {
   async generate(input: NvidiaGenerateInput): Promise<NvidiaGenerateOutput> {
-    const encoded = encodeURIComponent(input.prompt || 'fit legacy');
-    // Usa un placeholder remoto simple para no romper el flujo visual en local.
     return {
-      url: `https://picsum.photos/seed/${encoded}/1280/720`,
+      url: getPremiumFallbackImage(input.category || input.style || 'oversize', input.tags || [], input.prompt),
+      isFallback: true,
+      source: 'local-premium',
     };
   }
 }
