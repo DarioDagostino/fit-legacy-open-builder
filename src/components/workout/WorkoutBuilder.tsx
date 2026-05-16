@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useMemo, useEffect, type ComponentType } from 'react';
+import { lazy, Suspense, useState, useMemo, useEffect, useCallback, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { 
@@ -15,12 +15,15 @@ import {
   X,
   Ghost,
   MessageCircle,
-  Check
+  Check,
+  CalendarDays,
+  SlidersHorizontal
 } from 'lucide-react';
 import { UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { useWorkoutStore } from '../../lib/store';
 import { createPersistentWirShare } from '../../lib/share';
 import { toast } from 'sonner';
+import CalendarPanel, { loadCalendarEntries, saveCalendarEntry } from './CalendarPanel';
 
 const WirCanvasPreview = lazy(() =>
   import('../wir/WirCanvasPreview').then((module) => ({ default: module.WirCanvasPreview }))
@@ -45,9 +48,10 @@ function loadFoodIconRenderer() {
   return foodIconRendererPromise;
 }
 
-type TabType = 'catalog' | 'food' | 'build' | 'export';
+type TabType = 'catalog' | 'food' | 'build' | 'calendar' | 'export';
 
 const CUSTOMIZE_KEY = 'catalog-customize-config';
+const ONBOARDING_KEY = 'fl-builder-onboarding-v1';
 const CATALOG_BG_PRESETS = [
   {
     id: 'clean',
@@ -170,6 +174,45 @@ const FoodIcon = ({ category, name = '', className = 'w-6 h-6' }: FoodIconProps)
   return <Renderer category={category} name={name} className={className} />;
 };
 
+const ONBOARDING_STEPS: Array<{
+  title: string;
+  body: string;
+  tab: TabType;
+  icon: 'add' | 'meals' | 'routine' | 'share';
+}> = [
+  {
+    title: 'Agrega ejercicios',
+    body: 'Busca por grupo muscular, toca el + y arma la base del plan en segundos.',
+    tab: 'catalog',
+    icon: 'add',
+  },
+  {
+    title: 'Suma meals',
+    body: 'Cambia a Meals para combinar comidas, calorias y macros con la rutina.',
+    tab: 'food',
+    icon: 'meals',
+  },
+  {
+    title: 'Ajusta la rutina',
+    body: 'En Routine editas series, reps, peso y notas antes de compartir.',
+    tab: 'build',
+    icon: 'routine',
+  },
+  {
+    title: 'Comparte y mide',
+    body: 'Share genera el link .wir y Calendar guarda analytics en tiempo real.',
+    tab: 'export',
+    icon: 'share',
+  },
+];
+
+function OnboardingIcon({ type }: { type: 'add' | 'meals' | 'routine' | 'share' }) {
+  if (type === 'meals') return <Apple className="h-5 w-5" />;
+  if (type === 'routine') return <Dumbbell className="h-5 w-5" />;
+  if (type === 'share') return <Share2 className="h-5 w-5" />;
+  return <Plus className="h-5 w-5" />;
+}
+
 export default function MobileFirstBuilder() {
   const { 
     currentRoutine, 
@@ -199,6 +242,9 @@ export default function MobileFirstBuilder() {
   const [catalogLogo, setCatalogLogo] = useState<string | null>(null);
   const [catalogBgId, setCatalogBgId] = useState<string>('clean');
   const [catalogBgImage, setCatalogBgImage] = useState<string | null>(null);
+  const [calendarEntries, setCalendarEntries] = useState(() => loadCalendarEntries());
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
 
   const workoutFilters = useMemo(() => {
     return [
@@ -242,6 +288,10 @@ export default function MobileFirstBuilder() {
   // Set Language and A11y (Senior)
   useEffect(() => {
     document.documentElement.lang = 'es';
+  }, []);
+
+  useEffect(() => {
+    setShowOnboarding(localStorage.getItem(ONBOARDING_KEY) !== 'done');
   }, []);
 
   useEffect(() => {
@@ -404,7 +454,9 @@ export default function MobileFirstBuilder() {
       ? 'Meals'
       : activeTab === 'build'
         ? 'Routine'
-        : 'Share';
+        : activeTab === 'calendar'
+          ? 'Calendar'
+          : 'Share';
 
   const screenSubtitle = activeTab === 'catalog'
     ? 'Add exercises or meals to create a shareable routine link.'
@@ -412,7 +464,9 @@ export default function MobileFirstBuilder() {
       ? 'Adjust meal portions before sharing.'
       : activeTab === 'build'
         ? 'Edit the routine your client will open.'
-        : 'Preview the client view and send the link.';
+        : activeTab === 'calendar'
+          ? 'Track shared routines and progress.'
+          : 'Preview the client view and send the link.';
 
   const selectedWirPalette = useMemo<'clean' | 'mist' | 'navy' | 'forest' | 'ember' | undefined>(() => {
     if (catalogBgImage) {
@@ -424,19 +478,10 @@ export default function MobileFirstBuilder() {
 
   const sharePreviewText = useMemo(() => {
     const link = getShareableLink(selectedWirPalette);
-    const intro = shareTemplate === 'meal'
-      ? 'Te paso tu plan de comidas'
-      : shareTemplate === 'mixed'
-        ? 'Te paso tu rutina y comidas'
-        : 'Te paso tu rutina';
-    const summaryParts = [
-      currentRoutine.exercises.length > 0 ? `${currentRoutine.exercises.length} ejercicios` : null,
-      currentRoutine.foods.length > 0 ? `${currentRoutine.foods.length} comidas` : null,
-    ].filter(Boolean);
-    const summary = summaryParts.length > 0 ? `\n${summaryParts.join(' · ')}` : '';
-
-    return `${intro}: ${routineDisplayName}${summary}\n\nAbrilo sin instalar nada:\n${link}`;
-  }, [routineDisplayName, shareTemplate, currentRoutine.exercises.length, currentRoutine.foods.length, getShareableLink, selectedWirPalette]);
+    const contentType = shareTemplate === 'meal' ? 'plan de comidas' : shareTemplate === 'mixed' ? 'rutina y comidas' : 'rutina de entrenamiento';
+    
+    return `¿Estás listo para empezar tu nuev@ ${contentType} personalizado?\nHaz clic en este link ahora y accede a tu plan sin instalar nada.\n\n${link}`;
+  }, [shareTemplate, getShareableLink, selectedWirPalette]);
 
   const getBestShareTarget = async () => {
     const fallbackLink = getShareableLink(selectedWirPalette);
@@ -444,7 +489,7 @@ export default function MobileFirstBuilder() {
     if (!wir) return fallbackLink;
 
     const persisted = await createPersistentWirShare(wir, routineDisplayName);
-    return persisted?.ogUrl || fallbackLink;
+    return persisted?.url || fallbackLink;
   };
 
   const handleShareToWhatsApp = async () => {
@@ -458,6 +503,18 @@ export default function MobileFirstBuilder() {
     toast.dismiss(toastId);
 
     const message = sharePreviewText.replace(getShareableLink(selectedWirPalette), link);
+    // Auto-save to calendar on share
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const updated = saveCalendarEntry({
+      date: todayKey,
+      type: shareTemplate === 'meal' ? 'nutrition' : shareTemplate === 'mixed' ? 'mixed' : 'workout',
+      name: routineDisplayName,
+      exercises: currentRoutine.exercises.length,
+      foods: currentRoutine.foods.length,
+      totalVolume,
+      totalCalories: totalMacros.calories,
+    });
+    setCalendarEntries(updated);
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -510,30 +567,57 @@ export default function MobileFirstBuilder() {
     return CATALOG_BG_PRESETS.find(p => p.id === catalogBgId)?.style || CATALOG_BG_PRESETS[0].style;
   }, [catalogBgId, catalogBgImage]);
 
+  const completeOnboarding = useCallback(() => {
+    localStorage.setItem(ONBOARDING_KEY, 'done');
+    setShowOnboarding(false);
+  }, []);
+
+  const goToOnboardingStep = useCallback((stepIndex: number) => {
+    const step = ONBOARDING_STEPS[stepIndex];
+    setOnboardingStep(stepIndex);
+    setActiveTab(step.tab);
+    if (step.tab === 'catalog') {
+      setBuilderMode('workout');
+    }
+    if (step.tab === 'food') {
+      setBuilderMode('nutrition');
+    }
+  }, [setBuilderMode]);
+
+  const advanceOnboarding = useCallback(() => {
+    if (onboardingStep >= ONBOARDING_STEPS.length - 1) {
+      completeOnboarding();
+      return;
+    }
+    goToOnboardingStep(onboardingStep + 1);
+  }, [completeOnboarding, goToOnboardingStep, onboardingStep]);
+
   return (
     <div className="min-h-screen bg-white text-[#141e30] font-sans selection:bg-[#35577d]/20 flex flex-col overflow-hidden">
       
       {/* App Header */}
-      <header className="shrink-0 z-10 border-b border-[#e6ecf2] bg-white/95 px-4 py-3 text-[#141e30] shadow-[0_16px_30px_-28px_rgba(20,30,48,0.45)] backdrop-blur-xl" role="banner">
-        <div className="flex items-center justify-between gap-4">
-           <div className="flex items-center gap-3">
-             <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-[#e6ecf2] bg-[#f7f9fc]">
-               <img src="/icons/fit-legacy-mark.svg" alt="FL" className="h-full w-full object-cover" />
+      <header className="shrink-0 z-10 border-b border-[#e6ecf2] bg-white/95 px-3 py-2.5 text-[#141e30] shadow-[0_16px_30px_-28px_rgba(20,30,48,0.45)] backdrop-blur-xl sm:px-4 sm:py-3" role="banner">
+        <div className="flex min-h-[48px] items-center justify-between gap-2 sm:gap-4">
+           <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e6ecf2] bg-[#f7f9fc] p-1 shadow-sm sm:h-11 sm:w-11">
+               <img src="/icons/fit-legacy-mark.svg" alt="FL" className="h-full w-full rounded-lg object-cover" />
              </div>
              <div className="min-w-0">
-               <p className="truncate text-lg font-black leading-tight">{screenTitle}</p>
-               <p className="truncate text-xs font-bold text-[#5b6472]">{screenSubtitle}</p>
+               <p className="truncate text-base font-black leading-tight sm:text-lg">{screenTitle}</p>
+               <p className="line-clamp-1 text-[11px] font-bold leading-tight text-[#5b6472] sm:text-xs">{screenSubtitle}</p>
              </div>
            </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <div className="hidden rounded-xl border border-[#e6ecf2] bg-[#f7f9fc] px-3 py-2 text-xs font-black text-[#5b6472] sm:block">
               {routineItemCount} items
             </div>
             <button
               onClick={() => setShowCustomize(true)}
-              className="rounded-xl border border-[#dbe5f0] bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-[#141e30] transition-colors hover:bg-[#f7f9fc]"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dbe5f0] bg-white px-3 text-[10px] font-black uppercase tracking-wide text-[#141e30] transition-colors hover:bg-[#f7f9fc] sm:h-auto sm:px-3 sm:py-2 sm:text-xs"
+              aria-label="Open share settings"
             >
-              Settings
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="hidden min-[360px]:inline">Settings</span>
             </button>
           </div>
         </div>
@@ -898,6 +982,10 @@ export default function MobileFirstBuilder() {
             </motion.div>
           )}
 
+          {activeTab === 'calendar' && (
+            <CalendarPanel entries={calendarEntries} />
+          )}
+
           {activeTab === 'export' && (
             <motion.div 
               key="export"
@@ -921,6 +1009,27 @@ export default function MobileFirstBuilder() {
                   </p>
                 </div>
 
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5b6472]">Canvas Palette</p>
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    {CATALOG_BG_PRESETS.map(preset => (
+                      <button
+                        key={preset.id}
+                        onClick={() => {
+                          setCatalogBgId(preset.id);
+                          setCatalogBgImage(null);
+                        }}
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 transition-all ${catalogBgId === preset.id && !catalogBgImage ? 'border-[#141e30] scale-110 shadow-md' : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'}`}
+                        style={preset.style}
+                        title={preset.label}
+                      >
+                        {catalogBgId === preset.id && !catalogBgImage && (
+                          <Check className="h-5 w-5 text-[#141e30] mix-blend-difference" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5b6472]">Client preview</p>
@@ -986,27 +1095,42 @@ export default function MobileFirstBuilder() {
 
       <AnimatePresence>
         {showCustomize && (
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[360px] flex-col border-l border-[#dbe5f0] bg-white shadow-[-24px_0_60px_-42px_rgba(20,30,48,0.55)]"
-          >
-            <div className="flex items-start justify-between gap-4 border-b border-[#e6ecf2] p-5">
-              <div className="space-y-1">
+          <>
+            <motion.div
+              key="settings-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCustomize(false)}
+              className="fixed inset-0 z-40 bg-[#141e30]/18 backdrop-blur-[2px]"
+              aria-hidden="true"
+            />
+            <motion.aside
+              key="settings-drawer"
+              initial={{ y: 48, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 48, opacity: 0 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] border border-[#dbe5f0] bg-white shadow-[0_-24px_70px_-36px_rgba(20,30,48,0.65)] sm:inset-y-4 sm:right-4 sm:left-auto sm:h-auto sm:max-w-[380px] sm:rounded-[2rem]"
+              aria-label="Share settings"
+            >
+            <div className="flex justify-center pt-2 sm:hidden" aria-hidden="true">
+              <div className="h-1.5 w-12 rounded-full bg-[#dbe5f0]" />
+            </div>
+            <div className="flex items-start justify-between gap-3 border-b border-[#e6ecf2] px-4 pb-4 pt-3 sm:p-5">
+              <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <Palette className="h-4 w-4 text-[#35577d]" />
-                  <h2 className="text-sm font-black uppercase tracking-wide text-[#141e30]">Share settings</h2>
+                  <h2 className="truncate text-sm font-black uppercase tracking-wide text-[#141e30]">Share settings</h2>
                 </div>
-                <p className="text-xs font-bold leading-relaxed text-[#5b6472]">Brand, client view and delivery options.</p>
+                <p className="text-[11px] font-bold leading-snug text-[#5b6472] sm:text-xs sm:leading-relaxed">Brand, client view and delivery options.</p>
               </div>
-              <button onClick={() => setShowCustomize(false)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#f7f9fc] transition-colors hover:bg-[#eff4fa]">
+              <button onClick={() => setShowCustomize(false)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f7f9fc] transition-colors hover:bg-[#eff4fa]" aria-label="Close settings">
                 <X className="h-4 w-4 text-[#35577d]" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 pb-28 space-y-6">
+            <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 pb-28 sm:space-y-6 sm:p-5 sm:pb-28">
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-black uppercase tracking-wide text-[#5b6472]">Brand</p>
@@ -1016,18 +1140,21 @@ export default function MobileFirstBuilder() {
                     </button>
                   )}
                 </div>
-                <div className="rounded-2xl border border-[#e6ecf2] bg-[#f7f9fc] p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#dbe5f0] bg-white">
-                      {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full object-cover" /> : <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover" />}
+                <div className="rounded-3xl border border-[#e6ecf2] bg-[#f7f9fc] p-3 sm:p-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#dbe5f0] bg-white p-1 sm:h-16 sm:w-16">
+                      {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" /> : <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full rounded-lg object-cover" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-black text-[#141e30]">Catalog logo</p>
-                      <p className="mt-1 text-xs font-bold leading-relaxed text-[#5b6472]">Shown in the builder catalog.</p>
+                      <p className="mt-1 text-[11px] font-bold leading-snug text-[#5b6472] sm:text-xs sm:leading-relaxed">Shown in the builder catalog.</p>
+                      <p className="mt-1 text-[10px] font-bold leading-snug text-[#7895b2]">
+                        Max 1 MB. Ideal: WebP/JPG, 1080x1920 vertical or 1200x1200 square.
+                      </p>
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dbe5f0] bg-white px-3 py-3 text-xs font-black uppercase tracking-wide text-[#141e30] transition-colors hover:bg-[#eff4fa]">
+                    <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#dbe5f0] bg-white px-3 py-3 text-xs font-black uppercase tracking-wide text-[#141e30] transition-colors hover:bg-[#eff4fa]">
                       <ImageIcon className="h-3.5 w-3.5" /> Upload logo
                       <input type="file" accept="image/*" className="hidden" onChange={handleCatalogLogoUpload} />
                     </label>
@@ -1062,11 +1189,11 @@ export default function MobileFirstBuilder() {
                 </div>
 
                 <label className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-3 transition-colors ${catalogBgImage ? 'border-[#35577d] bg-[#eff4fa] text-[#35577d]' : 'border-[#e6ecf2] bg-white text-[#141e30] hover:bg-[#f7f9fc]'}`}>
-                  <span className="flex items-center gap-3">
+                  <span className="flex min-w-0 items-center gap-3">
                     <span className="flex h-9 w-12 items-center justify-center rounded-xl bg-[#eff4fa]">
                       <ImageIcon className="h-4 w-4" />
                     </span>
-                    <span>
+                    <span className="min-w-0">
                       <span className="block text-sm font-black">{catalogBgImage ? 'Custom image' : 'Upload image'}</span>
                       <span className="block text-xs font-bold text-[#5b6472]">Use a custom background.</span>
                     </span>
@@ -1108,7 +1235,8 @@ export default function MobileFirstBuilder() {
                 </div>
               </section>
             </div>
-          </motion.div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
 
@@ -1135,13 +1263,126 @@ export default function MobileFirstBuilder() {
         </div>
       )}
 
+      <AnimatePresence>
+        {showOnboarding && (
+          <>
+            <motion.div
+              key="builder-onboarding-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[55] bg-white/55 backdrop-blur-[2px]"
+              aria-hidden="true"
+            />
+            <motion.section
+              key="builder-onboarding"
+              initial={{ opacity: 0, y: 80, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 50, scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+              className="fixed bottom-[92px] left-0 right-0 z-[60] px-4"
+              aria-label="Primeros pasos del builder"
+            >
+            <div className="mx-auto max-w-md overflow-hidden rounded-3xl border border-[#dbe5f0] bg-white p-3 shadow-[0_-22px_54px_-24px_rgba(20,30,48,0.45)]">
+              <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#7895b2]">
+                    Primer ingreso
+                  </p>
+                  <h2 className="text-lg font-black italic uppercase tracking-tight text-[#141e30]">
+                    Como funciona
+                  </h2>
+                </div>
+                <button
+                  onClick={completeOnboarding}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#e6ecf2] bg-[#f7f9fc] text-[#5b6472] transition-colors hover:bg-white hover:text-[#141e30]"
+                  aria-label="Cerrar guia inicial"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="grid gap-2">
+                {ONBOARDING_STEPS.map((step, index) => {
+                  const isActive = onboardingStep === index;
+                  return (
+                    <motion.button
+                      key={step.title}
+                      type="button"
+                      onClick={() => goToOnboardingStep(index)}
+                      initial={false}
+                      animate={{ opacity: isActive ? 1 : 0.78 }}
+                      className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
+                        isActive
+                          ? 'border-[#b8cce0] bg-[#eff4fa] shadow-sm'
+                          : 'border-[#edf1f5] bg-white hover:bg-[#f7f9fc]'
+                      }`}
+                    >
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
+                        isActive ? 'bg-[#141e30] text-white' : 'bg-[#f7f9fc] text-[#35577d]'
+                      }`}>
+                        <OnboardingIcon type={step.icon} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-[#7895b2]">
+                            Paso {index + 1}
+                          </span>
+                          {isActive && (
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="rounded-full bg-white px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#35577d]"
+                            >
+                              ahora
+                            </motion.span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-sm font-black text-[#141e30]">{step.title}</p>
+                        <p className="mt-0.5 text-[11px] font-bold leading-snug text-[#5b6472]">{step.body}</p>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <button
+                  onClick={completeOnboarding}
+                  className="rounded-2xl px-3 py-3 text-[10px] font-black uppercase tracking-widest text-[#5b6472] transition-colors hover:bg-[#f7f9fc]"
+                >
+                  Saltar
+                </button>
+                <div className="flex items-center gap-1.5" aria-hidden="true">
+                  {ONBOARDING_STEPS.map((step, index) => (
+                    <span
+                      key={step.title}
+                      className={`h-1.5 rounded-full transition-all ${
+                        onboardingStep === index ? 'w-6 bg-[#141e30]' : 'w-1.5 bg-[#dbe5f0]'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={advanceOnboarding}
+                  className="rounded-2xl bg-[#141e30] px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-[0_14px_28px_-18px_rgba(20,30,48,0.9)]"
+                >
+                  {onboardingStep === ONBOARDING_STEPS.length - 1 ? 'Listo' : 'Siguiente'}
+                </button>
+              </div>
+            </div>
+            </motion.section>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 shrink-0 bg-gradient-to-t from-white via-white/95 to-transparent p-3" role="navigation">
         <div className="mx-auto flex max-w-md items-center justify-between rounded-3xl border border-[#e6ecf2] bg-white/95 p-1.5 shadow-[0_-14px_32px_-24px_rgba(20,30,48,0.35)] backdrop-blur-3xl">
             <button 
               onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }}
               aria-label="Add exercises"
-              className={`flex h-14 w-20 flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'catalog' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'catalog' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
             >
               <img
                 src="/icons/fit-legacy-mark.svg"
@@ -1154,12 +1395,12 @@ export default function MobileFirstBuilder() {
             <button 
               onClick={() => setActiveTab('food')}
               aria-label={`View meals (${currentRoutine.foods.length} items)`}
-              className={`relative flex h-14 w-20 flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'food' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'food' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
             >
               <Apple size={18} />
               <span className="text-[8px] font-black uppercase tracking-wide">Meals</span>
               {currentRoutine.foods.length > 0 && (
-                <div className="absolute right-4 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#28623a]" aria-hidden="true">
+                <div className="absolute right-3 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#28623a]" aria-hidden="true">
                   <span className="text-[8px] font-black text-white">{currentRoutine.foods.length}</span>
                 </div>
               )}
@@ -1167,20 +1408,33 @@ export default function MobileFirstBuilder() {
             <button 
               onClick={() => setActiveTab('build')}
               aria-label={`View routine (${currentRoutine.exercises.length} exercises)`}
-              className={`relative flex h-14 w-20 flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'build' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'build' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
             >
               <ExerciseIcon section="fullbody" className="w-5 h-5 relative z-10" />
               <span className="text-[8px] font-black uppercase tracking-wide">Routine</span>
               {currentRoutine.exercises.length > 0 && (
-                <div className="absolute right-4 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#6b1e23]" aria-hidden="true">
+                <div className="absolute right-3 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#6b1e23]" aria-hidden="true">
                   <span className="text-[8px] font-black text-white">{currentRoutine.exercises.length}</span>
+                </div>
+              )}
+            </button>
+            <button 
+              onClick={() => setActiveTab('calendar')}
+              aria-label="Calendar and analytics"
+              className={`relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'calendar' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+            >
+              <CalendarDays size={18} />
+              <span className="text-[8px] font-black uppercase tracking-wide">Calendar</span>
+              {calendarEntries.length > 0 && (
+                <div className="absolute right-3 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#e67700]" aria-hidden="true">
+                  <span className="text-[8px] font-black text-white">{calendarEntries.length > 9 ? '9+' : calendarEntries.length}</span>
                 </div>
               )}
             </button>
             <button 
               onClick={() => setActiveTab('export')}
               aria-label="Share routine"
-              className={`flex h-14 w-20 flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'export' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'export' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
             >
               <img
                 src="/icons/fl-1.svg"
