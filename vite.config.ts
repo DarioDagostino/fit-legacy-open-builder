@@ -15,8 +15,9 @@ export default defineConfig({
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
       'utils': path.resolve(__dirname, './utils'),
-      // Shared package alias
-      '@fit-legacy/shared': path.resolve(__dirname, './_consolidated_workout_nutrition/packages/shared'),
+      // Shared package alias — points to the monorepo workspace (single source of truth)
+      '@fit-legacy/shared/builder': path.resolve(__dirname, '../fitlegacyworkspace/fit-legacy-workspace/packages/shared/builder.ts'),
+      '@fit-legacy/shared': path.resolve(__dirname, '../fitlegacyworkspace/fit-legacy-workspace/packages/shared'),
       '@fit-legacy/ai': path.resolve(__dirname, './src/lib/integrations/nvidiaFallback.ts'),
       '@fit-legacy/config': path.resolve(__dirname, './src/lib/integrations'),
       '@fit-legacy/auth': path.resolve(__dirname, './src/lib/integrations'),
