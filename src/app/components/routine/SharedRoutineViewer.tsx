@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { AlertTriangle, Share2 } from 'lucide-react';
 import { processWirLink } from '@/lib/wir';
 import { WirCanvasPreview } from '@/components/wir/WirCanvasPreview';
+import { getRoutineAnalyticsSession, trackRoutineAnalytics } from '@/lib/routineAnalytics';
 
 
 type Exercise = {
@@ -57,6 +58,7 @@ export function SharedRoutineViewer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
 
   useEffect(() => {
     async function loadRoutine() {
@@ -64,7 +66,7 @@ export function SharedRoutineViewer() {
       if (dataParam) {
         try {
           const result = processWirLink(dataParam);
-          
+
           if (result.success && result.data) {
              const hydrated = result.data;
              const template = hydrated.template || 'routine';
@@ -113,6 +115,7 @@ export function SharedRoutineViewer() {
           setError(true);
         } else {
           setRoutine(data.routine_data as RoutineData);
+          setStartedAt(Date.now());
         }
       } catch (e) {
         setError(true);
@@ -131,6 +134,23 @@ export function SharedRoutineViewer() {
       next.add(id);
     }
     setCheckedItems(next);
+
+    if (routine && slug && slug !== 'wir') {
+      void trackRoutineAnalytics({
+        action: 'completion',
+        slug,
+        sessionId: getRoutineAnalyticsSession(slug),
+        itemsChecked: next.size,
+        totalItems: routine.exercises.length + routine.foods.length,
+        timeSpentSeconds: Math.round((Date.now() - startedAt) / 1000),
+        routine: {
+          name: routine.title,
+          type: routine.template === 'meal' ? 'nutrition' : routine.template === 'routine' ? 'workout' : 'mixed',
+          exercisesCount: routine.exercises.length,
+          foodsCount: routine.foods.length,
+        },
+      });
+    }
   };
 
   useEffect(() => {
@@ -138,6 +158,39 @@ export function SharedRoutineViewer() {
       document.title = `${routine.title} | Fit Legacy`;
     }
   }, [routine?.title]);
+
+  useEffect(() => {
+    if (!routine || !slug || slug === 'wir') return;
+
+    const sessionId = getRoutineAnalyticsSession(slug);
+    const basePayload = {
+      action: 'view' as const,
+      slug,
+      sessionId,
+      routine: {
+        name: routine.title,
+        type: routine.template === 'meal' ? 'nutrition' as const : routine.template === 'routine' ? 'workout' as const : 'mixed' as const,
+        exercisesCount: routine.exercises.length,
+        foodsCount: routine.foods.length,
+      },
+    };
+
+    void trackRoutineAnalytics(basePayload);
+    const timer = window.setInterval(() => {
+      void trackRoutineAnalytics({
+        ...basePayload,
+        timeSpentSeconds: Math.round((Date.now() - startedAt) / 1000),
+      });
+    }, 20000);
+
+    return () => {
+      window.clearInterval(timer);
+      void trackRoutineAnalytics({
+        ...basePayload,
+        timeSpentSeconds: Math.round((Date.now() - startedAt) / 1000),
+      });
+    };
+  }, [routine, slug, startedAt]);
 
   if (loading) {
     return (
@@ -180,11 +233,25 @@ export function SharedRoutineViewer() {
           onToggleItem={toggleItem}
           isPreview={false}
         />
-        
+
         {/* Footer Button */}
         <div className="mt-6 flex gap-3 justify-center">
-          <button 
+          <button
             onClick={() => {
+              if (routine && slug && slug !== 'wir') {
+                void trackRoutineAnalytics({
+                  action: 'reshare',
+                  slug,
+                  sessionId: getRoutineAnalyticsSession(slug),
+                  timeSpentSeconds: Math.round((Date.now() - startedAt) / 1000),
+                  routine: {
+                    name: routine.title,
+                    type: routine.template === 'meal' ? 'nutrition' : routine.template === 'routine' ? 'workout' : 'mixed',
+                    exercisesCount: routine.exercises.length,
+                    foodsCount: routine.foods.length,
+                  },
+                });
+              }
               if (navigator.share) {
                 navigator.share({
                   title: 'Mi Entrenamiento - Fit Legacy',

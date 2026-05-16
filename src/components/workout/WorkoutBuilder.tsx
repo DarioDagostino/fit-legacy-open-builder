@@ -22,8 +22,9 @@ import {
 import { UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { useWorkoutStore } from '../../lib/store';
 import { createPersistentWirShare } from '../../lib/share';
+import { loadRoutineAnalyticsStats } from '../../lib/routineAnalytics';
 import { toast } from 'sonner';
-import CalendarPanel, { loadCalendarEntries, saveCalendarEntry } from './CalendarPanel';
+import CalendarPanel, { loadCalendarEntries, saveCalendarEntry, type CalendarEntry } from './CalendarPanel';
 
 const WirCanvasPreview = lazy(() =>
   import('../wir/WirCanvasPreview').then((module) => ({ default: module.WirCanvasPreview }))
@@ -110,13 +111,28 @@ const FILTER_LABELS: Record<string, string> = {
   fats: 'Grasas',
   fruits: 'Frutas',
   vegetables: 'Verduras',
+  micros: 'Micros',
+  supplements: 'Suples deportivos',
+  others: 'Extras',
 };
+
+const FOOD_FILTER_ORDER = ['protein', 'carbs', 'fats', 'fruits', 'supplements', 'vegetables', 'micros', 'others'];
 
 function normalizeFilterId(value?: string) {
   const normalized = (value || '').toLowerCase().trim();
   if (normalized === 'fruit') return 'fruits';
   if (normalized === 'vegetable') return 'vegetables';
   return normalized;
+}
+
+function normalizeCatalogText(value?: string) {
+  return (value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // Exercise Icon Mapping
@@ -242,7 +258,7 @@ export default function MobileFirstBuilder() {
   const [catalogLogo, setCatalogLogo] = useState<string | null>(null);
   const [catalogBgId, setCatalogBgId] = useState<string>('clean');
   const [catalogBgImage, setCatalogBgImage] = useState<string | null>(null);
-  const [calendarEntries, setCalendarEntries] = useState(() => loadCalendarEntries());
+  const [calendarEntries, setCalendarEntries] = useState<CalendarEntry[]>(() => loadCalendarEntries());
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
 
@@ -257,12 +273,27 @@ export default function MobileFirstBuilder() {
   }, []);
 
   const foodFilters = useMemo(() => {
+    const categorySet = new Set(Object.keys(UNIFIED_FOODS));
+    if (Array.isArray((UNIFIED_FOODS as any).supplements) && (UNIFIED_FOODS as any).supplements.length > 0) {
+      categorySet.add('supplements');
+    }
+
+    const categories = Array.from(categorySet).sort((a, b) => {
+      const aIndex = FOOD_FILTER_ORDER.indexOf(normalizeFilterId(a));
+      const bIndex = FOOD_FILTER_ORDER.indexOf(normalizeFilterId(b));
+      const safeA = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+      const safeB = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+      return safeA - safeB;
+    });
+
     return [
       { id: 'all', label: FILTER_LABELS.all },
-      ...Object.keys(UNIFIED_FOODS).map((id) => ({
-        id,
-        label: FILTER_LABELS[id] || id,
-      })),
+      ...categories
+        .filter((id) => normalizeFilterId(id) !== 'micros' && normalizeFilterId(id) !== 'others')
+        .map((id) => ({
+          id,
+          label: FILTER_LABELS[id] || id,
+        })),
     ];
   }, []);
 
@@ -281,7 +312,7 @@ export default function MobileFirstBuilder() {
   const allFoods = useMemo(() => {
     return Object.entries(UNIFIED_FOODS)
       .flatMap(([category, items]) => 
-        items.map(item => ({ ...item, category }))
+        items.map(item => ({ ...item, category: (item as any).category || category }))
       );
   }, []);
 
@@ -330,10 +361,11 @@ export default function MobileFirstBuilder() {
   const filteredItems = useMemo(() => {
     const items = builderMode === 'workout' ? allExercises : allFoods;
     const normalizedFilter = normalizeFilterId(activeFilter);
-    const normalizedSearch = search.toLowerCase().trim();
+    const normalizedSearch = normalizeCatalogText(search);
 
     return items.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(normalizedSearch);
+      const itemText = normalizeCatalogText(`${item.name} ${(item as any).tags?.join(' ') || ''} ${(item as any).category || ''}`);
+      const matchesSearch = itemText.includes(normalizedSearch);
       const cat = builderMode === 'workout' ? (item as any).section : (item as any).category;
       const normalizedCat = normalizeFilterId(cat);
       const matchesFilter = normalizedFilter === 'all' || normalizedCat === normalizedFilter;
@@ -483,27 +515,11 @@ export default function MobileFirstBuilder() {
     return `¿Estás listo para empezar tu nuev@ ${contentType} personalizado?\nHaz clic en este link ahora y accede a tu plan sin instalar nada.\n\n${link}`;
   }, [shareTemplate, getShareableLink, selectedWirPalette]);
 
-  const getBestShareTarget = async () => {
-    const fallbackLink = getShareableLink(selectedWirPalette);
-    const wir = getShareableWir(selectedWirPalette);
-    if (!wir) return fallbackLink;
+  const analyticsSlugKey = useMemo(() => {
+    return Array.from(new Set(calendarEntries.map((entry) => entry.slug).filter(Boolean))).join('|');
+  }, [calendarEntries]);
 
-    const persisted = await createPersistentWirShare(wir, routineDisplayName);
-    return persisted?.url || fallbackLink;
-  };
-
-  const handleShareToWhatsApp = async () => {
-    if (!hasRoutineItems) {
-      toast.error('Add at least one item before sharing');
-      return;
-    }
-
-    const toastId = toast.loading('Creating share link...');
-    const link = await getBestShareTarget();
-    toast.dismiss(toastId);
-
-    const message = sharePreviewText.replace(getShareableLink(selectedWirPalette), link);
-    // Auto-save to calendar on share
+  const saveShareToCalendar = useCallback((slug?: string) => {
     const todayKey = new Date().toISOString().slice(0, 10);
     const updated = saveCalendarEntry({
       date: todayKey,
@@ -513,8 +529,67 @@ export default function MobileFirstBuilder() {
       foods: currentRoutine.foods.length,
       totalVolume,
       totalCalories: totalMacros.calories,
+      slug,
     });
     setCalendarEntries(updated);
+  }, [
+    currentRoutine.exercises.length,
+    currentRoutine.foods.length,
+    routineDisplayName,
+    shareTemplate,
+    totalMacros.calories,
+    totalVolume,
+  ]);
+
+  const getBestShareTarget = async () => {
+    const fallbackLink = getShareableLink(selectedWirPalette);
+    const wir = getShareableWir(selectedWirPalette);
+    if (!wir) return { link: fallbackLink, slug: undefined };
+
+    const persisted = await createPersistentWirShare(wir, routineDisplayName);
+    return { link: persisted?.url || fallbackLink, slug: persisted?.slug };
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'calendar') return;
+    const slugs = analyticsSlugKey.split('|').filter(Boolean);
+    if (slugs.length === 0) return;
+
+    let cancelled = false;
+    loadRoutineAnalyticsStats(slugs).then((stats) => {
+      if (cancelled || stats.length === 0) return;
+      const statsBySlug = new Map(stats.map((item) => [item.slug, item]));
+      setCalendarEntries((current) => current.map((entry) => {
+        if (!entry.slug) return entry;
+        const stat = statsBySlug.get(entry.slug);
+        if (!stat) return entry;
+        return {
+          ...entry,
+          views: stat.totalViews,
+          completions: stat.completedViews,
+          reshares: stat.reshareCount,
+          avgTimeSpent: stat.avgTimeSpent,
+        };
+      }));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, analyticsSlugKey]);
+
+  const handleShareToWhatsApp = async () => {
+    if (!hasRoutineItems) {
+      toast.error('Add at least one item before sharing');
+      return;
+    }
+
+    const toastId = toast.loading('Creating share link...');
+    const { link, slug } = await getBestShareTarget();
+    toast.dismiss(toastId);
+
+    const message = sharePreviewText.replace(getShareableLink(selectedWirPalette), link);
+    saveShareToCalendar(slug);
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -532,6 +607,7 @@ export default function MobileFirstBuilder() {
     const link = persisted?.url || getShareableLink(selectedWirPalette);
     if (!link) return;
     navigator.clipboard.writeText(link);
+    saveShareToCalendar(persisted?.slug);
     toast.success('Link copied', {
       style: {
         background: '#141e30',

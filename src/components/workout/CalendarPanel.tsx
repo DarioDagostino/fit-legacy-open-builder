@@ -17,7 +17,7 @@ import {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface CalendarEntry {
+export interface CalendarEntry {
   date: string; // ISO date key YYYY-MM-DD
   type: 'workout' | 'nutrition' | 'mixed';
   name: string;
@@ -25,6 +25,11 @@ interface CalendarEntry {
   foods: number;
   totalVolume: number;
   totalCalories: number;
+  slug?: string;
+  views?: number;
+  completions?: number;
+  reshares?: number;
+  avgTimeSpent?: number;
 }
 
 interface CalendarPanelProps {
@@ -279,7 +284,15 @@ export function saveCalendarEntry(entry: CalendarEntry) {
   const existing = loadCalendarEntries();
   const idx = existing.findIndex((e) => e.date === entry.date);
   if (idx >= 0) {
-    existing[idx] = entry;
+    existing[idx] = {
+      ...existing[idx],
+      ...entry,
+      slug: entry.slug || existing[idx].slug,
+      views: existing[idx].views,
+      completions: existing[idx].completions,
+      reshares: existing[idx].reshares,
+      avgTimeSpent: existing[idx].avgTimeSpent,
+    };
   } else {
     existing.push(entry);
   }
@@ -316,6 +329,12 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
       totalFoods: monthEntries.reduce((s, e) => s + e.foods, 0),
       totalVolume: monthEntries.reduce((s, e) => s + e.totalVolume, 0),
       totalCalories: monthEntries.reduce((s, e) => s + e.totalCalories, 0),
+      totalViews: monthEntries.reduce((s, e) => s + (e.views || 0), 0),
+      totalCompletions: monthEntries.reduce((s, e) => s + (e.completions || 0), 0),
+      totalReshares: monthEntries.reduce((s, e) => s + (e.reshares || 0), 0),
+      avgTimeSpent: monthEntries.length > 0
+        ? Math.round(monthEntries.reduce((s, e) => s + (e.avgTimeSpent || 0), 0) / monthEntries.length)
+        : 0,
       workoutEntries: monthEntries.filter((e) => e.type === 'workout').length,
       nutritionEntries: monthEntries.filter((e) => e.type === 'nutrition').length,
       mixedEntries: monthEntries.filter((e) => e.type === 'mixed').length,
@@ -328,12 +347,15 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
     const mealGoal = Math.max(monthStats.totalFoods, 20);
     const volumeGoal = Math.max(monthStats.totalVolume, 24000);
     const calorieGoal = Math.max(monthStats.totalCalories, 42000);
+    const viewGoal = Math.max(monthStats.totalViews, 30);
     const lastEntry = [...monthStats.entries].sort((a, b) => b.date.localeCompare(a.date))[0];
 
     return {
       activeDayPercent,
       exercisePercent: (monthStats.totalExercises / exerciseGoal) * 100,
       mealPercent: (monthStats.totalFoods / mealGoal) * 100,
+      viewPercent: (monthStats.totalViews / viewGoal) * 100,
+      completionPercent: monthStats.totalViews > 0 ? (monthStats.totalCompletions / monthStats.totalViews) * 100 : 0,
       outputPercent: ((monthStats.totalVolume / volumeGoal) * 50) + ((monthStats.totalCalories / calorieGoal) * 50),
       lastEntryLabel: lastEntry
         ? `${lastEntry.name} - ${new Date(lastEntry.date + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}`
@@ -410,6 +432,21 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
         </div>
       </div>
 
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-[#dbe5f0] bg-white p-3 text-center shadow-sm">
+          <p className="text-[7px] font-black uppercase tracking-widest text-[#5b6472]">Views</p>
+          <p className="text-lg font-black text-[#35577d]">{monthStats.totalViews}</p>
+        </div>
+        <div className="rounded-xl border border-[#d8efdf] bg-white p-3 text-center shadow-sm">
+          <p className="text-[7px] font-black uppercase tracking-widest text-[#5b6472]">Done</p>
+          <p className="text-lg font-black text-[#28623a]">{monthStats.totalCompletions}</p>
+        </div>
+        <div className="rounded-xl border border-[#ffd699]/60 bg-white p-3 text-center shadow-sm">
+          <p className="text-[7px] font-black uppercase tracking-widest text-[#5b6472]">Re-share</p>
+          <p className="text-lg font-black text-[#c55a00]">{monthStats.totalReshares}</p>
+        </div>
+      </div>
+
       {/* Real-time circular analytics */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -475,6 +512,37 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
               }}
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <CircularMetric
+            label="Views"
+            value={formatCompactNumber(monthStats.totalViews)}
+            detail="Client opens tracked from shared links."
+            percent={liveAnalytics.viewPercent}
+            delay={0.16}
+            palette={{
+              track: '#eef3f8',
+              stroke: '#8fb5d9',
+              glow: 'rgba(143, 181, 217, 0.24)',
+              text: '#35577d',
+              fill: 'linear-gradient(135deg, rgba(239,244,250,0.92), rgba(255,255,255,0.78))',
+            }}
+          />
+          <CircularMetric
+            label="Completed"
+            value={`${Math.round(liveAnalytics.completionPercent)}%`}
+            detail={`${monthStats.totalCompletions} completed client sessions.`}
+            percent={liveAnalytics.completionPercent}
+            delay={0.2}
+            palette={{
+              track: '#eef8f1',
+              stroke: '#7fc995',
+              glow: 'rgba(127, 201, 149, 0.25)',
+              text: '#28623a',
+              fill: 'linear-gradient(135deg, rgba(240,249,243,0.92), rgba(255,255,255,0.78))',
+            }}
+          />
         </div>
 
         <TypeDonut
@@ -606,7 +674,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                     <div className="p-2.5 bg-[#f7f9fc] rounded-xl text-center">
                       <Dumbbell className="mx-auto mb-1 h-3.5 w-3.5 text-[#35577d]" />
                       <p className="text-[7px] font-black text-[#5b6472] uppercase">Exercises</p>
@@ -627,7 +695,24 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                       <p className="text-[7px] font-black text-[#5b6472] uppercase">Kcal</p>
                       <p className="text-xs font-black text-[#141e30]">{Math.round(selectedEntry.totalCalories)}</p>
                     </div>
-                  </div>
+                    </div>
+
+                  {(selectedEntry.views || selectedEntry.completions || selectedEntry.reshares) && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-xl bg-[#eff4fa] p-2.5 text-center">
+                        <p className="text-[7px] font-black uppercase text-[#5b6472]">Views</p>
+                        <p className="text-xs font-black text-[#35577d]">{selectedEntry.views || 0}</p>
+                      </div>
+                      <div className="rounded-xl bg-[#f0f9f3] p-2.5 text-center">
+                        <p className="text-[7px] font-black uppercase text-[#5b6472]">Done</p>
+                        <p className="text-xs font-black text-[#28623a]">{selectedEntry.completions || 0}</p>
+                      </div>
+                      <div className="rounded-xl bg-[#fff4e6] p-2.5 text-center">
+                        <p className="text-[7px] font-black uppercase text-[#5b6472]">Shares</p>
+                        <p className="text-xs font-black text-[#c55a00]">{selectedEntry.reshares || 0}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
