@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
@@ -74,6 +74,47 @@ function formatCompactNumber(value: number) {
     maximumFractionDigits: value >= 1000 ? 1 : 0,
   }).format(Math.max(0, value));
 }
+
+const panelVariants = {
+  initial: { opacity: 0, y: 18, scale: 0.985 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.3,
+      ease: [0.22, 1, 0.36, 1],
+      when: 'beforeChildren',
+      staggerChildren: 0.055,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: 12,
+    scale: 0.992,
+    transition: { duration: 0.18, ease: 'easeInOut' },
+  },
+};
+
+const sectionVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: 8,
+    transition: { duration: 0.16, ease: 'easeInOut' },
+  },
+};
+
+const quietPanelVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.16 } },
+  exit: { opacity: 0, transition: { duration: 0.12 } },
+};
 
 function CircularMetric({
   label,
@@ -303,6 +344,7 @@ export function saveCalendarEntry(entry: CalendarEntry) {
 // ── Components ───────────────────────────────────────────────────────────────
 
 export default function CalendarPanel({ entries }: CalendarPanelProps) {
+  const shouldReduceMotion = useReducedMotion();
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -393,23 +435,24 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
   return (
     <motion.div
       key="calendar-panel"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+      variants={shouldReduceMotion ? quietPanelVariants : panelVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       className="h-full flex flex-col p-4 space-y-4 overflow-y-auto pb-28 sm:p-6 sm:space-y-5"
     >
       {/* Header */}
-      <div className="space-y-1">
+      <motion.div variants={sectionVariants} className="space-y-1">
         <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#141e30]">
           Calendar
         </h2>
         <p className="text-[10px] font-bold uppercase tracking-widest text-[#5b6472]">
           Track your shared routines and meal plans
         </p>
-      </div>
+      </motion.div>
 
       {/* Quick Stats Row */}
-      <div className="grid grid-cols-4 gap-2">
+      <motion.div variants={sectionVariants} className="grid grid-cols-4 gap-2">
         <div className="p-3 bg-gradient-to-br from-[#fff4e6] to-[#ffe8cc] rounded-xl border border-[#ffd699]/40 text-center shadow-sm">
           <Flame className="mx-auto mb-1 h-4 w-4 text-[#e67700]" />
           <p className="text-[7px] font-black text-[#e67700] uppercase">Streak</p>
@@ -430,9 +473,9 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
           <p className="text-[7px] font-black text-[#5b6472] uppercase">Meals</p>
           <p className="text-sm font-black text-[#6b1e23]">{monthStats.totalFoods}</p>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <motion.div variants={sectionVariants} className="grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-[#dbe5f0] bg-white p-3 text-center shadow-sm">
           <p className="text-[7px] font-black uppercase tracking-widest text-[#5b6472]">Views</p>
           <p className="text-lg font-black text-[#35577d]">{monthStats.totalViews}</p>
@@ -445,10 +488,10 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
           <p className="text-[7px] font-black uppercase tracking-widest text-[#5b6472]">Re-share</p>
           <p className="text-lg font-black text-[#c55a00]">{monthStats.totalReshares}</p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Real-time circular analytics */}
-      <div className="space-y-3">
+      <motion.section variants={sectionVariants} className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[#7895b2]" />
@@ -565,27 +608,29 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
             fill: 'linear-gradient(135deg, rgba(255,244,230,0.94), rgba(255,255,255,0.78))',
           }}
         />
-      </div>
+      </motion.section>
 
       {/* Calendar Grid */}
-      <div className="bg-white rounded-2xl border border-[#e6ecf2] shadow-sm p-4 space-y-3">
+      <motion.section variants={sectionVariants} className="bg-white rounded-2xl border border-[#e6ecf2] shadow-sm p-4 space-y-3">
         {/* Month navigation */}
         <div className="flex items-center justify-between">
-          <button
+          <motion.button
             onClick={() => navigateMonth(-1)}
+            whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
             className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f7f9fc] text-[#35577d] transition-colors hover:bg-[#eff4fa]"
           >
             <ChevronLeft size={18} />
-          </button>
+          </motion.button>
           <p className="text-sm font-black uppercase tracking-widest text-[#141e30]">
             {MONTH_NAMES[viewMonth]} {viewYear}
           </p>
-          <button
+          <motion.button
             onClick={() => navigateMonth(1)}
+            whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
             className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f7f9fc] text-[#35577d] transition-colors hover:bg-[#eff4fa]"
           >
             <ChevronRight size={18} />
-          </button>
+          </motion.button>
         </div>
 
         {/* Day headers */}
@@ -613,9 +658,12 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
             const hasEntry = !!entry;
 
             return (
-              <button
+              <motion.button
                 key={dateKey}
                 onClick={() => setSelectedDate(isSelected ? null : dateKey)}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
+                layout={!shouldReduceMotion}
+                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                 className={`
                   aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-black transition-all relative
                   ${isSelected
@@ -635,11 +683,11 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                     {entry.foods > 0 && <div className="w-1 h-1 rounded-full bg-[#28623a]" />}
                   </div>
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </div>
-      </div>
+      </motion.section>
 
       {/* Selected Day Detail */}
       <AnimatePresence mode="wait">
@@ -732,7 +780,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
 
       {/* Monthly Analytics */}
       {monthStats.totalDays > 0 && (
-        <div className="bg-white rounded-2xl border border-[#e6ecf2] p-5 shadow-sm space-y-4">
+        <motion.section variants={sectionVariants} className="bg-white rounded-2xl border border-[#e6ecf2] p-5 shadow-sm space-y-4">
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-[#35577d]" />
             <p className="text-[10px] font-black uppercase tracking-widest text-[#5b6472]">
@@ -785,7 +833,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
               />
             </div>
           </div>
-        </div>
+        </motion.section>
       )}
 
       {/* Streak badge */}
