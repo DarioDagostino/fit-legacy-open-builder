@@ -105,12 +105,12 @@ function CircularMetric({
       initial={{ opacity: 0, y: 10, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.45, delay, ease: 'easeOut' }}
-      className="relative overflow-hidden rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm"
+      className="relative overflow-hidden rounded-2xl border border-white/70 bg-white/85 p-3 shadow-sm sm:p-4"
       style={{ boxShadow: `0 18px 46px ${palette.glow}` }}
     >
       <div className="absolute inset-0 opacity-70" style={{ background: palette.fill }} />
-      <div className="relative flex items-center gap-4">
-        <div className="relative h-[108px] w-[108px] shrink-0">
+      <div className="relative flex min-w-0 items-center gap-3 sm:gap-4">
+        <div className="relative h-[88px] w-[88px] shrink-0 sm:h-[108px] sm:w-[108px]">
           <svg viewBox="0 0 108 108" className="h-full w-full -rotate-90">
             <circle
               cx="54"
@@ -142,19 +142,19 @@ function CircularMetric({
             transition={{ duration: 0.45, delay: delay + 0.28 }}
             className="absolute inset-0 flex flex-col items-center justify-center"
           >
-            <span className="text-xl font-black tracking-tight" style={{ color: palette.text }}>
+            <span className="text-lg font-black tracking-tight sm:text-xl" style={{ color: palette.text }}>
               {value}
             </span>
-            <span className="text-[8px] font-black uppercase tracking-widest text-[#5b6472]">
+            <span className="text-[8px] font-black uppercase tracking-wide text-[#5b6472] sm:tracking-widest">
               {Math.round(resolvedPercent)}%
             </span>
           </motion.div>
         </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5b6472]">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <p className="break-words text-[9px] font-black uppercase leading-tight tracking-[0.12em] text-[#5b6472] sm:text-[10px] sm:tracking-[0.18em]">
             {label}
           </p>
-          <p className="mt-1 text-xs font-bold leading-snug text-[#141e30]">
+          <p className="mt-1 break-words text-[11px] font-bold leading-snug text-[#141e30] sm:text-xs">
             {detail}
           </p>
         </div>
@@ -187,7 +187,7 @@ function TypeDonut({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.18 }}
-      className="rounded-2xl border border-[#e6ecf2] bg-white p-5 shadow-sm"
+      className="rounded-2xl border border-[#e6ecf2] bg-white p-4 shadow-sm sm:p-5"
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -202,8 +202,8 @@ function TypeDonut({
         </div>
       </div>
 
-      <div className="flex items-center gap-5">
-        <div className="relative h-[124px] w-[124px] shrink-0">
+      <div className="flex flex-col gap-4 min-[390px]:flex-row min-[390px]:items-center sm:gap-5">
+        <div className="relative mx-auto h-[112px] w-[112px] shrink-0 min-[390px]:mx-0 sm:h-[124px] sm:w-[124px]">
           <svg viewBox="0 0 124 124" className="h-full w-full -rotate-90">
             <circle cx="62" cy="62" r={radius} fill="none" stroke="#eef3f8" strokeWidth="13" />
             {segments.map((segment, index) => {
@@ -238,13 +238,13 @@ function TypeDonut({
           </div>
         </div>
 
-        <div className="flex-1 space-y-3">
+        <div className="min-w-0 flex-1 space-y-3">
           {segments.map((segment) => (
             <div key={segment.key} className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: segment.color }} />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#5b6472]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[#5b6472] sm:text-[10px] sm:tracking-widest">
                     {segment.label}
                   </p>
                 </div>
@@ -396,7 +396,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="h-full flex flex-col p-6 space-y-5 overflow-y-auto pb-28"
+      className="h-full flex flex-col p-4 space-y-4 overflow-y-auto pb-28 sm:p-6 sm:space-y-5"
     >
       {/* Header */}
       <div className="space-y-1">
@@ -449,7 +449,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
 
       {/* Real-time circular analytics */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[#7895b2]" />
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5b6472]">
@@ -461,7 +461,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
             initial={{ opacity: 0.45, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.35 }}
-            className="rounded-full bg-[#eff4fa] px-3 py-1 text-[8px] font-black uppercase tracking-widest text-[#35577d]"
+            className="rounded-full bg-[#eff4fa] px-2.5 py-1 text-[7px] font-black uppercase tracking-[0.14em] text-[#35577d] sm:px-3 sm:text-[8px] sm:tracking-widest"
           >
             Syncing from calendar
           </motion.div>
@@ -482,7 +482,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
               fill: 'linear-gradient(135deg, rgba(239,244,250,0.92), rgba(255,255,255,0.74))',
             }}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <CircularMetric
               label="Training"
               value={formatCompactNumber(monthStats.totalExercises)}
@@ -514,7 +514,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <CircularMetric
             label="Views"
             value={formatCompactNumber(monthStats.totalViews)}
