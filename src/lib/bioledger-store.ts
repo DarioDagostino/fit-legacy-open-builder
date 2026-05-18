@@ -33,7 +33,7 @@ interface BioLedgerState {
   stats: BioLedgerStats;
   sessions: WorkoutSession[];
   lastSessionDate: string | null;
-  
+
   // Actions
   addSession: (session: Omit<WorkoutSession, 'id'>) => void;
   removeSession: (id: string) => void;
@@ -70,13 +70,13 @@ export const useBioLedgerStore = create<BioLedgerState>()(
 
           // Calculate XP for this session (rough estimate)
           const sessionXp = (session.exerciseCount * 10) + (session.foodItems * 5);
-          
+
           // Update streak if session is today or yesterday
           const today = new Date().toISOString().split('T')[0];
           const isToday = session.date === today;
-          
+
           let updatedStats = { ...state.stats };
-          
+
           if (isToday && (!state.lastSessionDate || state.lastSessionDate !== today)) {
             updatedStats.currentStreak += 1;
             updatedStats.longestStreak = Math.max(
@@ -109,7 +109,7 @@ export const useBioLedgerStore = create<BioLedgerState>()(
 
           // Recalculate stats without this session
           const sessionXp = (session.exerciseCount * 10) + (session.foodItems * 5);
-          
+
           return {
             sessions: state.sessions.filter(s => s.id !== id),
             stats: {
@@ -133,7 +133,7 @@ export const useBioLedgerStore = create<BioLedgerState>()(
           const newXp = state.stats.totalXp + amount;
           const newLevel = Math.floor(newXp / 1000) + 1;
           const newCoincitos = state.stats.coincitos + Math.floor(amount / 50);
-          
+
           return {
             stats: {
               ...state.stats,
@@ -171,7 +171,7 @@ export const useBioLedgerStore = create<BioLedgerState>()(
         const state = get();
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        
+
         return state.sessions.filter(s => {
           const sessionDate = new Date(s.date);
           return sessionDate >= weekAgo;
@@ -182,7 +182,7 @@ export const useBioLedgerStore = create<BioLedgerState>()(
         const state = get();
         const monthAgo = new Date();
         monthAgo.setMonth(monthAgo.getMonth() - 1);
-        
+
         const monthlySessions = state.sessions.filter(s => {
           const sessionDate = new Date(s.date);
           return sessionDate >= monthAgo;

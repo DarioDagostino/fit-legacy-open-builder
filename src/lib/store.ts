@@ -47,6 +47,17 @@ interface WorkoutState {
   getShareableLink: (paletteId?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember') => string;
 }
 
+function normalizeRoutine(routine: any): WorkoutState['currentRoutine'] {
+  return {
+    name: typeof routine?.name === 'string' && routine.name.trim()
+      ? routine.name
+      : 'Untitled routine',
+    exercises: Array.isArray(routine?.exercises) ? routine.exercises : [],
+    foods: Array.isArray(routine?.foods) ? routine.foods : [],
+    coverImageUrl: typeof routine?.coverImageUrl === 'string' ? routine.coverImageUrl : null,
+  };
+}
+
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
     (set, get) => ({
@@ -161,17 +172,17 @@ export const useWorkoutStore = create<WorkoutState>()(
           if (data && (data.v === 1 || data.n)) {
             // Try to treat as WIR document
             const validation = validateWir(data, { checkCatalog: true });
-            
+
             if (validation.valid && validation.data) {
               try {
                 const hydrated = hydrateWir(validation.data);
-                
+
                 // Map to store format
                 const exercises = hydrated.exercises.map(ex => ({
                   ...ex,
                   difficulty: 'beginner' as const,
                 })) as SelectedExercise[];
-                
+
                 const foods = hydrated.foods as FoodItem[];
 
                 set({
@@ -190,15 +201,15 @@ export const useWorkoutStore = create<WorkoutState>()(
               console.error("WIR Validation failed", validation.errors);
             }
           }
-          
+
           // Fallback: Legacy format
           set({
-            currentRoutine: {
+            currentRoutine: normalizeRoutine({
               name: data?.name || 'Imported routine',
-              exercises: data?.exercises || [],
-              foods: data?.foods || [],
-              coverImageUrl: data?.coverImageUrl || null,
-            }
+              exercises: data?.exercises,
+              foods: data?.foods,
+              coverImageUrl: data?.coverImageUrl,
+            })
           });
         } catch (error) {
           console.error("Error loading routine", error);
@@ -228,7 +239,7 @@ export const useWorkoutStore = create<WorkoutState>()(
         const shareName = !trimmedName || trimmedName === 'Untitled routine' || trimmedName === 'NUEVA RUTINA'
           ? defaultName
           : trimmedName;
-        
+
         // Build the compact share payload used by the public routine link.
         const wirDoc: WirDocument = {
           v: 1,
@@ -273,6 +284,15 @@ export const useWorkoutStore = create<WorkoutState>()(
     }),
     {
       name: 'fit-legacy-workout-builder',
+      merge: (persistedState, currentState) => {
+        const state = persistedState as Partial<WorkoutState> | undefined;
+
+        return {
+          ...currentState,
+          ...state,
+          currentRoutine: normalizeRoutine(state?.currentRoutine),
+        };
+      },
     }
   )
 );

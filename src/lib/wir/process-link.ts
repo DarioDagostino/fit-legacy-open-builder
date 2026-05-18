@@ -19,7 +19,7 @@ export function processWirLink(encoded: string): ProcessWirLinkResult {
   try {
     // Decode the Base64 URL-safe string
     const decoded = decodeWir(encoded);
-    
+
     // Validate
     const validation = validateWir(decoded);
     if (!validation.valid) {

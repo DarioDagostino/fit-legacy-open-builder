@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { AlertTriangle, Share2 } from 'lucide-react';
+import { SocialJoin } from '@fit-legacy/shared';
 import { processWirLink } from '@/lib/wir';
 import { WirCanvasPreview } from '@/components/wir/WirCanvasPreview';
 import { getRoutineAnalyticsSession, trackRoutineAnalytics } from '@/lib/routineAnalytics';
@@ -194,15 +195,15 @@ export function SharedRoutineViewer() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f6f7fb] flex items-center justify-center font-sans text-[#141e30]">
-        <div className="w-8 h-8 border-4 border-[#35577d] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,113,227,0.08),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f6f9fc_100%)] flex items-center justify-center font-sans text-[#141e30]">
+        <div className="w-8 h-8 border-4 border-[#0071e3] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (error || !routine) {
     return (
-      <div className="min-h-screen bg-[#f6f7fb] flex flex-col items-center justify-center p-6 text-center font-sans">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,113,227,0.08),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f6f9fc_100%)] flex flex-col items-center justify-center p-6 text-center font-sans">
         <AlertTriangle className="w-12 h-12 text-[#a84f36] mb-4 opacity-80" />
         <h1 className="text-xl font-bold text-[#141e30] tracking-wide mb-2">Routine not found</h1>
         <p className="text-[#5b6472] text-sm">The link is invalid or no longer available.</p>
@@ -211,7 +212,7 @@ export function SharedRoutineViewer() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] flex items-center justify-center p-4 pb-20">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,113,227,0.08),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f6f9fc_100%)] flex items-center justify-center p-4 pb-20">
       <div className="w-full max-w-sm">
         <WirCanvasPreview
           template={routine.template}
@@ -259,12 +260,13 @@ export function SharedRoutineViewer() {
                 });
               }
             }}
-            className="flex items-center gap-1.5 bg-[#28623a] text-white px-4 py-2.5 rounded-full text-[11px] font-bold hover:opacity-90 transition-opacity"
+            className="builder-cta-primary flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-bold"
           >
             <Share2 className="w-3.5 h-3.5" />
             Share link
           </button>
         </div>
+        <SocialJoin align="center" className="mt-8" />
       </div>
     </div>
   );

@@ -146,7 +146,7 @@ function CircularMetric({
       initial={{ opacity: 0, y: 10, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.45, delay, ease: 'easeOut' }}
-      className="relative overflow-hidden rounded-2xl border border-white/70 bg-white/85 p-3 shadow-sm sm:p-4"
+      className="builder-apple-card relative overflow-hidden p-3 sm:p-4"
       style={{ boxShadow: `0 18px 46px ${palette.glow}` }}
     >
       <div className="absolute inset-0 opacity-70" style={{ background: palette.fill }} />
@@ -228,7 +228,7 @@ function TypeDonut({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.18 }}
-      className="rounded-2xl border border-[#e6ecf2] bg-white p-4 shadow-sm sm:p-5"
+      className="builder-apple-card p-4 sm:p-5"
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -453,22 +453,22 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
 
       {/* Quick Stats Row */}
       <motion.div variants={sectionVariants} className="grid grid-cols-4 gap-2">
-        <div className="p-3 bg-gradient-to-br from-[#fff4e6] to-[#ffe8cc] rounded-xl border border-[#ffd699]/40 text-center shadow-sm">
+        <div className="builder-apple-tile p-3 text-center">
           <Flame className="mx-auto mb-1 h-4 w-4 text-[#e67700]" />
           <p className="text-[7px] font-black text-[#e67700] uppercase">Streak</p>
           <p className="text-sm font-black text-[#c55a00]">{streak}</p>
         </div>
-        <div className="p-3 bg-gradient-to-br from-[#eff4fa] to-[#dce8f5] rounded-xl border border-[#c2d6eb]/40 text-center shadow-sm">
+        <div className="builder-apple-tile p-3 text-center">
           <CalendarIcon className="mx-auto mb-1 h-4 w-4 text-[#35577d]" />
           <p className="text-[7px] font-black text-[#5b6472] uppercase">Days</p>
           <p className="text-sm font-black text-[#141e30]">{monthStats.totalDays}</p>
         </div>
-        <div className="p-3 bg-gradient-to-br from-[#f0f9f3] to-[#d8efdf] rounded-xl border border-[#b8dfc5]/40 text-center shadow-sm">
+        <div className="builder-apple-tile p-3 text-center">
           <Dumbbell className="mx-auto mb-1 h-4 w-4 text-[#28623a]" />
           <p className="text-[7px] font-black text-[#5b6472] uppercase">Exercises</p>
           <p className="text-sm font-black text-[#28623a]">{monthStats.totalExercises}</p>
         </div>
-        <div className="p-3 bg-gradient-to-br from-[#fdf2f2] to-[#f8dede] rounded-xl border border-[#ecc4c4]/40 text-center shadow-sm">
+        <div className="builder-apple-tile p-3 text-center">
           <Apple className="mx-auto mb-1 h-4 w-4 text-[#6b1e23]" />
           <p className="text-[7px] font-black text-[#5b6472] uppercase">Meals</p>
           <p className="text-sm font-black text-[#6b1e23]">{monthStats.totalFoods}</p>
@@ -476,15 +476,15 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
       </motion.div>
 
       <motion.div variants={sectionVariants} className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-[#dbe5f0] bg-white p-3 text-center shadow-sm">
+        <div className="builder-apple-tile p-3 text-center">
           <p className="text-[7px] font-black uppercase tracking-widest text-[#5b6472]">Views</p>
           <p className="text-lg font-black text-[#35577d]">{monthStats.totalViews}</p>
         </div>
-        <div className="rounded-xl border border-[#d8efdf] bg-white p-3 text-center shadow-sm">
+        <div className="builder-apple-tile p-3 text-center">
           <p className="text-[7px] font-black uppercase tracking-widest text-[#5b6472]">Done</p>
           <p className="text-lg font-black text-[#28623a]">{monthStats.totalCompletions}</p>
         </div>
-        <div className="rounded-xl border border-[#ffd699]/60 bg-white p-3 text-center shadow-sm">
+        <div className="builder-apple-tile p-3 text-center">
           <p className="text-[7px] font-black uppercase tracking-widest text-[#5b6472]">Re-share</p>
           <p className="text-lg font-black text-[#c55a00]">{monthStats.totalReshares}</p>
         </div>
@@ -611,13 +611,13 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
       </motion.section>
 
       {/* Calendar Grid */}
-      <motion.section variants={sectionVariants} className="bg-white rounded-2xl border border-[#e6ecf2] shadow-sm p-4 space-y-3">
+      <motion.section variants={sectionVariants} className="builder-apple-card p-4 space-y-3">
         {/* Month navigation */}
         <div className="flex items-center justify-between">
           <motion.button
             onClick={() => navigateMonth(-1)}
             whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
-            className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f7f9fc] text-[#35577d] transition-colors hover:bg-[#eff4fa]"
+            className="builder-icon-button flex h-8 w-8 items-center justify-center"
           >
             <ChevronLeft size={18} />
           </motion.button>
@@ -627,7 +627,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
           <motion.button
             onClick={() => navigateMonth(1)}
             whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
-            className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f7f9fc] text-[#35577d] transition-colors hover:bg-[#eff4fa]"
+            className="builder-icon-button flex h-8 w-8 items-center justify-center"
           >
             <ChevronRight size={18} />
           </motion.button>
@@ -667,9 +667,9 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                 className={`
                   aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-black transition-all relative
                   ${isSelected
-                    ? 'bg-[#141e30] text-white scale-110 shadow-lg shadow-[#141e30]/30 z-10'
+                    ? 'bg-[#0071e3] text-white scale-110 shadow-lg shadow-[#0071e3]/30 z-10'
                     : isToday
-                      ? 'bg-[#eff4fa] text-[#141e30] ring-2 ring-[#35577d]/30'
+                      ? 'bg-[#eaf5ff] text-[#141e30] ring-2 ring-[#0071e3]/24'
                       : hasEntry
                         ? 'bg-[#f0f9f3] text-[#28623a] hover:bg-[#e0f2e5]'
                         : 'text-[#5b6472] hover:bg-[#f7f9fc]'
@@ -701,7 +701,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
           >
             {selectedEntry ? (
               <>
-                <div className="bg-white rounded-2xl border border-[#e6ecf2] p-5 shadow-sm space-y-4">
+                <div className="builder-apple-card p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#5b6472]">
@@ -723,22 +723,22 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                   </div>
 
                     <div className="grid grid-cols-4 gap-2">
-                    <div className="p-2.5 bg-[#f7f9fc] rounded-xl text-center">
+                    <div className="builder-apple-tile p-2.5 text-center">
                       <Dumbbell className="mx-auto mb-1 h-3.5 w-3.5 text-[#35577d]" />
                       <p className="text-[7px] font-black text-[#5b6472] uppercase">Exercises</p>
                       <p className="text-xs font-black text-[#141e30]">{selectedEntry.exercises}</p>
                     </div>
-                    <div className="p-2.5 bg-[#f7f9fc] rounded-xl text-center">
+                    <div className="builder-apple-tile p-2.5 text-center">
                       <Apple className="mx-auto mb-1 h-3.5 w-3.5 text-[#28623a]" />
                       <p className="text-[7px] font-black text-[#5b6472] uppercase">Foods</p>
                       <p className="text-xs font-black text-[#141e30]">{selectedEntry.foods}</p>
                     </div>
-                    <div className="p-2.5 bg-[#f7f9fc] rounded-xl text-center">
+                    <div className="builder-apple-tile p-2.5 text-center">
                       <TrendingUp className="mx-auto mb-1 h-3.5 w-3.5 text-[#6b1e23]" />
                       <p className="text-[7px] font-black text-[#5b6472] uppercase">Volume</p>
                       <p className="text-xs font-black text-[#141e30]">{Math.round(selectedEntry.totalVolume)}</p>
                     </div>
-                    <div className="p-2.5 bg-[#f7f9fc] rounded-xl text-center">
+                    <div className="builder-apple-tile p-2.5 text-center">
                       <Flame className="mx-auto mb-1 h-3.5 w-3.5 text-[#e67700]" />
                       <p className="text-[7px] font-black text-[#5b6472] uppercase">Kcal</p>
                       <p className="text-xs font-black text-[#141e30]">{Math.round(selectedEntry.totalCalories)}</p>
@@ -747,15 +747,15 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
 
                   {(selectedEntry.views || selectedEntry.completions || selectedEntry.reshares) && (
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-xl bg-[#eff4fa] p-2.5 text-center">
+                      <div className="builder-apple-tile p-2.5 text-center">
                         <p className="text-[7px] font-black uppercase text-[#5b6472]">Views</p>
                         <p className="text-xs font-black text-[#35577d]">{selectedEntry.views || 0}</p>
                       </div>
-                      <div className="rounded-xl bg-[#f0f9f3] p-2.5 text-center">
+                      <div className="builder-apple-tile p-2.5 text-center">
                         <p className="text-[7px] font-black uppercase text-[#5b6472]">Done</p>
                         <p className="text-xs font-black text-[#28623a]">{selectedEntry.completions || 0}</p>
                       </div>
-                      <div className="rounded-xl bg-[#fff4e6] p-2.5 text-center">
+                      <div className="builder-apple-tile p-2.5 text-center">
                         <p className="text-[7px] font-black uppercase text-[#5b6472]">Shares</p>
                         <p className="text-xs font-black text-[#c55a00]">{selectedEntry.reshares || 0}</p>
                       </div>
@@ -764,7 +764,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                 </div>
               </>
             ) : (
-              <div className="bg-white rounded-2xl border border-[#e6ecf2] p-8 shadow-sm text-center space-y-3">
+              <div className="builder-apple-card p-8 text-center space-y-3">
                 <Clock className="mx-auto h-10 w-10 text-[#9aa9ba]" />
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#5b6472]">
                   {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -780,7 +780,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
 
       {/* Monthly Analytics */}
       {monthStats.totalDays > 0 && (
-        <motion.section variants={sectionVariants} className="bg-white rounded-2xl border border-[#e6ecf2] p-5 shadow-sm space-y-4">
+        <motion.section variants={sectionVariants} className="builder-apple-card p-5 space-y-4">
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-[#35577d]" />
             <p className="text-[10px] font-black uppercase tracking-widest text-[#5b6472]">
@@ -799,7 +799,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, (monthStats.totalVolume / 50000) * 100)}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
-                className="h-full bg-gradient-to-r from-[#35577d] to-[#5b8dbf] rounded-full"
+                className="builder-apple-progress h-full rounded-full"
               />
             </div>
           </div>
@@ -814,7 +814,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, (monthStats.totalCalories / 60000) * 100)}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
-                className="h-full bg-gradient-to-r from-[#28623a] to-[#4caf50] rounded-full"
+                className="builder-apple-progress h-full rounded-full"
               />
             </div>
           </div>
@@ -829,7 +829,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                 initial={{ width: 0 }}
                 animate={{ width: `${(monthStats.totalDays / daysInMonth) * 100}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
-                className="h-full bg-gradient-to-r from-[#e67700] to-[#ffa940] rounded-full"
+                className="builder-apple-progress h-full rounded-full"
               />
             </div>
           </div>
@@ -841,7 +841,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="flex items-center gap-3 bg-gradient-to-r from-[#fff4e6] to-[#ffe8cc] rounded-2xl border border-[#ffd699]/40 p-4 shadow-sm"
+          className="builder-apple-card flex items-center gap-3 p-4"
         >
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e67700]/10">
             <Award className="h-6 w-6 text-[#e67700]" />

@@ -1,3 +1,4 @@
+export * from './SocialJoin';
 /**
  * @fit-legacy/shared
  * Catálogos maestros UNIFIED de ejercicios y alimentos
@@ -587,3 +588,4 @@ export function hasExercise(id: string): boolean {
 export function hasFood(id: string): boolean {
   return getFoodById(id) !== undefined;
 }
+

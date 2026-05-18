@@ -1,8 +1,8 @@
 import { useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { 
-  Dumbbell, 
-  Apple, 
+import {
+  Dumbbell,
+  Apple,
   ShieldCheck,
   Crown,
   ArrowRight,
@@ -33,9 +33,9 @@ const ICON_MAP: Record<string, string> = {
 const ExerciseIcon = ({ section, className = "w-4 h-4" }: { section: string, className?: string }) => {
   const iconFile = ICON_MAP[section.toLowerCase()] || 'icono_personalizado.svg';
   return (
-    <img 
-      src={`/assets/icons/workouts/${iconFile}`} 
-      className={`${className} object-contain`} 
+    <img
+      src={`/assets/icons/workouts/${iconFile}`}
+      className={`${className} object-contain`}
       alt={section}
     />
   );
@@ -52,7 +52,7 @@ export default function SovereignShared() {
 
   const decoded = useMemo(() => {
     if (!data) return null;
-    
+
     // We import locally to keep the React component clean or use the top-level import
     // But since this is a module, we can just import at the top of the file.
     // Let's add the import to the top of the file in another chunk, or just require it here if lazy.
@@ -63,16 +63,16 @@ export default function SovereignShared() {
     // Let's use `processWirLink` and assume we will add the import, or I will use `multi_replace_file_content`.
     // I made a mistake, I should use `multi_replace_file_content` to add the import as well. Let's cancel this and use `multi_replace_file_content` next if needed, but I'll try to just write this correctly first.
     // I can't cancel. I will just provide the replacement and then add the import.
-    
+
     try {
       // Temporary inline require since we didn't add the import yet
       const { processWirLink } = require('../../lib/wir');
       const result = processWirLink(data);
-      
+
       if (result.success && result.data) {
         return result.data;
       }
-      
+
       // If it failed processing as WIR (e.g. legacy JSON encoded manually)
       const legacyJson = JSON.parse(decodeURIComponent(escape(atob(data))));
       return legacyJson;
@@ -105,7 +105,7 @@ export default function SovereignShared() {
   const shareToWhatsApp = () => {
     const url = window.location.href;
     const text = `🔳 Estoy ejecutando la Rutina *${decoded.name}* en Fit Legacy.\n\nMírala y forja tu propio legado:\n${url}\n\n#TheRoad #FitLegacy`;
-    
+
     // Use native share if available (mobile), fallback to wa.me
     if (navigator.share) {
       navigator.share({ title: `Rutina ${decoded.name} — Fit Legacy`, text, url })
@@ -117,25 +117,25 @@ export default function SovereignShared() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans overflow-x-hidden selection:bg-purple-500/30">
-      
+
       {/* Cinematic Header Section */}
       <header className="relative h-[65vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden" role="banner">
         {decoded.coverImageUrl ? (
-          <motion.img 
+          <motion.img
             initial={{ scale: 1.1, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.4 }}
             transition={{ duration: 2 }}
-            src={decoded.coverImageUrl} 
-            className="absolute inset-0 w-full h-full object-cover" 
+            src={decoded.coverImageUrl}
+            className="absolute inset-0 w-full h-full object-cover"
             alt="Fondo cinemático de la rutina"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-black" aria-hidden="true" />
         )}
-        
+
         <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/20 to-transparent" aria-hidden="true" />
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10 space-y-8 max-w-5xl"
@@ -144,11 +144,11 @@ export default function SovereignShared() {
             <Crown className="w-4 h-4 text-amber-400" aria-label="Sello de Verificación" />
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400">Verified Sovereign Neural Link</span>
           </div>
-          
+
           <h1 className="font-brand-display text-7xl md:text-[10rem] font-black italic uppercase leading-none tracking-tighter drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
             {decoded.name}
           </h1>
-          
+
           <div className="flex flex-wrap justify-center gap-12 pt-12">
              <div className="text-center space-y-2">
                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Macro Target</p>
@@ -169,10 +169,10 @@ export default function SovereignShared() {
       </header>
 
       <main className="max-w-[1400px] mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-12 gap-20" role="main">
-        
+
         {/* Routine Manifest */}
         <div className="lg:col-span-8 space-y-24">
-          
+
           {/* Training Module */}
           {decoded.exercises.length > 0 && (
             <section className="space-y-12" aria-labelledby="training-title">
@@ -182,10 +182,10 @@ export default function SovereignShared() {
                 </div>
                 <h2 id="training-title" className="text-4xl font-black italic uppercase tracking-tight">Kinetic Manifest</h2>
               </div>
-              
+
               <div className="grid grid-cols-1 gap-6">
                 {decoded.exercises.map((ex: any, idx: number) => (
-                  <motion.div 
+                  <motion.div
                     key={ex.id}
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -233,10 +233,10 @@ export default function SovereignShared() {
                 </div>
                 <h2 id="nutrition-title" className="text-4xl font-black italic uppercase tracking-tight">Biological Supply</h2>
               </div>
-              
+
               <div className="grid grid-cols-1 gap-6">
                 {decoded.foods.map((food: any) => (
-                  <motion.div 
+                  <motion.div
                     key={food.id}
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -280,7 +280,7 @@ export default function SovereignShared() {
            <div className="bg-white/5 border border-white/10 rounded-[3rem] p-12 backdrop-blur-3xl sticky top-12 space-y-12 shadow-2xl">
               <div className="space-y-4">
                  <h3 className="text-xs font-black uppercase tracking-[0.5em] text-zinc-500">ROUTINE ACTION</h3>
-                 <button 
+                 <button
                   onClick={() => window.location.href = `/?data=${data}`}
                   aria-label="Importar esta rutina a mi build"
                   className="w-full h-24 bg-white text-black font-black text-xl italic uppercase rounded-3xl flex items-center justify-center gap-4 hover:bg-purple-500 hover:text-white transition-[background-color,color,transform] hover:scale-[1.02] active:scale-[0.98]"
@@ -288,7 +288,7 @@ export default function SovereignShared() {
                    IMPORTAR AL BUILD
                    <ArrowRight className="w-6 h-6" aria-hidden="true" />
                  </button>
-                 <button 
+                 <button
                   onClick={shareToWhatsApp}
                   aria-label="Compartir rutina por WhatsApp"
                   className="w-full h-16 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-black text-sm italic uppercase rounded-2xl flex items-center justify-center gap-3 hover:bg-[#25D366]/20 hover:border-[#25D366]/60 transition-all active:scale-[0.98]"
@@ -296,7 +296,7 @@ export default function SovereignShared() {
                    <MessageCircle className="w-5 h-5" aria-hidden="true" />
                    COMPARTIR POR WHATSAPP
                  </button>
-                 <button 
+                 <button
                   onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Rutina Copiada'); }}
                   aria-label="Copiar link de acceso"
                   className="w-full py-6 bg-transparent border border-white/10 text-white font-black text-sm uppercase italic rounded-2xl hover:bg-white/5 transition-[background-color,border-color,transform]"

@@ -180,6 +180,24 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
     return <img src={`${moreIconsPath}/Healthy Eating.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Healthy Eating" />;
   }
 
+  if (
+    lowercaseName.includes('whey') ||
+    lowercaseName.includes('proteina') ||
+    lowercaseName.includes('creatina') ||
+    lowercaseName.includes('bcaa') ||
+    lowercaseName.includes('eaa') ||
+    lowercaseName.includes('amino') ||
+    lowercaseName.includes('glutamina') ||
+    lowercaseName.includes('multivit') ||
+    lowercaseName.includes('omega') ||
+    lowercaseName.includes('magnesio') ||
+    lowercaseName.includes('vitamina') ||
+    lowercaseName.includes('electrolito') ||
+    lowercaseCategory === 'supplements'
+  ) {
+    return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>SUP</span>;
+  }
+
   if (lowercaseCategory === 'protein' || lowercaseCategory === 'proteins') return <img src="/meat/Meat.webp" className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Protein" />;
   if (lowercaseCategory === 'fruit' || lowercaseCategory === 'fruits') return <img src={`${path}/Apples  Plate.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Fruit" />;
   if (lowercaseCategory === 'vegetable' || lowercaseCategory === 'vegetables') return <img src={`${path}/Cabbage.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Vegetable" />;

@@ -669,27 +669,27 @@ export default function MobileFirstBuilder() {
   }, [completeOnboarding, goToOnboardingStep, onboardingStep]);
 
   return (
-    <div className="min-h-screen bg-white text-[#141e30] font-sans selection:bg-[#35577d]/20 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(0,113,227,0.08),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f6f9fc_100%)] text-[#141e30] font-sans selection:bg-[#0071e3]/15 flex flex-col overflow-hidden">
       
       {/* App Header */}
-      <header className="shrink-0 z-10 border-b border-[#e6ecf2] bg-white/95 px-3 py-2.5 text-[#141e30] shadow-[0_16px_30px_-28px_rgba(20,30,48,0.45)] backdrop-blur-xl sm:px-4 sm:py-3" role="banner">
-        <div className="flex min-h-[48px] items-center justify-between gap-2 sm:gap-4">
+      <header className="shrink-0 z-10 border-b border-white/70 bg-white/78 px-3 py-2 text-[#141e30] shadow-[0_16px_34px_-30px_rgba(20,30,48,0.38)] backdrop-blur-2xl sm:px-4 sm:py-3" role="banner">
+        <div className="flex min-h-[42px] items-center justify-between gap-2 sm:min-h-[48px] sm:gap-4">
            <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e6ecf2] bg-[#f7f9fc] p-1 shadow-sm sm:h-11 sm:w-11">
+             <div className="builder-header-mark flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden p-0.5 sm:h-11 sm:w-11 sm:p-1">
                <img src="/icons/fit-legacy-mark.svg" alt="FL" className="h-full w-full rounded-lg object-cover" />
              </div>
              <div className="min-w-0">
-               <p className="truncate text-base font-black leading-tight sm:text-lg">{screenTitle}</p>
-               <p className="line-clamp-1 text-[11px] font-bold leading-tight text-[#5b6472] sm:text-xs">{screenSubtitle}</p>
+               <p className="truncate text-sm font-black leading-tight sm:text-lg">{screenTitle}</p>
+               <p className="hidden text-[11px] font-bold leading-tight text-[#5b6472] min-[390px]:line-clamp-1 sm:block sm:text-xs">{screenSubtitle}</p>
              </div>
            </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <div className="hidden rounded-xl border border-[#e6ecf2] bg-[#f7f9fc] px-3 py-2 text-xs font-black text-[#5b6472] sm:block">
+            <div className="builder-status-chip hidden px-3 py-2 text-xs font-black text-[#5b6472] sm:block">
               {routineItemCount} items
             </div>
             <button
               onClick={() => setShowCustomize(true)}
-              className="flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dbe5f0] bg-white px-3 text-[10px] font-black uppercase tracking-wide text-[#141e30] transition-colors hover:bg-[#f7f9fc] sm:h-auto sm:px-3 sm:py-2 sm:text-xs"
+              className="builder-cta-ghost flex h-9 items-center justify-center gap-1.5 px-2.5 text-[10px] font-black uppercase tracking-wide sm:h-auto sm:px-3 sm:py-2 sm:text-xs"
               aria-label="Open share settings"
             >
               <SlidersHorizontal className="h-4 w-4" />
@@ -708,23 +708,23 @@ export default function MobileFirstBuilder() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="h-full flex flex-col p-6 space-y-6 rounded-3xl"
+              className="h-full flex flex-col gap-4 overflow-hidden rounded-[2rem] p-3 pt-3 sm:gap-6 sm:p-6"
               style={catalogActiveBg}
             >
               {/* Internal Discovery Toggle */}
-              <div className="relative bg-white/60 backdrop-blur-md p-1 rounded-2xl border border-white/45 shadow-[0_10px_22px_-16px_rgba(20,30,48,0.6)] flex items-center h-14 overflow-hidden" role="tablist">
+              <div className="builder-glass-shell relative flex h-[52px] items-center overflow-hidden rounded-[1.35rem] p-1 shadow-[0_18px_42px_-30px_rgba(20,30,48,0.5)] sm:h-14" role="tablist">
                  <motion.div 
                     initial={false}
                     animate={{ x: builderMode === 'workout' ? 0 : '100%' }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    className="absolute top-1 left-1 bottom-1 w-[calc(50%-4px)] bg-[#141e30] rounded-xl shadow-[0_10px_24px_-16px_rgba(20,30,48,0.9)] z-0"
+                    className="absolute bottom-1 left-1 top-1 z-0 w-[calc(50%-4px)] rounded-[1.05rem] bg-gradient-to-b from-[#2ea7ff] to-[#0071e3] shadow-[0_16px_26px_-18px_rgba(0,113,227,0.7)]"
                  />
                  
                  <button 
                   onClick={() => setBuilderMode('workout')} 
                   role="tab"
                   aria-selected={builderMode === 'workout'}
-                  className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${builderMode === 'workout' ? 'text-white' : 'text-[#35577d] hover:text-[#141e30]'}`}
+                  className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors duration-300 z-10 ${builderMode === 'workout' ? 'text-white' : 'text-[#35577d] hover:text-[#141e30]'}`}
                 >
                   <Dumbbell size={16} />
                   Exercises
@@ -733,14 +733,14 @@ export default function MobileFirstBuilder() {
                   onClick={() => setBuilderMode('nutrition')} 
                   role="tab"
                   aria-selected={builderMode === 'nutrition'}
-                  className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${builderMode === 'nutrition' ? 'text-white' : 'text-[#35577d] hover:text-[#141e30]'}`}
+                  className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors duration-300 z-10 ${builderMode === 'nutrition' ? 'text-white' : 'text-[#35577d] hover:text-[#141e30]'}`}
                 >
                   <Apple size={16} />
                   Meals
                 </button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5b6472]" aria-hidden="true" />
                   <input 
@@ -748,27 +748,45 @@ export default function MobileFirstBuilder() {
                     placeholder={`Search ${builderMode === 'workout' ? 'exercises' : 'foods'}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full bg-white/65 backdrop-blur-sm border border-white/50 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#35577d] transition-[border-color] font-bold text-sm text-[#102033] placeholder:text-[#5b6472]"
+                    className="builder-apple-input w-full py-4 pl-12 pr-4 focus:outline-none font-bold text-[15px] text-[#102033] placeholder:text-[#5b6472]"
                   />
                 </div>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5b6472]">Focus</p>
+                  <p className="text-[10px] font-bold text-[#7b8797]">{filteredItems.length} options</p>
+                </div>
+                <div className="-mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
                    {(builderMode === 'workout' ? workoutFilters : foodFilters).map(f => (
                      <button
                        key={f.id}
                        onClick={() => setActiveFilter(f.id)}
-                       className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${
-                         activeFilter === f.id ? 'bg-[#141e30] border-[#141e30] text-white shadow-lg shadow-[#141e30]/20' : 'bg-white/62 backdrop-blur-sm border-white/45 text-[#254667]'
+                       className={`group flex min-w-[112px] snap-start items-center gap-2.5 whitespace-nowrap px-3.5 py-3 text-left transition-all active:scale-95 ${
+                         activeFilter === f.id ? 'builder-cta-primary' : 'builder-focus-pill'
                        }`}
                      >
-                       {f.label}
+                       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl transition-colors ${
+                         activeFilter === f.id ? 'bg-white/18 text-white' : 'bg-white/70 text-[#0071e3]'
+                       }`}>
+                         {builderMode === 'workout'
+                           ? <ExerciseIcon section={f.id === 'all' ? 'fullbody' : f.id} className="h-6 w-6" />
+                           : <FoodIcon category={f.id === 'all' ? 'protein' : f.id} className="h-5 w-5" />}
+                       </span>
+                       <span className="flex min-w-0 flex-col">
+                         <span className="truncate text-[10px] font-black uppercase tracking-[0.12em]">{f.label}</span>
+                         <span className={`text-[8px] font-bold uppercase tracking-[0.16em] ${
+                           activeFilter === f.id ? 'text-white/72' : 'text-[#7b8797]'
+                         }`}>
+                           {f.id === 'all' ? 'All' : builderMode === 'workout' ? 'Muscle' : 'Meal'}
+                         </span>
+                       </span>
                      </button>
                    ))}
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
+              <div className="-mx-1 flex-1 overflow-y-auto space-y-3 px-1 pr-1 custom-scrollbar pb-28 sm:pr-2">
                 {isCustomWorkoutFilter && (
-                  <div className="bg-white/76 backdrop-blur-md border border-white/50 rounded-2xl p-4 space-y-3 shadow-[0_16px_24px_-20px_rgba(20,30,48,0.7)]">
+                  <div className="builder-apple-card p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#254667]">Custom exercise</p>
                       <ExerciseIcon section="custom" className="w-6 h-6" />
@@ -779,41 +797,41 @@ export default function MobileFirstBuilder() {
                       value={customExerciseName}
                       onChange={(e) => setCustomExerciseName(e.target.value)}
                       placeholder="Exercise name"
-                      className="w-full bg-white/80 border border-white/60 rounded-xl py-2.5 px-3 text-xs font-bold text-[#102033] placeholder:text-[#5b6472] focus:outline-none focus:border-[#35577d]"
+                      className="builder-apple-input w-full py-2.5 px-3 text-xs font-bold text-[#102033] placeholder:text-[#5b6472] focus:outline-none"
                     />
 
                     <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1">
                         <p className="text-[8px] font-black uppercase text-[#5b6472]">Sets</p>
-                        <div className="flex items-center justify-between bg-white/70 border border-white/60 rounded-lg px-2 py-1.5">
-                          <button onClick={() => setCustomSeries(v => Math.max(1, v - 1))} className="text-[#254667]"><Minus size={14} /></button>
+                        <div className="builder-apple-tile flex items-center justify-between px-2 py-1.5">
+                          <button onClick={() => setCustomSeries(v => Math.max(1, v - 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
                           <span className="text-xs font-black text-[#102033]">{customSeries}</span>
-                          <button onClick={() => setCustomSeries(v => Math.min(20, v + 1))} className="text-[#254667]"><Plus size={14} /></button>
+                          <button onClick={() => setCustomSeries(v => Math.min(20, v + 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                         </div>
                       </div>
 
                       <div className="space-y-1">
                         <p className="text-[8px] font-black uppercase text-[#5b6472]">Reps</p>
-                        <div className="flex items-center justify-between bg-white/70 border border-white/60 rounded-lg px-2 py-1.5">
-                          <button onClick={() => setCustomReps(v => Math.max(1, v - 1))} className="text-[#254667]"><Minus size={14} /></button>
+                        <div className="builder-apple-tile flex items-center justify-between px-2 py-1.5">
+                          <button onClick={() => setCustomReps(v => Math.max(1, v - 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
                           <span className="text-xs font-black text-[#102033]">{customReps}</span>
-                          <button onClick={() => setCustomReps(v => Math.min(100, v + 1))} className="text-[#254667]"><Plus size={14} /></button>
+                          <button onClick={() => setCustomReps(v => Math.min(100, v + 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                         </div>
                       </div>
 
                       <div className="space-y-1">
                         <p className="text-[8px] font-black uppercase text-[#5b6472]">Weight</p>
-                        <div className="flex items-center justify-between bg-white/70 border border-white/60 rounded-lg px-2 py-1.5">
-                          <button onClick={() => setCustomWeight(v => Math.max(0, v - 2.5))} className="text-[#254667]"><Minus size={14} /></button>
+                        <div className="builder-apple-tile flex items-center justify-between px-2 py-1.5">
+                          <button onClick={() => setCustomWeight(v => Math.max(0, v - 2.5))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
                           <span className="text-xs font-black text-[#102033]">{customWeight}</span>
-                          <button onClick={() => setCustomWeight(v => Math.min(500, Number((v + 2.5).toFixed(1))))} className="text-[#254667]"><Plus size={14} /></button>
+                          <button onClick={() => setCustomWeight(v => Math.min(500, Number((v + 2.5).toFixed(1))))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                         </div>
                       </div>
                     </div>
 
                     <button
                       onClick={addCustomExercise}
-                      className="w-full bg-[#141e30] text-white rounded-xl py-2.5 text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-transform"
+                      className="builder-cta-primary w-full py-2.5 text-[10px] font-black uppercase tracking-widest"
                     >
                       Add custom exercise
                     </button>
@@ -826,27 +844,31 @@ export default function MobileFirstBuilder() {
                     <p className="text-[10px] font-black uppercase tracking-[0.3em]">No results</p>
                   </div>
                 ) : (
-                  filteredItems.map(item => (
+                  filteredItems.map((item, index) => (
                     <motion.div
                       key={`${builderMode}-${item.id}`}
+                      initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.34, delay: Math.min(index * 0.018, 0.16), ease: [0.22, 1, 0.36, 1] }}
+                      whileTap={{ scale: 0.985 }}
                       onClick={() => {
                         builderMode === 'workout' ? addExercise(item as any) : addFood(item as any);
                         toast.success(`${item.name} added`);
                       }}
-                      className="bg-white/72 backdrop-blur-md border border-white/45 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-all group cursor-pointer hover:bg-white/80 shadow-[0_16px_24px_-20px_rgba(20,30,48,0.7)]"
+                      className="builder-apple-card flex min-h-[82px] cursor-pointer items-center justify-between gap-3 p-3.5 transition-all group hover:-translate-y-0.5 sm:min-h-0 sm:p-4"
                     >
-                      <div className="flex items-center gap-4">
-                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${builderMode === 'workout' ? 'bg-white/45 border border-white/50' : 'bg-white/45 border border-white/55'}`}>
-                           {builderMode === 'workout' ? <ExerciseIcon section={(item as any).section} className="w-10 h-10" /> : <FoodIcon category={(item as any).category} name={item.name} className="w-6 h-6" />}
+                      <div className="flex min-w-0 items-center gap-3.5">
+                         <div className="builder-apple-tile flex h-[60px] w-[60px] shrink-0 items-center justify-center transition-colors sm:h-14 sm:w-14">
+                           {builderMode === 'workout' ? <ExerciseIcon section={(item as any).section} className="w-11 h-11 sm:w-10 sm:h-10" /> : <FoodIcon category={(item as any).category} name={item.name} className="w-7 h-7 sm:w-6 sm:h-6" />}
                          </div>
-                         <div>
-                           <p className="font-black italic uppercase text-sm text-[#0f1b2d] group-active:text-[#0f1b2d]">{item.name}</p>
+                         <div className="min-w-0">
+                           <p className="line-clamp-2 font-black italic uppercase text-[13px] leading-tight text-[#0f1b2d] group-active:text-[#0f1b2d] sm:text-sm">{item.name}</p>
                            <p className="text-[8px] font-bold text-[#3f556f] uppercase tracking-widest">
                              {builderMode === 'workout' ? (item as any).section : (item as any).category}
                            </p>
                          </div>
                       </div>
-                      <button className="w-8 h-8 bg-white/65 border border-white/50 rounded-full flex items-center justify-center text-[#254667] group-active:bg-[#141e30] group-active:text-white transition-colors">
+                      <button className="builder-icon-button flex h-10 w-10 shrink-0 items-center justify-center group-active:bg-[#141e30] group-active:text-white sm:h-8 sm:w-8">
                          <Plus size={18} />
                       </button>
                     </motion.div>
@@ -870,28 +892,28 @@ export default function MobileFirstBuilder() {
               </div>
 
               <div className="grid grid-cols-4 gap-2">
-                  <div className="p-3 bg-[#f3faf5] rounded-xl border border-[#e6f4ea] text-center shadow-sm">
+                  <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
                       <FoodIcon category="carbs" name="rice" className="w-4 h-4" />
                     </div>
                     <p className="text-[7px] font-black text-[#5b6472] uppercase">Kcal</p>
                     <p className="text-sm font-black text-[#28623a]">{Math.round(totalMacros.calories)}</p>
                   </div>
-                  <div className="p-3 bg-[#f3faf5] rounded-xl border border-[#e6f4ea] text-center shadow-sm">
+                  <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
                       <FoodIcon category="protein" name="egg" className="w-4 h-4" />
                     </div>
                     <p className="text-[7px] font-black text-[#6b1e23] uppercase">Prot</p>
                     <p className="text-sm font-black text-[#6b1e23]">{Math.round(totalMacros.protein)}g</p>
                   </div>
-                  <div className="p-3 bg-[#f3faf5] rounded-xl border border-[#e6f4ea] text-center shadow-sm">
+                  <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
                       <FoodIcon category="carbs" name="noodles" className="w-4 h-4" />
                     </div>
                     <p className="text-[7px] font-black text-[#35577d] uppercase">Carb</p>
                     <p className="text-sm font-black text-[#35577d]">{Math.round(totalMacros.carbs)}g</p>
                   </div>
-                  <div className="p-3 bg-[#f3faf5] rounded-xl border border-[#e6f4ea] text-center shadow-sm">
+                  <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
                       <FoodIcon category="fats" name="avocado" className="w-4 h-4" />
                     </div>
@@ -907,12 +929,12 @@ export default function MobileFirstBuilder() {
                     <div className="space-y-2">
                       <p className="text-sm font-black uppercase tracking-widest text-[#141e30]">No meals yet</p>
                       <p className="max-w-xs text-xs font-bold leading-relaxed text-[#5b6472]">Add foods if this routine includes nutrition. You can also share workout-only links.</p>
-                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('nutrition'); }} className="mt-2 rounded-xl bg-[#28623a] px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white">Add food</button>
+                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('nutrition'); }} className="builder-cta-primary mt-2 px-4 py-3 text-[10px] font-black uppercase tracking-widest">Add food</button>
                     </div>
                   </div>
                 ) : (
                   currentRoutine.foods.map(food => (
-                    <div key={food.id} className="bg-[#f3faf5] border border-[#e6f4ea] rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                    <div key={food.id} className="builder-apple-card flex items-center justify-between p-5">
                        <div className="space-y-1">
                           <div className="flex items-center gap-2 mb-1">
                              <FoodIcon category={food.category || 'all'} name={food.name} className="w-5 h-5" />
@@ -925,11 +947,11 @@ export default function MobileFirstBuilder() {
                           </div>
                        </div>
                         <div className="flex flex-col gap-3">
-                           <div className="flex items-center gap-3 bg-white rounded-xl p-2 border border-[#e6ecf2] shadow-sm">
-                              <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} className="p-1"><Minus size={16} /></button>
+                           <div className="builder-apple-tile flex items-center gap-3 p-2">
+                              <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Minus size={16} /></button>
                               <span className="text-xs font-black w-10 text-center">{food.quantity}g</span>
-                              <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} className="p-1"><Plus size={16} /></button>
-                              <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#e6ecf2] text-[#5b6472] hover:text-red-500"><Trash2 size={16} /></button>
+                              <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Plus size={16} /></button>
+                              <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#e6ecf2] text-[#5b6472] transition-colors hover:text-red-500"><Trash2 size={16} /></button>
                            </div>
                            <div className="relative">
                               <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#28623a] opacity-40" />
@@ -938,7 +960,7 @@ export default function MobileFirstBuilder() {
                                 placeholder="Note..."
                                 value={food.notes || ''}
                                 onChange={(e) => updateFood(food.id, { notes: e.target.value })}
-                                className="w-full bg-white/50 border border-[#e6ecf2] rounded-lg py-1.5 pl-8 pr-3 text-[10px] font-bold focus:outline-none focus:border-[#28623a] placeholder:italic"
+                                className="builder-apple-input w-full py-1.5 pl-8 pr-3 text-[10px] font-bold focus:outline-none placeholder:italic"
                               />
                            </div>
                         </div>
@@ -969,21 +991,21 @@ export default function MobileFirstBuilder() {
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                <div className="p-3 bg-[#eff4fa] rounded-xl border border-[#e6ecf2] text-center shadow-sm">
+                <div className="builder-apple-tile p-3 text-center">
                   <div className="mb-1 flex justify-center">
                     <ExerciseIcon section="fullbody" className="w-5 h-5" />
                   </div>
                   <p className="text-[7px] font-black text-[#5b6472] uppercase">Ejercicios</p>
                   <p className="text-sm font-black text-[#141e30]">{currentRoutine.exercises.length}</p>
                 </div>
-                <div className="p-3 bg-[#eff4fa] rounded-xl border border-[#e6ecf2] text-center shadow-sm">
+                <div className="builder-apple-tile p-3 text-center">
                   <div className="mb-1 flex justify-center">
                     <ExerciseIcon section="arms" className="w-5 h-5" />
                   </div>
                   <p className="text-[7px] font-black text-[#5b6472] uppercase">Sets</p>
                   <p className="text-sm font-black text-[#141e30]">{totalSets}</p>
                 </div>
-                <div className="p-3 bg-[#eff4fa] rounded-xl border border-[#e6ecf2] text-center shadow-sm">
+                <div className="builder-apple-tile p-3 text-center">
                   <div className="mb-1 flex justify-center">
                     <ExerciseIcon section="legs" className="w-5 h-5" />
                   </div>
@@ -1000,44 +1022,44 @@ export default function MobileFirstBuilder() {
                       <p className="text-sm font-black uppercase tracking-widest text-[#141e30]">Start with an exercise</p>
                       <p className="max-w-xs text-xs font-bold leading-relaxed text-[#5b6472]">Add items, preview the client view, then send the routine through WhatsApp.</p>
                       <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-center">
-                        <button onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }} className="rounded-xl bg-[#141e30] px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white">Add exercise</button>
-                        <button onClick={addSampleRoutine} className="rounded-xl border border-[#dbe5f0] bg-white px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[#141e30]">Use sample</button>
+                        <button onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }} className="builder-cta-primary px-4 py-3 text-[10px] font-black uppercase tracking-widest">Add exercise</button>
+                        <button onClick={addSampleRoutine} className="builder-cta-ghost px-4 py-3 text-[10px] font-black uppercase tracking-widest">Use sample</button>
                       </div>
                     </div>
                   </div>
                 ) : (
                   currentRoutine.exercises.map(ex => (
-                    <div key={ex.id} className="bg-white border border-[#e6ecf2] rounded-2xl p-5 space-y-5 shadow-sm">
+                    <div key={ex.id} className="builder-apple-card p-5 space-y-5">
                       <div className="flex justify-between items-center">
                          <div className="flex items-center gap-3">
                             <ExerciseIcon section={ex.section} className="w-8 h-8" />
                             <h4 className="font-black italic uppercase text-xs tracking-tight">{ex.name}</h4>
                          </div>
-                         <button onClick={() => removeExercise(ex.id)} className="p-2 -mr-2 text-[#5b6472] hover:text-red-500"><X size={16} /></button>
+                         <button onClick={() => removeExercise(ex.id)} className="builder-icon-button -mr-2 flex h-8 w-8 items-center justify-center hover:text-red-500"><X size={16} /></button>
                       </div>
                       <div className="grid grid-cols-3 gap-4">
                          <div className="space-y-1">
                             <label className="text-[7px] font-black text-[#5b6472] uppercase">Sets</label>
-                            <div className="flex items-center justify-between bg-[#f7f9fc] rounded-lg p-2 border border-[#e6ecf2]">
-                               <button onClick={() => updateExercise(ex.id, { sets: Math.max(1, ex.sets - 1) })}><Minus size={14} /></button>
+                            <div className="builder-apple-tile flex items-center justify-between p-2">
+                               <button onClick={() => updateExercise(ex.id, { sets: Math.max(1, ex.sets - 1) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
                                <span className="text-xs font-black">{ex.sets}</span>
-                               <button onClick={() => updateExercise(ex.id, { sets: ex.sets + 1 })}><Plus size={14} /></button>
+                               <button onClick={() => updateExercise(ex.id, { sets: ex.sets + 1 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                             </div>
                          </div>
                          <div className="space-y-1">
                             <label className="text-[7px] font-black text-[#5b6472] uppercase">Reps</label>
-                            <div className="flex items-center justify-between bg-[#f7f9fc] rounded-lg p-2 border border-[#e6ecf2]">
-                               <button onClick={() => updateExercise(ex.id, { reps: Math.max(1, ex.reps - 1) })}><Minus size={14} /></button>
+                            <div className="builder-apple-tile flex items-center justify-between p-2">
+                               <button onClick={() => updateExercise(ex.id, { reps: Math.max(1, ex.reps - 1) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
                                <span className="text-xs font-black">{ex.reps}</span>
-                               <button onClick={() => updateExercise(ex.id, { reps: ex.reps + 1 })}><Plus size={14} /></button>
+                               <button onClick={() => updateExercise(ex.id, { reps: ex.reps + 1 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                             </div>
                          </div>
                          <div className="space-y-1">
                             <label className="text-[7px] font-black text-[#5b6472] uppercase">kg</label>
-                            <div className="flex items-center justify-between bg-[#f7f9fc] rounded-lg p-2 border border-[#e6ecf2]">
-                               <button onClick={() => updateExercise(ex.id, { weight: Math.max(0, ex.weight - 2.5) })}><Minus size={14} /></button>
+                            <div className="builder-apple-tile flex items-center justify-between p-2">
+                               <button onClick={() => updateExercise(ex.id, { weight: Math.max(0, ex.weight - 2.5) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
                                <span className="text-xs font-black">{ex.weight}</span>
-                               <button onClick={() => updateExercise(ex.id, { weight: ex.weight + 2.5 })}><Plus size={14} /></button>
+                               <button onClick={() => updateExercise(ex.id, { weight: ex.weight + 2.5 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                             </div>
                          </div>
                       </div>
@@ -1048,7 +1070,7 @@ export default function MobileFirstBuilder() {
                           placeholder="Note (rest, tempo, cues...)"
                           value={ex.notes || ''}
                           onChange={(e) => updateExercise(ex.id, { notes: e.target.value })}
-                          className="w-full bg-[#f7f9fc] border border-[#e6ecf2] rounded-lg py-2 pl-8 pr-3 text-[10px] font-bold focus:outline-none focus:border-[#35577d] placeholder:italic"
+                          className="builder-apple-input w-full py-2 pl-8 pr-3 text-[10px] font-bold focus:outline-none placeholder:italic"
                         />
                       </div>
                     </div>
@@ -1071,7 +1093,7 @@ export default function MobileFirstBuilder() {
               className="h-full overflow-y-auto p-6 pb-52"
             >
               <div className="w-full max-w-3xl mx-auto space-y-6">
-                <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 shadow-sm">
+                <div className="builder-apple-card p-5">
                   <p className="text-[10px] font-black uppercase tracking-wide text-[#28623a]">
                     {hasRoutineItems ? 'Ready to share' : 'Nothing to share yet'}
                   </p>
@@ -1113,7 +1135,7 @@ export default function MobileFirstBuilder() {
                   </div>
                   <button
                     onClick={() => setActiveTab('build')}
-                    className="rounded-xl border border-[#e6ecf2] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#141e30]"
+                    className="builder-cta-ghost px-4 py-2 text-[10px] font-black uppercase tracking-widest"
                   >
                     Edit
                   </button>
@@ -1178,7 +1200,7 @@ export default function MobileFirstBuilder() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowCustomize(false)}
-              className="fixed inset-0 z-40 bg-[#141e30]/18 backdrop-blur-[2px]"
+              className="fixed inset-0 z-40 bg-[#141e30]/10 backdrop-blur-md"
               aria-hidden="true"
             />
             <motion.aside
@@ -1187,13 +1209,13 @@ export default function MobileFirstBuilder() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 48, opacity: 0 }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] border border-[#dbe5f0] bg-white shadow-[0_-24px_70px_-36px_rgba(20,30,48,0.65)] sm:inset-y-4 sm:right-4 sm:left-auto sm:h-auto sm:max-w-[380px] sm:rounded-[2rem]"
+              className="builder-glass-shell fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] sm:inset-y-4 sm:right-4 sm:left-auto sm:h-auto sm:max-w-[380px] sm:rounded-[2rem]"
               aria-label="Share settings"
             >
             <div className="flex justify-center pt-2 sm:hidden" aria-hidden="true">
               <div className="h-1.5 w-12 rounded-full bg-[#dbe5f0]" />
             </div>
-            <div className="flex items-start justify-between gap-3 border-b border-[#e6ecf2] px-4 pb-4 pt-3 sm:p-5">
+            <div className="flex items-start justify-between gap-3 border-b border-white/70 px-4 pb-4 pt-3 sm:p-5">
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <Palette className="h-4 w-4 text-[#35577d]" />
@@ -1201,7 +1223,7 @@ export default function MobileFirstBuilder() {
                 </div>
                 <p className="text-[11px] font-bold leading-snug text-[#5b6472] sm:text-xs sm:leading-relaxed">Brand, client view and delivery options.</p>
               </div>
-              <button onClick={() => setShowCustomize(false)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f7f9fc] transition-colors hover:bg-[#eff4fa]" aria-label="Close settings">
+              <button onClick={() => setShowCustomize(false)} className="builder-icon-button flex h-10 w-10 shrink-0 items-center justify-center" aria-label="Close settings">
                 <X className="h-4 w-4 text-[#35577d]" />
               </button>
             </div>
@@ -1216,9 +1238,9 @@ export default function MobileFirstBuilder() {
                     </button>
                   )}
                 </div>
-                <div className="rounded-3xl border border-[#e6ecf2] bg-[#f7f9fc] p-3 sm:p-4">
+                <div className="builder-apple-card p-3 sm:p-4">
                   <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#dbe5f0] bg-white p-1 sm:h-16 sm:w-16">
+                    <div className="builder-header-mark flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden p-1 sm:h-16 sm:w-16">
                       {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" /> : <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full rounded-lg object-cover" />}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -1230,7 +1252,7 @@ export default function MobileFirstBuilder() {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#dbe5f0] bg-white px-3 py-3 text-xs font-black uppercase tracking-wide text-[#141e30] transition-colors hover:bg-[#eff4fa]">
+                    <label className="builder-cta-ghost flex min-h-12 cursor-pointer items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-wide">
                       <ImageIcon className="h-3.5 w-3.5" /> Upload logo
                       <input type="file" accept="image/*" className="hidden" onChange={handleCatalogLogoUpload} />
                     </label>
@@ -1248,15 +1270,15 @@ export default function MobileFirstBuilder() {
                         setCatalogBgId(preset.id);
                         setCatalogBgImage(null);
                       }}
-                      className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${catalogBgId === preset.id && !catalogBgImage ? 'border-[#35577d] bg-[#eff4fa]' : 'border-[#e6ecf2] bg-white hover:bg-[#f7f9fc]'}`}
+                      className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${catalogBgId === preset.id && !catalogBgImage ? 'border-[#35577d] bg-[#eff4fa]' : ''}`}
                     >
-                      <span className="h-9 w-12 shrink-0 rounded-xl border border-white shadow-inner" style={preset.style} />
+                    <span className="h-9 w-12 shrink-0 rounded-2xl border border-white shadow-inner" style={preset.style} />
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-black text-[#141e30]">{preset.label}</span>
                         <span className="block text-xs font-bold text-[#5b6472]">Preview palette</span>
                       </span>
                       {catalogBgId === preset.id && !catalogBgImage && (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#35577d] text-white">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0071e3] text-white">
                           <Check className="h-3.5 w-3.5" />
                         </span>
                       )}
@@ -1264,9 +1286,9 @@ export default function MobileFirstBuilder() {
                   ))}
                 </div>
 
-                <label className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-3 transition-colors ${catalogBgImage ? 'border-[#35577d] bg-[#eff4fa] text-[#35577d]' : 'border-[#e6ecf2] bg-white text-[#141e30] hover:bg-[#f7f9fc]'}`}>
+                <label className={`builder-cta-ghost flex cursor-pointer items-center justify-between gap-3 p-3 ${catalogBgImage ? 'border-[#35577d] bg-[#eff4fa] text-[#35577d]' : ''}`}>
                   <span className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-9 w-12 items-center justify-center rounded-xl bg-[#eff4fa]">
+                    <span className="builder-apple-tile flex h-9 w-12 items-center justify-center">
                       <ImageIcon className="h-4 w-4" />
                     </span>
                     <span className="min-w-0">
@@ -1279,7 +1301,7 @@ export default function MobileFirstBuilder() {
                 </label>
 
                 {catalogBgImage && (
-                  <button onClick={() => { setCatalogBgImage(null); setCatalogBgId('clean'); }} className="w-full rounded-xl border border-[#dbe5f0] px-3 py-2 text-xs font-black uppercase tracking-wide text-[#6b1e23] transition-colors hover:bg-[#fff4f4]">
+                  <button onClick={() => { setCatalogBgImage(null); setCatalogBgId('clean'); }} className="builder-cta-ghost w-full px-3 py-2 text-xs font-black uppercase tracking-wide text-[#6b1e23] hover:bg-[#fff4f4]">
                     Remove image
                   </button>
                 )}
@@ -1287,14 +1309,14 @@ export default function MobileFirstBuilder() {
 
               <section className="space-y-3">
                 <p className="text-[10px] font-black uppercase tracking-wide text-[#5b6472]">Share</p>
-                <div className="rounded-2xl border border-[#e6ecf2] bg-[#f7f9fc] p-4">
+                <div className="builder-apple-card p-4">
                   <p className="truncate text-sm font-black text-[#141e30]">{routineDisplayName}</p>
                   <p className="mt-1 text-xs font-bold text-[#5b6472]">{routineItemCount} items ready</p>
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <button
                       onClick={handleCopyShareLink}
                       disabled={!hasRoutineItems}
-                      className="flex items-center justify-center gap-2 rounded-xl border border-[#dbe5f0] bg-white px-3 py-3 text-xs font-black uppercase tracking-wide text-[#141e30] disabled:opacity-45"
+                      className="builder-cta-ghost flex items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-wide"
                     >
                       <Copy className="h-3.5 w-3.5" />
                       Copy
@@ -1302,7 +1324,7 @@ export default function MobileFirstBuilder() {
                     <button
                       onClick={handleShareToWhatsApp}
                       disabled={!hasRoutineItems}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[#28623a] px-3 py-3 text-xs font-black uppercase tracking-wide text-white disabled:opacity-45"
+                      className="builder-cta-primary flex items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-wide"
                     >
                       <MessageCircle className="h-3.5 w-3.5" />
                       Send
@@ -1318,11 +1340,11 @@ export default function MobileFirstBuilder() {
 
       {activeTab === 'export' && (
         <div className="fixed bottom-[86px] left-0 right-0 z-50 px-4">
-          <div className="mx-auto grid max-w-md grid-cols-[1fr_2fr] gap-2 rounded-3xl border border-[#e6ecf2] bg-white/95 p-2 shadow-[0_-18px_42px_-28px_rgba(20,30,48,0.5)] backdrop-blur-xl">
+          <div className="builder-glass-shell mx-auto grid max-w-md grid-cols-[1fr_2fr] gap-2 rounded-[1.6rem] p-2">
             <button
               onClick={handleCopyShareLink}
               disabled={!hasRoutineItems}
-              className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe5f0] bg-white text-xs font-black uppercase tracking-wide text-[#141e30] disabled:opacity-45"
+              className="builder-cta-ghost flex h-12 items-center justify-center gap-2 text-xs font-black uppercase tracking-wide"
             >
               <Copy className="h-4 w-4" />
               Copy
@@ -1330,7 +1352,7 @@ export default function MobileFirstBuilder() {
             <button
               onClick={handleShareToWhatsApp}
               disabled={!hasRoutineItems}
-              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#28623a] text-xs font-black uppercase tracking-wide text-white shadow-[0_14px_28px_-18px_rgba(40,98,58,0.8)] disabled:opacity-45 disabled:shadow-none"
+              className="builder-cta-primary flex h-12 items-center justify-center gap-2 text-xs font-black uppercase tracking-wide"
             >
               <Share2 className="h-4 w-4" />
               WhatsApp
@@ -1359,7 +1381,7 @@ export default function MobileFirstBuilder() {
               className="fixed bottom-[92px] left-0 right-0 z-[60] px-4"
               aria-label="Primeros pasos del builder"
             >
-            <div className="mx-auto max-w-md overflow-hidden rounded-3xl border border-[#dbe5f0] bg-white p-3 shadow-[0_-22px_54px_-24px_rgba(20,30,48,0.45)]">
+            <div className="builder-glass-shell mx-auto max-w-md overflow-hidden rounded-[1.75rem] p-3">
               <div className="mb-3 flex items-center justify-between gap-3 px-1">
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#7895b2]">
@@ -1371,7 +1393,7 @@ export default function MobileFirstBuilder() {
                 </div>
                 <button
                   onClick={completeOnboarding}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#e6ecf2] bg-[#f7f9fc] text-[#5b6472] transition-colors hover:bg-white hover:text-[#141e30]"
+                  className="builder-icon-button flex h-9 w-9 shrink-0 items-center justify-center text-[#5b6472] hover:bg-white hover:text-[#141e30]"
                   aria-label="Cerrar guia inicial"
                 >
                   <X className="h-4 w-4" />
@@ -1388,14 +1410,14 @@ export default function MobileFirstBuilder() {
                       onClick={() => goToOnboardingStep(index)}
                       initial={false}
                       animate={{ opacity: isActive ? 1 : 0.78 }}
-                      className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
+                      className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${
                         isActive
                           ? 'border-[#b8cce0] bg-[#eff4fa] shadow-sm'
-                          : 'border-[#edf1f5] bg-white hover:bg-[#f7f9fc]'
+                          : 'border-[#edf1f5] bg-white'
                       }`}
                     >
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
-                        isActive ? 'bg-[#141e30] text-white' : 'bg-[#f7f9fc] text-[#35577d]'
+                        isActive ? 'bg-[#0071e3] text-white' : 'builder-apple-tile text-[#0071e3]'
                       }`}>
                         <OnboardingIcon type={step.icon} />
                       </div>
@@ -1425,7 +1447,7 @@ export default function MobileFirstBuilder() {
               <div className="mt-3 flex items-center justify-between gap-3">
                 <button
                   onClick={completeOnboarding}
-                  className="rounded-2xl px-3 py-3 text-[10px] font-black uppercase tracking-widest text-[#5b6472] transition-colors hover:bg-[#f7f9fc]"
+                  className="builder-cta-ghost px-3 py-3 text-[10px] font-black uppercase tracking-widest text-[#5b6472]"
                 >
                   Saltar
                 </button>
@@ -1434,14 +1456,14 @@ export default function MobileFirstBuilder() {
                     <span
                       key={step.title}
                       className={`h-1.5 rounded-full transition-all ${
-                        onboardingStep === index ? 'w-6 bg-[#141e30]' : 'w-1.5 bg-[#dbe5f0]'
+                        onboardingStep === index ? 'w-6 bg-[#0071e3]' : 'w-1.5 bg-[#dbe5f0]'
                       }`}
                     />
                   ))}
                 </div>
                 <button
                   onClick={advanceOnboarding}
-                  className="rounded-2xl bg-[#141e30] px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-[0_14px_28px_-18px_rgba(20,30,48,0.9)]"
+                  className="builder-cta-primary px-4 py-3 text-[10px] font-black uppercase tracking-widest"
                 >
                   {onboardingStep === ONBOARDING_STEPS.length - 1 ? 'Listo' : 'Siguiente'}
                 </button>
@@ -1453,12 +1475,12 @@ export default function MobileFirstBuilder() {
       </AnimatePresence>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 shrink-0 bg-gradient-to-t from-white via-white/95 to-transparent p-3" role="navigation">
-        <div className="mx-auto flex max-w-md items-center justify-between rounded-3xl border border-[#e6ecf2] bg-white/95 p-1.5 shadow-[0_-14px_32px_-24px_rgba(20,30,48,0.35)] backdrop-blur-3xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 shrink-0 bg-gradient-to-t from-white via-white/90 to-transparent p-3" role="navigation">
+        <div className="builder-glass-shell mx-auto flex max-w-md items-center justify-between rounded-[1.75rem] p-1.5">
             <button 
               onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }}
               aria-label="Add exercises"
-              className={`flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'catalog' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`builder-nav-button flex h-14 w-[72px] flex-col items-center justify-center gap-1 duration-300 ${activeTab === 'catalog' ? 'is-active' : 'text-[#35577d]'}`}
             >
               <img
                 src="/icons/fit-legacy-mark.svg"
@@ -1471,7 +1493,7 @@ export default function MobileFirstBuilder() {
             <button 
               onClick={() => setActiveTab('food')}
               aria-label={`View meals (${currentRoutine.foods.length} items)`}
-              className={`relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'food' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`builder-nav-button relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 duration-300 ${activeTab === 'food' ? 'is-active' : 'text-[#35577d]'}`}
             >
               <Apple size={18} />
               <span className="text-[8px] font-black uppercase tracking-wide">Meals</span>
@@ -1484,7 +1506,7 @@ export default function MobileFirstBuilder() {
             <button 
               onClick={() => setActiveTab('build')}
               aria-label={`View routine (${currentRoutine.exercises.length} exercises)`}
-              className={`relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'build' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`builder-nav-button relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 duration-300 ${activeTab === 'build' ? 'is-active' : 'text-[#35577d]'}`}
             >
               <ExerciseIcon section="fullbody" className="w-5 h-5 relative z-10" />
               <span className="text-[8px] font-black uppercase tracking-wide">Routine</span>
@@ -1497,7 +1519,7 @@ export default function MobileFirstBuilder() {
             <button 
               onClick={() => setActiveTab('calendar')}
               aria-label="Calendar and analytics"
-              className={`relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'calendar' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`builder-nav-button relative flex h-14 w-[72px] flex-col items-center justify-center gap-1 duration-300 ${activeTab === 'calendar' ? 'is-active' : 'text-[#35577d]'}`}
             >
               <CalendarDays size={18} />
               <span className="text-[8px] font-black uppercase tracking-wide">Calendar</span>
@@ -1510,7 +1532,7 @@ export default function MobileFirstBuilder() {
             <button 
               onClick={() => setActiveTab('export')}
               aria-label="Share routine"
-              className={`flex h-14 w-[72px] flex-col items-center justify-center gap-1 rounded-2xl transition-[background-color,color] duration-300 ${activeTab === 'export' ? 'bg-[#141e30] text-white' : 'text-[#35577d] hover:bg-[#f7f9fc] hover:text-[#141e30]'}`}
+              className={`builder-nav-button flex h-14 w-[72px] flex-col items-center justify-center gap-1 duration-300 ${activeTab === 'export' ? 'is-active' : 'text-[#35577d]'}`}
             >
               <img
                 src="/icons/fl-1.svg"

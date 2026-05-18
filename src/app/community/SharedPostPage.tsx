@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Trophy, Download, Apple } from 'lucide-react';
+import { SocialJoin } from '@fit-legacy/shared';
 import { supabase } from '@/lib/supabase';
 
 // Interfaces para tipado (Basadas en las de la app mobile)
@@ -160,6 +161,8 @@ export const SharedPostPage: React.FC = () => {
                 DESCARGAR EN APP STORE
               </a>
             </div>
+
+            <SocialJoin title="Únete" variant="dark" align="center" className="pt-2" />
           </div>
         </div>
       </motion.div>

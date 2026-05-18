@@ -74,84 +74,84 @@ type PreviewTheme = {
 
 const themes: Record<'clean' | 'mist' | 'navy' | 'forest' | 'ember' | 'routine' | 'meal' | 'mixed', PreviewTheme> = {
   clean: {
-    background: '#f5f7fb',
-    surface: '#ffffff',
-    mutedSurface: '#eef3f8',
-    border: '#d9e3ee',
+    background: 'radial-gradient(circle at 18% 0%, rgba(0,113,227,0.09), transparent 34%), linear-gradient(180deg, #ffffff 0%, #f5f9fd 100%)',
+    surface: 'rgba(255,255,255,0.76)',
+    mutedSurface: 'rgba(235,244,252,0.84)',
+    border: 'rgba(210,220,232,0.78)',
     text: '#172033',
     mutedText: '#647083',
-    accent: '#254667',
-    accentSoft: '#e6eef7',
+    accent: '#0071e3',
+    accentSoft: 'rgba(0,113,227,0.1)',
   },
   mist: {
-    background: '#edf6fb',
-    surface: '#ffffff',
-    mutedSurface: '#e1eef7',
-    border: '#c6d9e8',
+    background: 'linear-gradient(180deg, #f8fcff 0%, #edf7ff 100%)',
+    surface: 'rgba(255,255,255,0.76)',
+    mutedSurface: 'rgba(225,238,247,0.84)',
+    border: 'rgba(198,217,232,0.76)',
     text: '#14283b',
     mutedText: '#607386',
-    accent: '#2f5f8f',
-    accentSoft: '#e1eef9',
+    accent: '#0071e3',
+    accentSoft: 'rgba(0,113,227,0.11)',
   },
   navy: {
-    background: '#eef3f8',
-    surface: '#ffffff',
-    mutedSurface: '#e4ecf5',
-    border: '#cbd8e8',
+    background: 'linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%)',
+    surface: 'rgba(255,255,255,0.78)',
+    mutedSurface: 'rgba(228,236,245,0.86)',
+    border: 'rgba(203,216,232,0.78)',
     text: '#101827',
     mutedText: '#5d6b7d',
-    accent: '#275f96',
-    accentSoft: '#e0edf8',
+    accent: '#0071e3',
+    accentSoft: 'rgba(0,113,227,0.11)',
   },
   forest: {
-    background: '#eff8f1',
-    surface: '#ffffff',
-    mutedSurface: '#e2f0e6',
-    border: '#c6dfce',
+    background: 'linear-gradient(180deg, #fbfffc 0%, #eef8f1 100%)',
+    surface: 'rgba(255,255,255,0.78)',
+    mutedSurface: 'rgba(226,240,230,0.86)',
+    border: 'rgba(198,223,206,0.78)',
     text: '#14241a',
     mutedText: '#637466',
     accent: '#28623a',
     accentSoft: '#e2f0e6',
   },
   ember: {
-    background: '#fff4ef',
-    surface: '#ffffff',
-    mutedSurface: '#f8e5dc',
-    border: '#edcaba',
+    background: 'linear-gradient(180deg, #fffdfb 0%, #fff3ee 100%)',
+    surface: 'rgba(255,255,255,0.78)',
+    mutedSurface: 'rgba(248,229,220,0.86)',
+    border: 'rgba(237,202,186,0.78)',
     text: '#2a1813',
     mutedText: '#80685f',
     accent: '#a84f36',
     accentSoft: '#f7e3da',
   },
   routine: {
-    background: '#f6f7fb',
-    surface: '#ffffff',
-    mutedSurface: '#edf1f6',
-    border: '#dbe3ee',
+    background: 'radial-gradient(circle at 18% 0%, rgba(0,113,227,0.09), transparent 34%), linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%)',
+    surface: 'rgba(255,255,255,0.78)',
+    mutedSurface: 'rgba(237,241,246,0.86)',
+    border: 'rgba(219,227,238,0.78)',
     text: '#141e30',
     mutedText: '#657184',
-    accent: '#35577d',
-    accentSoft: '#e6edf5',
+    accent: '#0071e3',
+    accentSoft: 'rgba(0,113,227,0.1)',
   },
   meal: {
-    background: '#f1f8f3',
-    surface: '#ffffff',
-    mutedSurface: '#e5f1e8',
-    border: '#cfe3d4',
+    background: 'linear-gradient(180deg, #ffffff 0%, #f1f8f3 100%)',
+    surface: 'rgba(255,255,255,0.78)',
+    mutedSurface: 'rgba(229,241,232,0.86)',
+    border: 'rgba(207,227,212,0.78)',
     text: '#14231a',
     mutedText: '#657568',
     accent: '#28623a',
     accentSoft: '#e3f0e7',
   },
   mixed: {
-    background: '#f4f7fb',
-    surface: '#ffffff',
-    mutedSurface: '#e9eff6',
-    border: '#d5e0ec',
+    background: 'radial-gradient(circle at 18% 0%, rgba(0,113,227,0.08), transparent 34%), linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%)',
+    surface: 'rgba(255,255,255,0.78)',
+    mutedSurface: 'rgba(233,239,246,0.86)',
+    border: 'rgba(213,224,236,0.78)',
     text: '#142033',
     mutedText: '#637083',
-    accent: '#315f8e',
-    accentSoft: '#e4eef8',
+    accent: '#0071e3',
+    accentSoft: 'rgba(0,113,227,0.1)',
   },
 };
 
@@ -203,13 +203,13 @@ export function WirCanvasPreview({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="w-full overflow-hidden rounded-3xl border shadow-[0_20px_55px_-35px_rgba(20,30,48,0.45)]"
+      className="w-full overflow-hidden rounded-[2rem] border shadow-[0_26px_70px_-46px_rgba(20,30,48,0.5)] backdrop-blur-2xl"
       style={{ background: theme.background, borderColor: theme.border, color: theme.text }}
     >
-      <div className="border-b px-5 py-4" style={{ borderColor: theme.border, background: theme.surface }}>
+      <div className="border-b px-5 py-4 backdrop-blur-2xl" style={{ borderColor: theme.border, background: theme.surface }}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border shadow-[0_12px_24px_-20px_rgba(20,30,48,0.45)]" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
               <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0">
@@ -218,7 +218,7 @@ export function WirCanvasPreview({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-extrabold" style={{ background: theme.accentSoft, color: theme.accent }}>
+          <div className="flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-extrabold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)]" style={{ background: theme.accentSoft, color: theme.accent }}>
             {templateIcon}
             {templateLabel}
           </div>
@@ -254,7 +254,7 @@ export function WirCanvasPreview({
           )}
         </div>
 
-        <div className="rounded-2xl border p-4" style={{ borderColor: theme.border, background: theme.surface }}>
+        <div className="rounded-[1.35rem] border p-4 backdrop-blur-xl shadow-[0_16px_34px_-30px_rgba(20,30,48,0.38)]" style={{ borderColor: theme.border, background: theme.surface }}>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-extrabold uppercase tracking-wide" style={{ color: theme.mutedText }}>Progreso</span>
             <span className="text-sm font-extrabold" style={{ color: theme.accent }}>{progress}%</span>
@@ -265,7 +265,7 @@ export function WirCanvasPreview({
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.35 }}
               className="h-full rounded-full"
-              style={{ background: theme.accent }}
+              style={{ background: `linear-gradient(90deg, #72c7ff, ${theme.accent}, #6dd6ff)` }}
             />
           </div>
         </div>
@@ -308,7 +308,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, unit, icon, theme }: StatCardProps) {
   return (
-    <div className="rounded-2xl border p-3" style={{ borderColor: theme.border, background: theme.surface }}>
+    <div className="rounded-[1.35rem] border p-3 backdrop-blur-xl shadow-[0_14px_30px_-28px_rgba(20,30,48,0.34)]" style={{ borderColor: theme.border, background: theme.surface }}>
       <div className="mb-2 flex items-center gap-2" style={{ color: theme.accent }}>
         {icon}
         <span className="text-[10px] font-extrabold uppercase tracking-wide" style={{ color: theme.mutedText }}>{label}</span>
@@ -340,7 +340,7 @@ function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, 
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: theme.accentSoft, color: theme.accent }}>
+        <div className="flex h-8 w-8 items-center justify-center rounded-2xl" style={{ background: theme.accentSoft, color: theme.accent }}>
           {icon}
         </div>
         <h2 className="text-sm font-extrabold uppercase tracking-wide" style={{ color: theme.text }}>{title}</h2>
@@ -363,7 +363,7 @@ function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, 
               tabIndex={0}
               role="checkbox"
               aria-checked={isDone}
-              className="cursor-pointer rounded-2xl border p-3 outline-none transition-transform active:scale-[0.99] focus-visible:ring-2"
+              className="cursor-pointer rounded-[1.35rem] border p-3 outline-none transition-all hover:-translate-y-0.5 active:scale-[0.99] focus-visible:ring-2"
               style={{
                 borderColor: isDone ? '#9bd2b0' : theme.border,
                 background: isDone ? '#eef9f1' : theme.surface,
@@ -372,7 +372,7 @@ function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, 
             >
               <div className="flex items-start gap-3">
                 <div
-                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2"
+                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-xl border-2"
                   style={{
                     borderColor: isDone ? '#2f9d55' : theme.border,
                     background: isDone ? '#2f9d55' : theme.mutedSurface,
@@ -416,7 +416,7 @@ function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, 
                   </div>
 
                   {item.notes && (
-                    <div className="mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-xs font-semibold leading-relaxed" style={{ background: theme.mutedSurface, color: theme.mutedText }}>
+                    <div className="mt-2 flex items-start gap-2 rounded-2xl px-3 py-2 text-xs font-semibold leading-relaxed" style={{ background: theme.mutedSurface, color: theme.mutedText }}>
                       <MessageSquare size={13} className="mt-0.5 shrink-0" style={{ color: theme.accent }} />
                       <p>{item.notes}</p>
                     </div>
