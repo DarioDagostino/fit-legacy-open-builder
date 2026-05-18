@@ -1,0 +1,25 @@
+{
+  "id": "fit-legacy-builder-mobile-first",
+  "version": 1,
+  "defaultViewport": "mobile",
+  "principle": "Mobile-first is the source experience. Desktop wraps it with professional side panels instead of replacing the workflow.",
+  "shell": {
+    "maxWidth": "430px",
+    "bottomNavigation": true,
+    "settingsDrawer": "bottom-sheet",
+    "primaryFlow": ["catalog", "meals", "routine", "calendar", "share"]
+  },
+  "tabs": [
+    { "id": "catalog", "label": "Add", "description": "Search exercises and quick-add to the routine." },
+    { "id": "food", "label": "Meals", "description": "Adjust foods, calories and macros." },
+    { "id": "build", "label": "Routine", "description": "Edit sets, reps, load and notes." },
+    { "id": "calendar", "label": "Calendar", "description": "Review tracking and analytics." },
+    { "id": "export", "label": "Share", "description": "Preview the client canvas and send the link." }
+  ],
+  "desktopWrap": {
+    "enabled": true,
+    "columns": ["tools", "mobile-workspace", "routine-preview"],
+    "leftPanel": "navigation-and-filters",
+    "rightPanel": "live-routine-and-client-preview"
+  }
+}

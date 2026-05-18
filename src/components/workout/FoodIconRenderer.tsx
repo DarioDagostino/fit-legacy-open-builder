@@ -183,11 +183,20 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
   if (
     lowercaseName.includes('whey') ||
     lowercaseName.includes('proteina') ||
+    lowercaseName.includes('caseina') ||
     lowercaseName.includes('creatina') ||
     lowercaseName.includes('bcaa') ||
     lowercaseName.includes('eaa') ||
     lowercaseName.includes('amino') ||
     lowercaseName.includes('glutamina') ||
+    lowercaseName.includes('beta alanina') ||
+    lowercaseName.includes('citrulina') ||
+    lowercaseName.includes('pre entreno') ||
+    lowercaseName.includes('preentreno') ||
+    lowercaseName.includes('cafeina') ||
+    lowercaseName.includes('carnitina') ||
+    lowercaseName.includes('colageno') ||
+    lowercaseName.includes('mass gainer') ||
     lowercaseName.includes('multivit') ||
     lowercaseName.includes('omega') ||
     lowercaseName.includes('magnesio') ||
