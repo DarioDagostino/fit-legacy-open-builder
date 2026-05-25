@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  # Development: Hot reload with bind mounts
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: fit-legacy-builder-dev
+    ports:
+      - "5178:5178"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tailwind.config.js:/app/tailwind.config.js
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+    develop:
+      watch:
+        - path: ./src
+          action: rebuild
+        - path: ./package.json
+          action: rebuild
+
+  # Production: Optimized nginx
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fit-legacy-builder-prod
+    ports:
+      - "80:80"
