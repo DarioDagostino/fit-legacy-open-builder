@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 type FoodIconProps = {
   category?: string;
   name?: string;
@@ -198,81 +196,55 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
     }
     // Casein → caseina/
     if (lowercaseName.includes('caseina')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/caseina/caseina.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Caseína" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/caseina/caseina.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Caseína" />;
     }
     // Creatine → creatina/
     if (lowercaseName.includes('creatina')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/creatina/creatina_monohidrato.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Creatina" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/creatina/creatina_monohidrato.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Creatina" />;
     }
     // BCAA
     if (lowercaseName.includes('bcaa')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/bcaas/BCAAS.webp`} className={`${className} object-contain drop-shadow-sm`} alt="BCAA" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/bcaas/BCAAS.webp`} className={`${className} object-contain drop-shadow-sm`} alt="BCAA" />;
     }
     // EAA / Full Amino
     if (lowercaseName.includes('eaa') || lowercaseName.includes('amino')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/bcaas/FULL_AMINO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Aminoácidos" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/bcaas/FULL_AMINO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Aminoácidos" />;
     }
     // Glutamine
     if (lowercaseName.includes('glutamina')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/bcaas/GLUTAMINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Glutamina" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/bcaas/GLUTAMINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Glutamina" />;
     }
     // Beta Alanina
     if (lowercaseName.includes('beta alanina')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/bcaas/BETA_ALANINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Beta Alanina" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/bcaas/BETA_ALANINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Beta Alanina" />;
     }
     // Citrulina
     if (lowercaseName.includes('citrulina')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/bcaas/CITRULINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Citrulina" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/bcaas/CITRULINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Citrulina" />;
     }
     // Pre-workout / Caffeine → fat_burning/
     if (lowercaseName.includes('pre entreno') || lowercaseName.includes('preentreno') || lowercaseName.includes('cafeina')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/fat_burning/ignite_pre.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Pre-Entreno" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/fat_burning/ignite_pre.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Pre-Entreno" />;
     }
     // L-Carnitina → fat_burning/
     if (lowercaseName.includes('carnitina')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/fat_burning/L_CARNITINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="L-Carnitina" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/fat_burning/L_CARNITINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="L-Carnitina" />;
     }
     // Multivitamin → multivitaminicos/
     if (lowercaseName.includes('multivit')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/multivitaminicos/MULTIVITAMINICO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Multivitamínico" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/multivitaminicos/MULTIVITAMINICO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Multivitamínico" />;
     }
     // Omega / Vitamin / Electrolytes → multivitaminicos/
     if (lowercaseName.includes('omega') || lowercaseName.includes('electrolito') || lowercaseName.includes('vitamina')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/multivitaminicos/MULTIVITAMINICO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Multivitamínico" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/multivitaminicos/MULTIVITAMINICO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Multivitamínico" />;
     }
     // Magnesium → magnesio/
     if (lowercaseName.includes('magnesio')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/magnesio/magnesio.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Magnesio" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/magnesio/magnesio.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Magnesio" />;
     }
     // Collagen → colageno/
     if (lowercaseName.includes('colageno')) {
-      const [failed, setFailed] = useState(false);
-      if (failed) return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
-      return <img src={`${SUPP_PATH}/colageno/Colageno.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Colágeno" onError={() => setFailed(true)} />;
+      return <img src={`${SUPP_PATH}/colageno/Colageno.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Colágeno" />;
     }
     // Maltodextrin / Dextrose → carbohidratos/
     if (lowercaseName.includes('maltodextrina') || lowercaseName.includes('dextrosa')) {
