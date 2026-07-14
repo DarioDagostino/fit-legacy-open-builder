@@ -996,6 +996,31 @@ export default function MobileFirstBuilder() {
                     <Ghost size={48} />
                     <p className="text-[10px] font-black uppercase tracking-[0.3em]">No results</p>
                   </div>
+                ) : normalizeFilterId(activeFilter) === 'supplements' && builderMode === 'nutrition' ? (
+                  <div className="grid grid-cols-2 gap-3 pb-28">
+                    {filteredItems.map((item, index) => (
+                      <motion.div
+                        key={`${builderMode}-${item.id}`}
+                        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.34, delay: Math.min(index * 0.018, 0.16), ease: [0.22, 1, 0.36, 1] }}
+                        whileTap={{ scale: 0.985 }}
+                        onClick={() => { addFood(item as any); toast.success(`${item.name} added`); }}
+                        className="builder-apple-card flex cursor-pointer flex-col items-center gap-2 p-4 text-center transition-all group hover:-translate-y-0.5"
+                      >
+                        <div className="builder-apple-tile flex h-[120px] w-full items-center justify-center rounded-2xl transition-colors sm:h-[140px]">
+                          <FoodIcon category={(item as any).category} name={item.name} className="w-20 h-20 sm:w-24 sm:h-24" />
+                        </div>
+                        <div className="min-w-0 w-full">
+                          <p className="line-clamp-2 font-black italic uppercase text-xs leading-tight text-[#0f1b2d]">{item.name}</p>
+                          <p className="text-[8px] font-bold text-[#3f556f] uppercase tracking-widest mt-0.5">Suplemento</p>
+                        </div>
+                        <button className="builder-icon-button flex h-9 w-9 shrink-0 items-center justify-center group-active:bg-[#141e30] group-active:text-white">
+                          <Plus size={16} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
                 ) : (
                   filteredItems.map((item, index) => (
                     <motion.div
