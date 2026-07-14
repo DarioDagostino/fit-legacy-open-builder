@@ -435,7 +435,7 @@ export interface Food {
   carbs: number;       // grams per 100g
   fats: number;        // grams per 100g
   calories: number;    // kcal per 100g
-  category: 'protein' | 'carbs' | 'fats' | 'vegetables' | 'fruits';
+  category: 'protein' | 'carbs' | 'fats' | 'vegetables' | 'fruits' | 'supplements';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -536,6 +536,47 @@ const FRUITS: Food[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SUPPLEMENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SUPPLEMENTS: Food[] = [
+  { id: 'sup-1', name: 'Proteína Whey', protein: 24, carbs: 3, fats: 1, calories: 120, category: 'supplements' },
+  { id: 'sup-2', name: 'Creatina Monohidrato', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sup-6', name: 'Cafeína', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sup-clean-whey', name: 'Proteina Whey', protein: 25, carbs: 2, fats: 1.5, calories: 120, category: 'supplements' },
+  { id: 'sup-clean-vegan-protein', name: 'Proteina Vegana', protein: 22, carbs: 2, fats: 2, calories: 110, category: 'supplements' },
+  { id: 'sup-clean-creatine', name: 'Creatina Monohidrato', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sup-clean-bcaa', name: 'BCAA 2:1:1', protein: 5, carbs: 0, fats: 0, calories: 20, category: 'supplements' },
+  { id: 'sup-clean-eaa', name: 'Aminoacidos Esenciales EAA', protein: 8, carbs: 0, fats: 0, calories: 32, category: 'supplements' },
+  { id: 'sup-clean-glutamine', name: 'Glutamina', protein: 4, carbs: 0, fats: 0, calories: 16, category: 'supplements' },
+  { id: 'sup-clean-casein', name: 'Caseina Micelar', protein: 24, carbs: 3, fats: 0.5, calories: 115, category: 'supplements' },
+  { id: 'sup-clean-multivitamin', name: 'Multivitaminico', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sup-clean-omega3', name: 'Omega 3', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sup-clean-magnesium', name: 'Magnesio', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sup-clean-vitamin-d3', name: 'Vitamina D3', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sup-clean-electrolytes', name: 'Electrolitos', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'whey_protein', name: 'Whey Protein', protein: 24, carbs: 3, fats: 1, calories: 120, category: 'supplements' },
+  { id: 'creatine', name: 'Creatina', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'casein', name: 'Caseína Micelar', protein: 24, carbs: 3, fats: 0.5, calories: 115, category: 'supplements' },
+  { id: 'bcaa', name: 'BCAA (Polvo)', protein: 5, carbs: 0, fats: 0, calories: 20, category: 'supplements' },
+  { id: 'glutamine', name: 'Glutamina', protein: 4, carbs: 0, fats: 0, calories: 16, category: 'supplements' },
+  { id: 'pre_workout', name: 'Pre-Entreno', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'l_carnitine', name: 'L-Carnitina', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'multivitamin', name: 'Multivitamínico', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'omega3', name: 'Omega-3', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 's2', name: 'Whey Protein (Suero)', protein: 24, carbs: 3, fats: 1, calories: 120, category: 'supplements' },
+  { id: 's3', name: 'Proteína Vegana', protein: 22, carbs: 2, fats: 2, calories: 110, category: 'supplements' },
+  { id: 's6', name: 'BCAA 2:1:1', protein: 5, carbs: 0, fats: 0, calories: 20, category: 'supplements' },
+  { id: 's7', name: 'Vitamina D3', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 's9', name: 'Magnesio', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 's11', name: 'Pre-Entrenamiento', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sport-beta-alanine', name: 'Beta Alanina', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sport-citrulline', name: 'Citrulina Malato', protein: 0, carbs: 0, fats: 0, calories: 0, category: 'supplements' },
+  { id: 'sport-collagen', name: 'Colageno Hidrolizado', protein: 10, carbs: 0, fats: 0, calories: 40, category: 'supplements' },
+  { id: 'sport-mass-gainer', name: 'Mass Gainer', protein: 20, carbs: 60, fats: 2, calories: 340, category: 'supplements' },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // UNIFIED_FOODS EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -545,6 +586,7 @@ export const UNIFIED_FOODS = {
   fats: FAT_SOURCES,
   vegetables: VEGETABLES,
   fruits: FRUITS,
+  supplements: SUPPLEMENTS,
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
