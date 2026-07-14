@@ -1,0 +1,169 @@
+/* ── Builder boot splash ── */
+.builder-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #050507;
+  color: #f6f3ed;
+  user-select: none;
+}
+
+.builder-boot-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.builder-boot-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(80px);
+  opacity: 0.55;
+}
+
+.builder-boot-orb-cyan {
+  top: 50%;
+  left: 50%;
+  width: min(72vw, 420px);
+  height: min(72vw, 420px);
+  transform: translate(-50%, -54%);
+  background: radial-gradient(circle, rgba(0, 255, 255, 0.2) 0%, rgba(118, 232, 255, 0.1) 42%, transparent 72%);
+  animation: builderBootPulse 4.8s ease-in-out infinite;
+}
+
+.builder-boot-orb-teal {
+  bottom: -8%;
+  right: -6%;
+  width: min(56vw, 320px);
+  height: min(56vw, 320px);
+  background: radial-gradient(circle, rgba(0, 153, 153, 0.2) 0%, transparent 70%);
+  animation: builderBootPulseTeal 6.2s ease-in-out infinite;
+}
+
+.builder-boot-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.65) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.65) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at 50% 46%, black 18%, transparent 72%);
+}
+
+.builder-boot-stack {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: min(92vw, 360px);
+  text-align: center;
+}
+
+.builder-boot-logo-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 28px;
+}
+
+.builder-boot-logo-halo {
+  position: absolute;
+  inset: -18%;
+  border-radius: 28px;
+  background: radial-gradient(circle, rgba(118, 232, 255, 0.3) 0%, rgba(0, 255, 255, 0.08) 48%, transparent 72%);
+  filter: blur(8px);
+}
+
+.builder-boot-logo {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 42px rgba(118, 232, 255, 0.28));
+}
+
+.builder-boot-title {
+  margin: 0;
+  font-family: 'Bebas Neue', var(--font-display), sans-serif;
+  font-size: clamp(52px, 14vw, 72px);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  background: linear-gradient(165deg, #ffffff 0%, #c8f6ff 38%, #76e8ff 72%, #eee2bc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.builder-boot-tagline {
+  margin: 10px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.builder-boot-byline {
+  margin: 8px 0 0;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(238, 226, 188, 0.52);
+}
+
+.builder-boot-progress {
+  width: 120px;
+  height: 2px;
+  margin-top: 36px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.builder-boot-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(0, 153, 153, 0.35), #76e8ff 52%, #eee2bc 100%);
+  box-shadow: 0 0 18px rgba(118, 232, 255, 0.45);
+  transition: width 0.12s linear;
+}
+
+@keyframes builderBootPulse {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: translate(-50%, -54%) scale(1);
+  }
+
+  50% {
+    opacity: 0.68;
+    transform: translate(-50%, -54%) scale(1.06);
+  }
+}
+
+@keyframes builderBootPulseTeal {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.48;
+    transform: scale(1.08);
+  }
+}
