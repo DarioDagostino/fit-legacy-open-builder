@@ -1,14 +1,61 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MentorService, ChatMessage } from '@/lib/integrations/perplexity';
-import { Send, X, ShieldCheck, Sparkles } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { MentorService, ChatMessage, LegacitoMode, MODE_META } from '@/lib/integrations/perplexity';
+import { Send, X, Crosshair, SlidersHorizontal, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useBioLedgerStore } from '@/lib/bioledger-store';
+import { useWorkoutStore } from '@/lib/store';
+
+const MODE_ICONS: Record<LegacitoMode, React.ReactNode> = {
+  tecnico: <Crosshair className="w-3.5 h-3.5" />,
+  ajuste: <SlidersHorizontal className="w-3.5 h-3.5" />,
+  sargento: <Flame className="w-3.5 h-3.5" />,
+};
+
+const MODE_BORDER: Record<LegacitoMode, string> = {
+  tecnico: 'border-[#E0793C]',
+  ajuste: 'border-[#F2A468]',
+  sargento: 'border-[#8A2F14]',
+};
+
+const MODE_BG: Record<LegacitoMode, string> = {
+  tecnico: 'bg-[#E0793C]',
+  ajuste: 'bg-[#F2A468]',
+  sargento: 'bg-[#8A2F14]',
+};
 
 export const AiMentorChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [mode, setMode] = useState<LegacitoMode>('tecnico');
+  const [modeJustSwitched, setModeJustSwitched] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bioStats = useBioLedgerStore(s => s.stats);
+  const sessions = useBioLedgerStore(s => s.sessions);
+  const routine = useWorkoutStore(s => s.currentRoutine);
+
+  const athleteContext = useMemo(() => {
+    const lines: string[] = [];
+    if (bioStats) {
+      lines.push(`- Nivel: ${bioStats.level}`);
+      lines.push(`- XP total: ${bioStats.totalXp}`);
+      lines.push(`- Racha actual: ${bioStats.currentStreak} días`);
+      lines.push(`- Racha record: ${bioStats.longestStreak} días`);
+      lines.push(`- Sesiones totales: ${bioStats.totalSessions}`);
+      lines.push(`- Coincitos: ${bioStats.coincitos}`);
+    }
+    if (sessions?.length) {
+      const last = sessions[sessions.length - 1];
+      const daysSince = Math.floor((Date.now() - new Date(last.date).getTime()) / 86400000);
+      lines.push(`- Última sesión: ${daysSince === 0 ? 'hoy' : `hace ${daysSince} día${daysSince > 1 ? 's' : ''}`}`);
+    }
+    if (routine?.exercises?.length) {
+      lines.push(`- Ejercicios en rutina actual: ${routine.exercises.map(e => e.name).join(', ')}`);
+    }
+    if (!lines.length) return undefined;
+    return lines.join('\n');
+  }, [bioStats, sessions, routine]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -16,16 +63,24 @@ export const AiMentorChat: React.FC = () => {
     }
   }, [messages, isTyping]);
 
+  const handleModeSwitch = (newMode: LegacitoMode) => {
+    if (newMode === mode) return;
+    setMode(newMode);
+    setModeJustSwitched(true);
+    setTimeout(() => setModeJustSwitched(false), 2000);
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMsg: ChatMessage = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setInput('');
     setIsTyping(true);
 
     try {
-      const response = await MentorService.getMentorResponse([...messages, userMsg]);
+      const response = await MentorService.getMentorResponse(updatedMessages, mode, athleteContext);
       setMessages(prev => [...prev, { role: 'assistant', content: response }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: "Mis pensamientos están nublados. Inténtalo de nuevo, guerrero." }]);
@@ -36,84 +91,119 @@ export const AiMentorChat: React.FC = () => {
 
   return (
     <>
-      {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-tr from-[#0A0A0A] to-[#2A2A2A] flex items-center justify-center shadow-2xl hover:scale-110 transition-transform active:scale-95 z-50 border border-white/10"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#16130F] flex items-center justify-center shadow-2xl hover:scale-110 transition-transform active:scale-95 z-50 border border-[#E0793C]/40"
       >
-        <Sparkles className="text-white w-6 h-6" />
+        <Flame className="text-[#E0793C] w-6 h-6" />
       </button>
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 right-6 w-[350px] max-w-[90vw] h-[550px] rounded-[2rem] flex flex-col shadow-2xl z-50 overflow-hidden bg-white/95 backdrop-blur-2xl border border-black/5"
+            className="fixed bottom-24 right-6 w-[350px] max-w-[90vw] h-[580px] rounded-[2rem] flex flex-col shadow-2xl z-50 overflow-hidden bg-[#16130F] border border-[#2A2520]"
           >
             {/* Header */}
-            <div className="px-6 py-5 flex items-center justify-between border-b border-black/5 bg-white/50 backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <div className="bg-[#0A0A0A] p-2 rounded-full">
-                  <ShieldCheck className="text-white w-4 h-4" />
+            <div className="px-5 pt-5 pb-3 flex flex-col gap-3 bg-[#1E1A16]/60 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`p-1.5 rounded-full ${MODE_BG[mode]}`}>
+                    {MODE_ICONS[mode]}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#FAF5EC] tracking-tight leading-none text-sm">Legacito</h3>
+                    <p className="text-[9px] uppercase tracking-wider text-[#6E6558] font-semibold mt-0.5">{MODE_META[mode].title}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-[#0A0A0A] tracking-tight leading-none">Mentor AI</h3>
-                  <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mt-1">Legado en progreso</p>
-                </div>
+                <button onClick={() => setIsOpen(false)} className="text-[#6E6558] hover:text-[#FAF5EC] transition-colors p-1.5 hover:bg-[#2A2520] rounded-full">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button onClick={() => setIsOpen(false)} className="text-neutral-400 hover:text-[#0A0A0A] transition-colors p-2 hover:bg-black/5 rounded-full">
-                <X className="w-5 h-5" />
-              </button>
+
+              {/* Mode Selector */}
+              <div className="flex gap-1.5">
+                {(Object.keys(MODE_META) as LegacitoMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => handleModeSwitch(m)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase transition-all ${
+                      mode === m
+                        ? `${MODE_BG[m]} text-[#FAF5EC] shadow-lg`
+                        : 'bg-[#2A2520] text-[#6E6558] hover:text-[#FAF5EC] hover:bg-[#3A3228]'
+                    }`}
+                  >
+                    {MODE_ICONS[m]}
+                    {MODE_META[m].label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6">
-              {messages.length === 0 && (
-                <div className="text-center py-12 px-4 flex flex-col items-center justify-center h-full opacity-60">
-                  <Sparkles className="w-10 h-10 text-indigo-500/50 mb-4" />
-                  <p className="text-sm font-medium text-[#0A0A0A] mb-1">La disciplina es la base de la libertad.</p>
-                  <p className="text-xs text-neutral-500">¿En qué puedo orientarte hoy, atleta?</p>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-4">
+              {modeJustSwitched && (
+                <div className={`text-center py-2 px-4 rounded-xl border ${MODE_BORDER[mode]} bg-[#1E1A16]`}>
+                  <p className="text-[11px] font-medium text-[#FAF5EC]">Modo {MODE_META[mode].label} activado</p>
                 </div>
               )}
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] px-5 py-3 text-[15px] leading-relaxed shadow-sm ${
-                    msg.role === 'user' 
-                    ? 'bg-[#0A0A0A] text-white rounded-2xl rounded-tr-sm' 
-                    : 'bg-[#F3F2F8] text-[#0A0A0A] rounded-2xl rounded-tl-sm border border-black/5'
-                  }`}>
-                    {msg.content}
+
+              {messages.length === 0 && !modeJustSwitched && (
+                <div className="text-center py-10 px-4 flex flex-col items-center justify-center h-full">
+                  <div className={`p-3 rounded-full ${MODE_BG[mode]} mb-4`}>
+                    {MODE_ICONS[mode]}
                   </div>
+                  <p className="text-sm font-medium text-[#FAF5EC] mb-2">{MODE_META[mode].title}</p>
+                  <p className="text-xs text-[#6E6558] leading-relaxed">{MODE_META[mode].greeting}</p>
                 </div>
-              ))}
+              )}
+
+              {messages.map((msg, i) => {
+                const isUser = msg.role === 'user';
+                return (
+                  <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[88%] px-4 py-2.5 text-[14px] leading-relaxed ${
+                      isUser
+                        ? `${MODE_BG[mode]} text-[#FAF5EC] rounded-2xl rounded-tr-sm`
+                        : 'bg-[#2A2520] text-[#FAF5EC] rounded-2xl rounded-tl-sm border border-[#3A3228]'
+                    }`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                );
+              })}
+
               {isTyping && (
                 <div className="flex justify-start">
-                  <div className="bg-[#F3F2F8] px-5 py-4 rounded-2xl rounded-tl-sm border border-black/5 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="bg-[#2A2520] px-4 py-3 rounded-2xl rounded-tl-sm border border-[#3A3228] flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-[#6E6558] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-[#6E6558] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-[#6E6558] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               )}
             </div>
 
             {/* Input */}
-            <div className="p-4 pb-2 bg-white/80 backdrop-blur-md border-t border-black/5">
+            <div className="p-4 pb-2 bg-[#1E1A16]/80 backdrop-blur-md border-t border-[#2A2520]">
               <div className="relative flex items-center">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Dime qué necesitas..."
-                  className="w-full bg-[#F3F2F8] border border-black/5 rounded-full pl-5 pr-12 py-3.5 text-[15px] text-[#0A0A0A] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-inner"
+                  placeholder={
+                    mode === 'sargento' ? 'Decime, en qué andás...' :
+                    mode === 'ajuste' ? 'Cómo estás hoy?' :
+                    'Describime el ejercicio...'
+                  }
+                  className="w-full bg-[#2A2520] border border-[#3A3228] rounded-full pl-5 pr-12 py-3 text-[14px] text-[#FAF5EC] placeholder:text-[#6E6558] focus:outline-none focus:ring-2 focus:ring-[#E0793C]/30 transition-all shadow-inner"
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim()}
-                  className="absolute right-1.5 p-2 bg-[#0A0A0A] disabled:bg-neutral-300 text-white rounded-full hover:bg-neutral-800 transition-colors shadow-md"
+                  className={`absolute right-1.5 p-2 ${MODE_BG[mode]} disabled:bg-[#2A2520] text-[#FAF5EC] rounded-full hover:opacity-80 transition-all shadow-md disabled:opacity-40`}
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -121,9 +211,9 @@ export const AiMentorChat: React.FC = () => {
             </div>
 
             {/* Disclaimer */}
-            <div className="flex items-center justify-center gap-2 px-4 pb-3 text-[8px] font-medium tracking-[0.04em] text-neutral-400">
+            <div className="flex items-center justify-center gap-2 px-4 pb-3 text-[8px] font-medium tracking-[0.04em] text-[#6E6558]">
               <span className="flex items-center gap-1">
-                <span className="h-1 w-1 rounded-full bg-emerald-500/60" />
+                <span className={`h-1 w-1 rounded-full ${MODE_BG[mode]}`} />
                 Legacito activo
               </span>
               <span>·</span>
