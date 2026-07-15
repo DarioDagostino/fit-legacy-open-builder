@@ -101,7 +101,7 @@ export const AiMentorChat: React.FC = () => {
             </div>
 
             {/* Input */}
-            <div className="p-4 bg-white/80 backdrop-blur-md border-t border-black/5">
+            <div className="p-4 pb-2 bg-white/80 backdrop-blur-md border-t border-black/5">
               <div className="relative flex items-center">
                 <input
                   value={input}
@@ -118,6 +118,16 @@ export const AiMentorChat: React.FC = () => {
                   <Send className="w-4 h-4" />
                 </button>
               </div>
+            </div>
+
+            {/* Disclaimer */}
+            <div className="flex items-center justify-center gap-2 px-4 pb-3 text-[8px] font-medium tracking-[0.04em] text-neutral-400">
+              <span className="flex items-center gap-1">
+                <span className="h-1 w-1 rounded-full bg-emerald-500/60" />
+                Legacito activo
+              </span>
+              <span>·</span>
+              <span>IA puede cometer errores. Verifica las respuestas.</span>
             </div>
           </motion.div>
         )}
