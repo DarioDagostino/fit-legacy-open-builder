@@ -678,13 +678,6 @@ export default function MobileFirstBuilder() {
     reader.readAsDataURL(file);
   };
 
-  const catalogActiveBg = useMemo(() => {
-    if (catalogBgImage) {
-      return { background: `url(${catalogBgImage}) center/cover no-repeat` };
-    }
-    return CATALOG_BG_PRESETS.find(p => p.id === catalogBgId)?.style || CATALOG_BG_PRESETS[0].style;
-  }, [catalogBgId, catalogBgImage]);
-
   const completeOnboarding = useCallback(() => {
     localStorage.setItem(ONBOARDING_KEY, 'done');
     setShowOnboarding(false);
@@ -893,7 +886,6 @@ export default function MobileFirstBuilder() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="h-full flex flex-col gap-4 overflow-hidden rounded-[2rem] p-3 pt-3 sm:gap-6 sm:p-6"
-              style={catalogActiveBg}
             >
                {/* Internal Discovery Toggle */}
                <div className="builder-glass-shell relative flex h-[52px] items-center overflow-hidden rounded-[1.35rem] p-1 sm:h-14" role="tablist">

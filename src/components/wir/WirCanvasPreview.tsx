@@ -60,16 +60,85 @@ interface WirCanvasPreviewProps {
   isPreview?: boolean;
 }
 
-const THEME = {
-  background: '#16130F',
-  surface: '#FAF5EC',
-  mutedSurface: '#1E1912',
-  border: 'rgba(250,245,236,0.10)',
-  text: '#1E1A16',
-  mutedText: '#6E6558',
-  accent: '#E0793C',
-  accentSoft: 'rgba(224,121,60,0.12)',
-} as const;
+type CanvasTheme = {
+  background: string;
+  surface: string;
+  mutedSurface: string;
+  border: string;
+  text: string;
+  mutedText: string;
+  accent: string;
+  accentSoft: string;
+  glowFrom: string;
+  glowTo: string;
+};
+
+const THEMES: Record<string, CanvasTheme> = {
+  clean: {
+    background: '#16130F',
+    surface: '#FAF5EC',
+    mutedSurface: '#1E1912',
+    border: 'rgba(250,245,236,0.10)',
+    text: '#1E1A16',
+    mutedText: '#6E6558',
+    accent: '#E0793C',
+    accentSoft: 'rgba(224,121,60,0.12)',
+    glowFrom: 'rgba(224,121,60,0.06)',
+    glowTo: 'rgba(138,47,20,0.08)',
+  },
+  mist: {
+    background: '#16130F',
+    surface: '#FAF5EC',
+    mutedSurface: '#1E1912',
+    border: 'rgba(250,245,236,0.10)',
+    text: '#1E1A16',
+    mutedText: '#6E6558',
+    accent: '#7B8A9B',
+    accentSoft: 'rgba(123,138,155,0.12)',
+    glowFrom: 'rgba(123,138,155,0.06)',
+    glowTo: 'rgba(80,90,100,0.08)',
+  },
+  navy: {
+    background: '#16130F',
+    surface: '#FAF5EC',
+    mutedSurface: '#1E1912',
+    border: 'rgba(250,245,236,0.10)',
+    text: '#1E1A16',
+    mutedText: '#6E6558',
+    accent: '#4A7B9D',
+    accentSoft: 'rgba(74,123,157,0.12)',
+    glowFrom: 'rgba(74,123,157,0.06)',
+    glowTo: 'rgba(30,60,90,0.08)',
+  },
+  forest: {
+    background: '#16130F',
+    surface: '#FAF5EC',
+    mutedSurface: '#1E1912',
+    border: 'rgba(250,245,236,0.10)',
+    text: '#1E1A16',
+    mutedText: '#6E6558',
+    accent: '#7B9D6D',
+    accentSoft: 'rgba(123,157,109,0.12)',
+    glowFrom: 'rgba(123,157,109,0.06)',
+    glowTo: 'rgba(60,90,50,0.08)',
+  },
+  ember: {
+    background: '#16130F',
+    surface: '#FAF5EC',
+    mutedSurface: '#1E1912',
+    border: 'rgba(250,245,236,0.10)',
+    text: '#1E1A16',
+    mutedText: '#6E6558',
+    accent: '#C85A1C',
+    accentSoft: 'rgba(200,90,28,0.15)',
+    glowFrom: 'rgba(200,90,28,0.08)',
+    glowTo: 'rgba(138,47,20,0.12)',
+  },
+};
+
+function getTheme(palette?: string): CanvasTheme {
+  return THEMES[palette || 'clean'] || THEMES.clean;
+}
 
 const formatDisplayTitle = (value: string) => {
   const trimmed = value.trim();
@@ -82,6 +151,7 @@ const formatDisplayTitle = (value: string) => {
 
 export function WirCanvasPreview({
   template,
+  palette,
   title,
   exercises,
   foods,
@@ -89,6 +159,7 @@ export function WirCanvasPreview({
   onToggleItem = () => {},
   isPreview = false,
 }: WirCanvasPreviewProps) {
+  const theme = getTheme(palette);
   const totalMacros = useMemo(() => {
     return foods.reduce((acc, food) => ({
       calories: acc.calories + (Number(food.calories) || 0),
@@ -119,30 +190,30 @@ export function WirCanvasPreview({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
       className="w-full overflow-hidden rounded-[2rem] border shadow-[0_26px_70px_-46px_rgba(0,0,0,0.7)]"
-      style={{ background: THEME.background, borderColor: THEME.border }}
+      style={{ background: theme.background, borderColor: theme.border }}
     >
-      <div className="border-b px-5 py-4" style={{ borderColor: THEME.border, background: THEME.mutedSurface }}>
+      <div className="border-b px-5 py-4" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl" style={{ background: THEME.background }}>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl" style={{ background: theme.background }}>
               <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover opacity-80" />
             </div>
             <div className="min-w-0">
-              <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide" style={{ color: '#FAF5EC' }}>Fit Legacy</p>
-              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium" style={{ color: '#A79A87' }}>Routine link</p>
+              <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide text-[#FAF5EC]">Fit Legacy</p>
+              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#A79A87]">Routine link</p>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-wider bg-[#E0793C]/15 text-[#E0793C]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+          <div className="flex shrink-0 items-center rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-wider" style={{ background: theme.accentSoft, color: theme.accent, fontFamily: "'IBM Plex Mono', monospace" }}>
             {templateLabel}
           </div>
         </div>
       </div>
 
-      <div className="relative px-5 py-6" style={{ background: THEME.background }}>
+      <div className="relative px-5 py-6" style={{ background: theme.background }}>
         <div className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(55% 30% at 85% 0%, rgba(224,121,60,0.06), transparent 60%), radial-gradient(40% 25% at 15% 100%, rgba(138,47,20,0.08), transparent 60%)'
+            background: `radial-gradient(55% 30% at 85% 0%, ${theme.glowFrom}, transparent 60%), radial-gradient(40% 25% at 15% 100%, ${theme.glowTo}, transparent 60%)`
           }}
         />
 
@@ -159,18 +230,18 @@ export function WirCanvasPreview({
           <div className="grid grid-cols-2 gap-2">
             {template === 'meal' ? (
               <>
-                <StatCard label="Calorias" value={Math.round(totalMacros.calories)} unit="kcal" />
-                <StatCard label="Proteina" value={Math.round(totalMacros.protein)} unit="g" />
+                <StatCard label="Calorias" value={Math.round(totalMacros.calories)} unit="kcal" theme={theme} />
+                <StatCard label="Proteina" value={Math.round(totalMacros.protein)} unit="g" theme={theme} />
               </>
             ) : template === 'mixed' ? (
               <>
-                <StatCard label="Ejercicios" value={exercises.length} unit="items" />
-                <StatCard label="Comidas" value={foods.length} unit="items" />
+                <StatCard label="Ejercicios" value={exercises.length} unit="items" theme={theme} />
+                <StatCard label="Comidas" value={foods.length} unit="items" theme={theme} />
               </>
             ) : (
               <>
-                <StatCard label="Ejercicios" value={exercises.length} unit="items" />
-                <StatCard label="Series" value={totalSets} unit="total" />
+                <StatCard label="Ejercicios" value={exercises.length} unit="items" theme={theme} />
+                <StatCard label="Series" value={totalSets} unit="total" theme={theme} />
               </>
             )}
           </div>
@@ -179,7 +250,7 @@ export function WirCanvasPreview({
             <div className="rounded-[1.35rem] p-4" style={{ background: 'rgba(30,25,18,0.6)', border: '1px solid rgba(250,245,236,0.06)' }}>
               <div className="mb-2 flex items-center justify-between">
                 <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#A79A87]">Progreso</span>
-                <span className="font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#E0793C]">{progress}%</span>
+                <span className="font-['Big_Shoulders_Display',sans-serif] text-sm font-bold" style={{ color: theme.accent }}>{progress}%</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full" style={{ background: 'rgba(250,245,236,0.06)' }}>
                 <motion.div
@@ -187,7 +258,7 @@ export function WirCanvasPreview({
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.35 }}
                   className="h-full rounded-full"
-                  style={{ background: 'linear-gradient(90deg, #E0793C, #F2A468, #8A2F14)' }}
+                  style={{ background: `linear-gradient(90deg, ${theme.accent}, #F2A468, ${theme.glowTo.replace('0.08', '1').replace('0.12', '1') || '#8A2F14'})` }}
                 />
               </div>
             </div>
@@ -197,19 +268,19 @@ export function WirCanvasPreview({
             {template === 'mixed' ? (
               <>
                 {hasExercises && (
-                  <ListSection title="Entrenamiento" items={exercises} type="ex" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+                  <ListSection title="Entrenamiento" items={exercises} type="ex" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} theme={theme} />
                 )}
                 {hasFoods && (
-                  <ListSection title="Comidas" items={foods} type="food" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+                  <ListSection title="Comidas" items={foods} type="food" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} theme={theme} />
                 )}
               </>
             ) : (
               <>
                 {hasExercises && (
-                  <ListSection title="Ejercicios" items={exercises} type="ex" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+                  <ListSection title="Ejercicios" items={exercises} type="ex" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} theme={theme} />
                 )}
                 {hasFoods && (
-                  <ListSection title="Comidas" items={foods} type="food" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+                  <ListSection title="Comidas" items={foods} type="food" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} theme={theme} />
                 )}
               </>
             )}
@@ -218,7 +289,7 @@ export function WirCanvasPreview({
       </div>
 
       {!isPreview && (
-        <div className="border-t px-5 py-4 text-center" style={{ borderColor: THEME.border, background: THEME.mutedSurface }}>
+        <div className="border-t px-5 py-4 text-center" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
           <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium text-[#A79A87]">
             Marca cada item como hecho y volve al link cuando lo necesites.
           </p>
@@ -228,9 +299,9 @@ export function WirCanvasPreview({
   );
 }
 
-function StatCard({ label, value, unit }: { label: string; value: string | number; unit: string }) {
+function StatCard({ label, value, unit, theme }: { label: string; value: string | number; unit: string; theme: CanvasTheme }) {
   return (
-    <div className="rounded-[1.35rem] p-3" style={{ background: THEME.surface, border: '1px solid rgba(250,245,236,0.15)' }}>
+    <div className="rounded-[1.35rem] p-3" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
       <div className="mb-1">
         <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-wide text-[#6E6558]">{label}</span>
       </div>
@@ -249,9 +320,10 @@ interface ListSectionProps {
   checkedItems: Set<string>;
   onToggle: (id: string) => void;
   variants: any;
+  theme: CanvasTheme;
 }
 
-function ListSection({ title, items, type, checkedItems, onToggle, variants }: ListSectionProps) {
+function ListSection({ title, items, type, checkedItems, onToggle, variants, theme }: ListSectionProps) {
   if (items.length === 0) {
     return null;
   }
@@ -277,18 +349,19 @@ function ListSection({ title, items, type, checkedItems, onToggle, variants }: L
               tabIndex={0}
               role="checkbox"
               aria-checked={isDone}
-              className="cursor-pointer rounded-[1.35rem] p-3 outline-none transition-all hover:-translate-y-0.5 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-[#E0793C]/40"
+                      className="cursor-pointer rounded-[1.35rem] p-3 outline-none transition-all hover:-translate-y-0.5 active:scale-[0.99] focus-visible:ring-2"
               style={{
-                background: isDone ? 'rgba(224,121,60,0.06)' : THEME.surface,
-                border: isDone ? '1px solid rgba(224,121,60,0.2)' : '1px solid rgba(250,245,236,0.15)',
+                background: isDone ? `${theme.accentSoft}` : theme.surface,
+                border: isDone ? `1px solid ${theme.accent}44` : `1px solid ${theme.border}`,
+                outlineColor: `${theme.accent}66`,
               }}
             >
               <div className="flex items-start gap-3">
                 <div
                   className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 transition-all"
                   style={{
-                    borderColor: isDone ? '#E0793C' : '#6E6558',
-                    background: isDone ? '#E0793C' : 'transparent',
+                    borderColor: isDone ? theme.accent : '#6E6558',
+                    background: isDone ? theme.accent : 'transparent',
                   }}
                 >
                   <AnimatePresence>
