@@ -17,7 +17,8 @@ import {
   MessageCircle,
   Check,
   CalendarDays,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Pencil
 } from 'lucide-react';
 import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { useWorkoutStore } from '../../lib/store';
@@ -1172,13 +1173,16 @@ export default function MobileFirstBuilder() {
               className="h-full flex flex-col p-6 space-y-6"
             >
               <div className="space-y-4">
-                <input 
-                  type="text"
-                  value={currentRoutine.name}
-                  onChange={(e) => updateRoutineName(e.target.value)}
-                  className="w-full bg-transparent border-none p-0 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-[#6E6558] text-[#FAF5EC]"
-                  placeholder="Untitled routine"
-                />
+                <div className="relative">
+                  <input 
+                    type="text"
+                    value={currentRoutine.name}
+                    onChange={(e) => updateRoutineName(e.target.value)}
+                    className="w-full bg-transparent border-none p-0 pr-8 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-[#6E6558] text-[#FAF5EC]"
+                    placeholder="Untitled routine"
+                  />
+                  <Pencil size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-[#6E6558] pointer-events-none opacity-40" />
+                </div>
                 <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-widest text-[#6E6558] -mt-3">This is the routine your client will open</p>
               </div>
 
