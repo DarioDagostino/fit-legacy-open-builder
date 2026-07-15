@@ -488,6 +488,15 @@
     backdrop-filter: blur(18px) saturate(1.22);
   }
 
+  .builder-apple-icon-tile {
+    padding: 0;
+    background: #0f1724;
+    border-color: rgba(15, 27, 45, 0.12);
+    box-shadow:
+      0 16px 32px -24px rgba(20, 30, 48, 0.42),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+
   .builder-apple-input {
     border: 1px solid rgba(210, 220, 232, 0.7);
     border-radius: 20px;

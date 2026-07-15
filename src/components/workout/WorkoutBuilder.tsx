@@ -195,6 +195,26 @@ const FoodIcon = ({ category, name = '', className = 'w-6 h-6' }: FoodIconProps)
   return <Renderer category={category} name={name} className={className} />;
 };
 
+const ExerciseIconTile = ({ section, className = '' }: { section: string; className?: string }) => (
+  <div className={`builder-apple-tile builder-apple-icon-tile shrink-0 overflow-hidden ${className}`.trim()}>
+    <ExerciseIcon section={section} className="h-full w-full" />
+  </div>
+);
+
+const FoodIconTile = ({
+  category,
+  name = '',
+  className = '',
+}: {
+  category: string;
+  name?: string;
+  className?: string;
+}) => (
+  <div className={`builder-apple-tile flex shrink-0 items-center justify-center overflow-hidden ${className}`.trim()}>
+    <FoodIcon category={category} name={name} className="h-full w-full" />
+  </div>
+);
+
 const ONBOARDING_STEPS: Array<{
   title: string;
   body: string;
@@ -831,11 +851,11 @@ export default function MobileFirstBuilder() {
                       className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_20%_0%,rgba(0,113,227,0.16),transparent_40%)]"
                     />
                   )}
-                  <span className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm">
+                   <span className="flex items-center gap-2.5">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
                       {builderMode === 'workout'
-                        ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-5 w-5" />
-                        : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-4 w-4" />}
+                        ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-6 w-6" />
+                        : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-6 w-6" />}
                     </span>
                     <span className="text-xs font-black uppercase tracking-[0.08em]">{filter.label}</span>
                   </span>
@@ -1013,9 +1033,15 @@ export default function MobileFirstBuilder() {
                         className="builder-apple-card flex min-h-[82px] cursor-pointer items-center justify-between gap-3 p-3.5 transition-all group hover:-translate-y-0.5 sm:min-h-0 sm:p-4"
                       >
                         <div className="flex min-w-0 items-center gap-3.5">
-                           <div className={`${isSupp ? 'overflow-hidden p-0' : ''} builder-apple-tile flex h-[60px] w-[60px] shrink-0 items-center justify-center transition-colors sm:h-14 sm:w-14`}>
-                             {builderMode === 'workout' ? <ExerciseIcon section={(item as any).section} className="w-11 h-11 sm:w-10 sm:h-10" /> : <FoodIcon category={(item as any).category} name={item.name} className={isSupp ? 'h-[60px] w-[60px] sm:h-14 sm:w-14' : 'w-7 h-7 sm:w-6 sm:h-6'} />}
-                           </div>
+                           {builderMode === 'workout' ? (
+                             <ExerciseIconTile section={(item as any).section} className="h-20 w-20 rounded-[1.15rem]" />
+                           ) : isSupp ? (
+                             <div className="builder-apple-tile flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden bg-white p-0">
+                               <FoodIcon category={(item as any).category} name={item.name} className="h-full w-full" />
+                             </div>
+                           ) : (
+                             <FoodIconTile category={(item as any).category} name={item.name} className="h-20 w-20" />
+                           )}
                            <div className="min-w-0">
                              <p className="line-clamp-2 font-black italic uppercase text-[13px] leading-tight text-[#0f1b2d] group-active:text-[#0f1b2d] sm:text-sm">{item.name}</p>
                              <p className="text-[8px] font-bold text-[#3f556f] uppercase tracking-widest">
