@@ -1,14 +1,4 @@
 import React, { useState, useEffect, useId } from "react";
-import {
-  Flame,
-  CalendarDays,
-  Dumbbell,
-  Apple,
-  Eye,
-  CheckCircle2,
-  Sparkles,
-  Activity,
-} from "lucide-react";
 
 const DEFAULT_DATA = {
   streak: 0,
@@ -69,10 +59,8 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
 
           background: var(--blt-obsidian);
           font-family: 'Inter', sans-serif;
-          padding: 28px clamp(16px, 4vw, 32px) 36px;
-          border-radius: 28px;
-          max-width: 1060px;
-          margin: 0 auto;
+          padding: 24px 20px 32px;
+          border-radius: 24px;
           position: relative;
           overflow: hidden;
         }
@@ -118,8 +106,8 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
           gap: 10px;
           margin-bottom: 10px;
         }
-        .cal-grid--4 { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
-        .cal-grid--3 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 24px; }
+        .cal-grid--4 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+        .cal-grid--3 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 24px; }
 
         .cal-tile {
           background: var(--blt-bone);
@@ -162,9 +150,6 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
           animation: cal-rise 0.5s cubic-bezier(0.22,1,0.36,1) both;
         }
         .cal-section-title {
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
           font-family: 'IBM Plex Mono', monospace;
           font-size: 11px;
           font-weight: 500;
@@ -321,23 +306,21 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
       </header>
 
       <section className="cal-grid cal-grid--4">
-        <StatTile icon={Flame} label="Streak" value={d.streak} accent delay="0.04s" />
-        <StatTile icon={CalendarDays} label="Days" value={d.days} delay="0.08s" />
-        <StatTile icon={Dumbbell} label="Exercises" value={d.exercises} delay="0.12s" />
-        <StatTile icon={Apple} label="Meals" value={d.meals} delay="0.16s" />
+        <StatTile label="Streak" value={d.streak} accent delay="0.04s" />
+        <StatTile label="Days" value={d.days} delay="0.08s" />
+        <StatTile label="Exercises" value={d.exercises} delay="0.12s" />
+        <StatTile label="Meals" value={d.meals} delay="0.16s" />
       </section>
 
       <section className="cal-grid cal-grid--3">
-        <StatTile label="Views" icon={Eye} value={d.views} delay="0.20s" />
-        <StatTile label="Done" icon={CheckCircle2} value={d.done} delay="0.24s" />
+        <StatTile label="Views" value={d.views} delay="0.20s" />
+        <StatTile label="Done" value={d.done} delay="0.24s" />
         <StatTile label="Re-share" value={d.reShare} delay="0.28s" />
       </section>
 
       <section className="cal-section">
         <div className="cal-section-head">
-          <span className="cal-section-title">
-            <Sparkles size={13} strokeWidth={2.25} /> User Analytics
-          </span>
+          <span className="cal-section-title">User Analytics</span>
           <LivePill>Syncing from calendar</LivePill>
         </div>
 
@@ -386,9 +369,7 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
 
       <section className="cal-section">
         <div className="cal-section-head">
-          <span className="cal-section-title">
-            <Activity size={13} strokeWidth={2.25} /> Live Mix
-          </span>
+          <span className="cal-section-title">Live Mix</span>
           <LivePill>Real time</LivePill>
         </div>
 
@@ -415,10 +396,9 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
   );
 }
 
-function StatTile({ icon: Icon, label, value, accent, delay }) {
+function StatTile({ label, value, accent, delay }) {
   return (
     <div className={`cal-tile ${accent ? "cal-tile--accent" : ""}`} style={{ animationDelay: delay }}>
-      {Icon && <Icon size={16} strokeWidth={2.25} className="cal-tile-icon" />}
       <span className="cal-tile-label">{label}</span>
       <span className="cal-tile-value">{value}</span>
     </div>
