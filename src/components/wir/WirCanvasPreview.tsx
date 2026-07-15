@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { Dumbbell, Apple, Check, Target, Activity, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FoodIconRenderer as FoodIcon } from '../workout/FoodIconRenderer';
 
@@ -61,99 +60,16 @@ interface WirCanvasPreviewProps {
   isPreview?: boolean;
 }
 
-type PreviewTheme = {
-  background: string;
-  surface: string;
-  mutedSurface: string;
-  border: string;
-  text: string;
-  mutedText: string;
-  accent: string;
-  accentSoft: string;
-};
-
-const themes: Record<'clean' | 'mist' | 'navy' | 'forest' | 'ember' | 'routine' | 'meal' | 'mixed', PreviewTheme> = {
-  clean: {
-    background: 'radial-gradient(circle at 18% 0%, rgba(0,113,227,0.09), transparent 34%), linear-gradient(180deg, #ffffff 0%, #f5f9fd 100%)',
-    surface: 'rgba(255,255,255,0.76)',
-    mutedSurface: 'rgba(235,244,252,0.84)',
-    border: 'rgba(210,220,232,0.78)',
-    text: '#172033',
-    mutedText: '#647083',
-    accent: '#0071e3',
-    accentSoft: 'rgba(0,113,227,0.1)',
-  },
-  mist: {
-    background: 'linear-gradient(180deg, #f8fcff 0%, #edf7ff 100%)',
-    surface: 'rgba(255,255,255,0.76)',
-    mutedSurface: 'rgba(225,238,247,0.84)',
-    border: 'rgba(198,217,232,0.76)',
-    text: '#14283b',
-    mutedText: '#607386',
-    accent: '#0071e3',
-    accentSoft: 'rgba(0,113,227,0.11)',
-  },
-  navy: {
-    background: 'linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%)',
-    surface: 'rgba(255,255,255,0.78)',
-    mutedSurface: 'rgba(228,236,245,0.86)',
-    border: 'rgba(203,216,232,0.78)',
-    text: '#101827',
-    mutedText: '#5d6b7d',
-    accent: '#0071e3',
-    accentSoft: 'rgba(0,113,227,0.11)',
-  },
-  forest: {
-    background: 'linear-gradient(180deg, #fbfffc 0%, #eef8f1 100%)',
-    surface: 'rgba(255,255,255,0.78)',
-    mutedSurface: 'rgba(226,240,230,0.86)',
-    border: 'rgba(198,223,206,0.78)',
-    text: '#14241a',
-    mutedText: '#637466',
-    accent: '#28623a',
-    accentSoft: '#e2f0e6',
-  },
-  ember: {
-    background: 'linear-gradient(180deg, #fffdfb 0%, #fff3ee 100%)',
-    surface: 'rgba(255,255,255,0.78)',
-    mutedSurface: 'rgba(248,229,220,0.86)',
-    border: 'rgba(237,202,186,0.78)',
-    text: '#2a1813',
-    mutedText: '#80685f',
-    accent: '#a84f36',
-    accentSoft: '#f7e3da',
-  },
-  routine: {
-    background: 'radial-gradient(circle at 18% 0%, rgba(0,113,227,0.09), transparent 34%), linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%)',
-    surface: 'rgba(255,255,255,0.78)',
-    mutedSurface: 'rgba(237,241,246,0.86)',
-    border: 'rgba(219,227,238,0.78)',
-    text: '#141e30',
-    mutedText: '#657184',
-    accent: '#0071e3',
-    accentSoft: 'rgba(0,113,227,0.1)',
-  },
-  meal: {
-    background: 'linear-gradient(180deg, #ffffff 0%, #f1f8f3 100%)',
-    surface: 'rgba(255,255,255,0.78)',
-    mutedSurface: 'rgba(229,241,232,0.86)',
-    border: 'rgba(207,227,212,0.78)',
-    text: '#14231a',
-    mutedText: '#657568',
-    accent: '#28623a',
-    accentSoft: '#e3f0e7',
-  },
-  mixed: {
-    background: 'radial-gradient(circle at 18% 0%, rgba(0,113,227,0.08), transparent 34%), linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%)',
-    surface: 'rgba(255,255,255,0.78)',
-    mutedSurface: 'rgba(233,239,246,0.86)',
-    border: 'rgba(213,224,236,0.78)',
-    text: '#142033',
-    mutedText: '#637083',
-    accent: '#0071e3',
-    accentSoft: 'rgba(0,113,227,0.1)',
-  },
-};
+const THEME = {
+  background: '#16130F',
+  surface: '#FAF5EC',
+  mutedSurface: '#1E1912',
+  border: 'rgba(250,245,236,0.10)',
+  text: '#1E1A16',
+  mutedText: '#6E6558',
+  accent: '#E0793C',
+  accentSoft: 'rgba(224,121,60,0.12)',
+} as const;
 
 const formatDisplayTitle = (value: string) => {
   const trimmed = value.trim();
@@ -166,7 +82,6 @@ const formatDisplayTitle = (value: string) => {
 
 export function WirCanvasPreview({
   template,
-  palette,
   title,
   exercises,
   foods,
@@ -184,10 +99,10 @@ export function WirCanvasPreview({
   const totalItems = exercises.length + foods.length;
   const progress = totalItems === 0 ? 0 : Math.round((checkedItems.size / totalItems) * 100);
   const totalSets = exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 0), 0);
-  const theme = palette ? themes[palette] : themes[template];
   const displayTitle = formatDisplayTitle(title);
   const templateLabel = template === 'meal' ? 'Comida' : template === 'mixed' ? 'Mixto' : 'Rutina';
-  const templateIcon = template === 'meal' ? <Apple className="h-4 w-4" /> : <Dumbbell className="h-4 w-4" />;
+  const hasExercises = exercises.length > 0;
+  const hasFoods = foods.length > 0;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 6 },
@@ -203,119 +118,125 @@ export function WirCanvasPreview({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="w-full overflow-hidden rounded-[2rem] border shadow-[0_26px_70px_-46px_rgba(20,30,48,0.5)] backdrop-blur-2xl"
-      style={{ background: theme.background, borderColor: theme.border, color: theme.text }}
+      className="w-full overflow-hidden rounded-[2rem] border shadow-[0_26px_70px_-46px_rgba(0,0,0,0.7)]"
+      style={{ background: THEME.background, borderColor: THEME.border }}
     >
-      <div className="border-b px-5 py-4 backdrop-blur-2xl" style={{ borderColor: theme.border, background: theme.surface }}>
+      <div className="border-b px-5 py-4" style={{ borderColor: THEME.border, background: THEME.mutedSurface }}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border shadow-[0_12px_24px_-20px_rgba(20,30,48,0.45)]" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
-              <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl" style={{ background: THEME.background }}>
+              <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover opacity-80" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-[11px] font-extrabold uppercase tracking-wide" style={{ color: theme.text }}>Fit Legacy</p>
-              <p className="text-[10px] font-bold" style={{ color: theme.mutedText }}>Routine link</p>
+              <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide" style={{ color: '#FAF5EC' }}>Fit Legacy</p>
+              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium" style={{ color: '#A79A87' }}>Routine link</p>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-extrabold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)]" style={{ background: theme.accentSoft, color: theme.accent }}>
-            {templateIcon}
+          <div className="flex shrink-0 items-center rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-wider bg-[#E0793C]/15 text-[#E0793C]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
             {templateLabel}
           </div>
         </div>
       </div>
 
-      <div className="space-y-5 px-5 py-5">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-extrabold leading-tight tracking-normal" style={{ color: theme.text }}>
-            {displayTitle}
-          </h1>
-          <p className="text-sm font-semibold leading-relaxed" style={{ color: theme.mutedText }}>
-            Checklist para completar desde el navegador, sin instalar otra app.
-          </p>
-        </div>
+      <div className="relative px-5 py-6" style={{ background: THEME.background }}>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(55% 30% at 85% 0%, rgba(224,121,60,0.06), transparent 60%), radial-gradient(40% 25% at 15% 100%, rgba(138,47,20,0.08), transparent 60%)'
+          }}
+        />
 
-        <div className="grid grid-cols-2 gap-2">
-          {template === 'meal' ? (
-            <>
-              <StatCard label="Calorias" value={Math.round(totalMacros.calories)} unit="kcal" icon={<Activity size={14} />} theme={theme} />
-              <StatCard label="Proteina" value={Math.round(totalMacros.protein)} unit="g" icon={<Target size={14} />} theme={theme} />
-            </>
-          ) : template === 'mixed' ? (
-            <>
-              <StatCard label="Ejercicios" value={exercises.length} unit="items" icon={<Dumbbell size={14} />} theme={theme} />
-              <StatCard label="Comidas" value={foods.length} unit="items" icon={<Apple size={14} />} theme={theme} />
-            </>
-          ) : (
-            <>
-              <StatCard label="Ejercicios" value={exercises.length} unit="items" icon={<Dumbbell size={14} />} theme={theme} />
-              <StatCard label="Series" value={totalSets} unit="total" icon={<Target size={14} />} theme={theme} />
-            </>
-          )}
-        </div>
-
-        <div className="rounded-[1.35rem] border p-4 backdrop-blur-xl shadow-[0_16px_34px_-30px_rgba(20,30,48,0.38)]" style={{ borderColor: theme.border, background: theme.surface }}>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wide" style={{ color: theme.mutedText }}>Progreso</span>
-            <span className="text-sm font-extrabold" style={{ color: theme.accent }}>{progress}%</span>
+        <div className="relative space-y-6">
+          <div className="space-y-2">
+            <h1 className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-extrabold italic uppercase leading-tight tracking-tight text-[#FAF5EC]">
+              {displayTitle}
+            </h1>
+            <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-relaxed text-[#A79A87]">
+              Checklist para completar desde el navegador, sin instalar otra app.
+            </p>
           </div>
-          <div className="h-2 overflow-hidden rounded-full" style={{ background: theme.mutedSurface }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.35 }}
-              className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, #72c7ff, ${theme.accent}, #6dd6ff)` }}
-            />
-          </div>
-        </div>
 
-        <div className="space-y-5">
-          {template === 'mixed' ? (
-            <>
-              <ListSection title="Entrenamiento" icon={<Dumbbell size={17} />} items={exercises} type="ex" theme={theme} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
-              <ListSection title="Comidas" icon={<Apple size={17} />} items={foods} type="food" theme={theme} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
-            </>
-          ) : (
-            <>
-              {exercises.length > 0 && (
-                <ListSection title="Ejercicios" icon={<Dumbbell size={17} />} items={exercises} type="ex" theme={theme} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
-              )}
-              {foods.length > 0 && (
-                <ListSection title="Comidas" icon={<Apple size={17} />} items={foods} type="food" theme={theme} checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
-              )}
-            </>
+          <div className="grid grid-cols-2 gap-2">
+            {template === 'meal' ? (
+              <>
+                <StatCard label="Calorias" value={Math.round(totalMacros.calories)} unit="kcal" />
+                <StatCard label="Proteina" value={Math.round(totalMacros.protein)} unit="g" />
+              </>
+            ) : template === 'mixed' ? (
+              <>
+                <StatCard label="Ejercicios" value={exercises.length} unit="items" />
+                <StatCard label="Comidas" value={foods.length} unit="items" />
+              </>
+            ) : (
+              <>
+                <StatCard label="Ejercicios" value={exercises.length} unit="items" />
+                <StatCard label="Series" value={totalSets} unit="total" />
+              </>
+            )}
+          </div>
+
+          {totalItems > 0 && (
+            <div className="rounded-[1.35rem] p-4" style={{ background: 'rgba(30,25,18,0.6)', border: '1px solid rgba(250,245,236,0.06)' }}>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#A79A87]">Progreso</span>
+                <span className="font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#E0793C]">{progress}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full" style={{ background: 'rgba(250,245,236,0.06)' }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.35 }}
+                  className="h-full rounded-full"
+                  style={{ background: 'linear-gradient(90deg, #E0793C, #F2A468, #8A2F14)' }}
+                />
+              </div>
+            </div>
           )}
+
+          <div className="space-y-5">
+            {template === 'mixed' ? (
+              <>
+                {hasExercises && (
+                  <ListSection title="Entrenamiento" items={exercises} type="ex" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+                )}
+                {hasFoods && (
+                  <ListSection title="Comidas" items={foods} type="food" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+                )}
+              </>
+            ) : (
+              <>
+                {hasExercises && (
+                  <ListSection title="Ejercicios" items={exercises} type="ex" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+                )}
+                {hasFoods && (
+                  <ListSection title="Comidas" items={foods} type="food" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} />
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {!isPreview && (
-        <div className="border-t px-5 py-4 text-center text-[11px] font-semibold" style={{ borderColor: theme.border, background: theme.surface, color: theme.mutedText }}>
-          Marca cada item como hecho y volve al link cuando lo necesites.
+        <div className="border-t px-5 py-4 text-center" style={{ borderColor: THEME.border, background: THEME.mutedSurface }}>
+          <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium text-[#A79A87]">
+            Marca cada item como hecho y volve al link cuando lo necesites.
+          </p>
         </div>
       )}
     </motion.div>
   );
 }
 
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  unit: string;
-  icon: React.ReactNode;
-  theme: PreviewTheme;
-}
-
-function StatCard({ label, value, unit, icon, theme }: StatCardProps) {
+function StatCard({ label, value, unit }: { label: string; value: string | number; unit: string }) {
   return (
-    <div className="rounded-[1.35rem] border p-3 backdrop-blur-xl shadow-[0_14px_30px_-28px_rgba(20,30,48,0.34)]" style={{ borderColor: theme.border, background: theme.surface }}>
-      <div className="mb-2 flex items-center gap-2" style={{ color: theme.accent }}>
-        {icon}
-        <span className="text-[10px] font-extrabold uppercase tracking-wide" style={{ color: theme.mutedText }}>{label}</span>
+    <div className="rounded-[1.35rem] p-3" style={{ background: THEME.surface, border: '1px solid rgba(250,245,236,0.15)' }}>
+      <div className="mb-1">
+        <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-wide text-[#6E6558]">{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
-        <span className="text-2xl font-extrabold leading-none" style={{ color: theme.text }}>{value}</span>
-        <span className="text-xs font-bold" style={{ color: theme.mutedText }}>{unit}</span>
+        <span className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-bold leading-none text-[#1E1A16]">{value}</span>
+        <span className="font-['IBM_Plex_Mono',monospace] text-xs font-medium text-[#6E6558]">{unit}</span>
       </div>
     </div>
   );
@@ -323,28 +244,21 @@ function StatCard({ label, value, unit, icon, theme }: StatCardProps) {
 
 interface ListSectionProps {
   title: string;
-  icon: React.ReactNode;
   items: Array<CanvasExercise | CanvasFood>;
   type: 'ex' | 'food';
-  theme: PreviewTheme;
   checkedItems: Set<string>;
   onToggle: (id: string) => void;
   variants: any;
 }
 
-function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, variants }: ListSectionProps) {
+function ListSection({ title, items, type, checkedItems, onToggle, variants }: ListSectionProps) {
   if (items.length === 0) {
     return null;
   }
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-2xl" style={{ background: theme.accentSoft, color: theme.accent }}>
-          {icon}
-        </div>
-        <h2 className="text-sm font-extrabold uppercase tracking-wide" style={{ color: theme.text }}>{title}</h2>
-      </div>
+      <h2 className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-[0.12em] text-[#A79A87]">{title}</h2>
 
       <div className="space-y-2">
         {items.map((item, idx) => {
@@ -363,26 +277,30 @@ function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, 
               tabIndex={0}
               role="checkbox"
               aria-checked={isDone}
-              className="cursor-pointer rounded-[1.35rem] border p-3 outline-none transition-all hover:-translate-y-0.5 active:scale-[0.99] focus-visible:ring-2"
+              className="cursor-pointer rounded-[1.35rem] p-3 outline-none transition-all hover:-translate-y-0.5 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-[#E0793C]/40"
               style={{
-                borderColor: isDone ? '#9bd2b0' : theme.border,
-                background: isDone ? '#eef9f1' : theme.surface,
-                color: theme.text,
+                background: isDone ? 'rgba(224,121,60,0.06)' : THEME.surface,
+                border: isDone ? '1px solid rgba(224,121,60,0.2)' : '1px solid rgba(250,245,236,0.15)',
               }}
             >
               <div className="flex items-start gap-3">
                 <div
-                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-xl border-2"
+                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 transition-all"
                   style={{
-                    borderColor: isDone ? '#2f9d55' : theme.border,
-                    background: isDone ? '#2f9d55' : theme.mutedSurface,
+                    borderColor: isDone ? '#E0793C' : '#6E6558',
+                    background: isDone ? '#E0793C' : 'transparent',
                   }}
                 >
                   <AnimatePresence>
                     {isDone && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                        <Check className="h-4 w-4 text-white stroke-[4]" />
-                      </motion.div>
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="text-[11px] font-black leading-none text-white"
+                      >
+                        ✓
+                      </motion.span>
                     )}
                   </AnimatePresence>
                 </div>
@@ -394,12 +312,13 @@ function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, 
                     ) : (
                       <ExerciseIcon section={(item as CanvasExercise).section} />
                     )}
-                    <p className={`truncate text-sm font-extrabold ${isDone ? 'line-through' : ''}`} style={{ color: isDone ? theme.mutedText : theme.text }}>
+                    <p className={`truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-tight ${isDone ? 'line-through' : ''}`}
+                      style={{ color: isDone ? '#6E6558' : '#1E1A16' }}>
                       {item.name}
                     </p>
                   </div>
 
-                  <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] font-bold" style={{ color: theme.mutedText }}>
+                  <div className="mt-1 flex flex-wrap gap-1.5 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#6E6558]">
                     {type === 'ex' ? (
                       <>
                         <span>{(item as CanvasExercise).sets} sets</span>
@@ -416,8 +335,9 @@ function ListSection({ title, icon, items, type, theme, checkedItems, onToggle, 
                   </div>
 
                   {item.notes && (
-                    <div className="mt-2 flex items-start gap-2 rounded-2xl px-3 py-2 text-xs font-semibold leading-relaxed" style={{ background: theme.mutedSurface, color: theme.mutedText }}>
-                      <MessageSquare size={13} className="mt-0.5 shrink-0" style={{ color: theme.accent }} />
+                    <div className="mt-2 flex items-start gap-2 rounded-2xl px-3 py-2 text-xs font-medium leading-relaxed"
+                      style={{ background: 'rgba(30,25,18,0.08)', color: '#6E6558' }}>
+                      <span className="mt-0.5 shrink-0 opacity-50">✎</span>
                       <p>{item.notes}</p>
                     </div>
                   )}
