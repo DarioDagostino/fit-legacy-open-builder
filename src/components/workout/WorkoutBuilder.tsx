@@ -765,101 +765,111 @@ export default function MobileFirstBuilder() {
           initial={{ opacity: 0, x: -18, filter: 'blur(8px)' }}
           animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative hidden min-h-0 flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-4 shadow-[0_24px_60px_-36px_rgba(20,30,48,0.45)] backdrop-blur-2xl lg:flex"
+          className="relative hidden min-h-0 flex-col overflow-hidden rounded-[2rem] bg-[#16130F] p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.7)] lg:flex"
         >
-          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5b6472]">{MOBILE_FIRST_CONFIG.defaultViewport}-first</p>
-              <h2 className="mt-1 text-xl font-black tracking-[-0.04em] text-[#141e30]">Builder Tools</h2>
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_40%_at_15%_0%,rgba(224,121,60,0.10),transparent_60%),radial-gradient(50%_30%_at_100%_100%,rgba(138,47,20,0.12),transparent_60%)]" />
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+          <div className="mb-5 flex items-start justify-between relative">
+            <div className="space-y-0.5">
+              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium tracking-[0.16em] text-[#F2A468]">Build your legacy</p>
+              <h2 className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold tracking-tight text-[#FAF5EC] uppercase">Builder Tools</h2>
             </div>
             <motion.button
-              whileHover={{ y: -2, scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ rotate: 90, scale: 1.05 }}
+              whileTap={{ scale: 0.92 }}
               onClick={() => setShowCustomize(true)}
-              className="builder-icon-button flex h-10 w-10 items-center justify-center"
+              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-[#FAF5EC]/10 bg-[#1E1912] text-[#A79A87] hover:text-[#F2A468] hover:border-[#E0793C]/35 transition-colors"
               aria-label="Open settings"
             >
-              <SlidersHorizontal size={18} />
+              <SlidersHorizontal size={18} strokeWidth={2.25} />
             </motion.button>
           </div>
 
-          <div className="mb-5 grid gap-2">
+          <div className="relative flex flex-col gap-3">
             {[
               { id: 'catalog' as TabType, label: 'Catalog', meta: `${filteredItems.length} options`, icon: Search },
               { id: 'build' as TabType, label: 'Routine', meta: `${currentRoutine.exercises.length} exercises`, icon: Dumbbell },
               { id: 'food' as TabType, label: 'Meals', meta: `${currentRoutine.foods.length} foods`, icon: Apple },
               { id: 'calendar' as TabType, label: 'Calendar', meta: `${calendarEntries.length} entries`, icon: CalendarDays },
               { id: 'export' as TabType, label: 'Share', meta: 'Client preview', icon: Share2 },
-            ].map((item) => (
-              <motion.button
-                key={item.id}
-                whileHover={{ x: 4, scale: 1.01 }}
-                whileTap={{ scale: 0.985 }}
-                onClick={() => setActiveTab(item.id)}
-                className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border px-3 py-3 text-left transition-all ${
-                  activeTab === item.id
-                    ? 'border-[#141e30]/12 bg-[#141e30] text-white shadow-[0_18px_34px_-24px_rgba(20,30,48,0.7)]'
-                    : 'border-[#dfe7f0] bg-white/60 text-[#35577d] hover:bg-white hover:text-[#141e30]'
-                }`}
-              >
-                {activeTab === item.id && (
-                  <motion.span
-                    layoutId="desktop-nav-active-glow"
-                    className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-[#b4ff00] shadow-[0_0_18px_rgba(180,255,0,0.72)]"
-                  />
-                )}
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
-                  activeTab === item.id ? 'bg-white/14 text-white' : 'bg-[#f2f6fb] text-[#35577d]'
-                }`}>
-                  <item.icon size={18} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-xs font-black uppercase tracking-[0.12em]">{item.label}</span>
-                  <span className={`mt-0.5 block truncate text-[10px] font-bold ${
-                    activeTab === item.id ? 'text-white/55' : 'text-[#7b8797]'
-                  }`}>{item.meta}</span>
-                </span>
-              </motion.button>
-            ))}
+            ].map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <motion.button
+                  key={item.id}
+                  whileHover={{ x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`relative flex items-center gap-3.5 overflow-hidden rounded-2xl px-4 py-3.5 text-left transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#E0793C] to-[#8A2F14] text-[#FAF5EC] shadow-[0_8px_24px_-6px_rgba(224,121,60,0.45)]'
+                      : 'bg-[#1E1912] text-[#A79A87] hover:bg-[#2A241D] hover:text-[#FAF5EC] border border-[#FAF5EC]/[0.06]'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="desktop-nav-seam"
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/0 via-white/10 to-white/0"
+                      style={{ backgroundSize: '200% 100%' }}
+                      animate={{ backgroundPosition: ['130% 0', '-30% 0'] }}
+                      transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  )}
+                  <span className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all ${
+                    isActive ? 'bg-[#FAF5EC]/15 text-white scale-105' : 'bg-[#16130F]/60 text-[#6E6558]'
+                  }`}>
+                    <item.icon size={19} strokeWidth={2.25} />
+                  </span>
+                  <span className="relative min-w-0">
+                    <span className="block font-['Big_Shoulders_Display',sans-serif] text-base font-bold uppercase tracking-[0.03em]">{item.label}</span>
+                    <span className={`mt-0.5 block truncate font-['IBM_Plex_Mono',monospace] text-[10px] font-medium ${
+                      isActive ? 'text-[#FAF5EC]/75' : 'text-[#6E6558]'
+                    }`}>{item.meta}</span>
+                  </span>
+                </motion.button>
+              );
+            })}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="mt-5 min-h-0 flex-1 overflow-hidden relative">
             <div className="mb-3 flex items-center justify-between px-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5b6472]">Focus</p>
-              <p className="text-[10px] font-bold text-[#7b8797]">{builderMode === 'workout' ? 'Exercises' : 'Meals'}</p>
+              <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium tracking-[0.18em] text-[#A79A87] uppercase">Focus</p>
+              <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium text-[#6E6558]">{builderMode === 'workout' ? 'Exercises' : 'Meals'}</p>
             </div>
-            <div className="space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+            <div className="space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
               {(builderMode === 'workout' ? workoutFilters : foodFilters).map((filter) => (
                 <motion.button
                   key={filter.id}
                   whileHover={{ x: 3 }}
-                  whileTap={{ scale: 0.985 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setActiveTab('catalog');
                     setActiveFilter(filter.id);
                   }}
                   className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border px-3 py-2.5 text-left transition-all ${
                     activeFilter === filter.id
-                      ? 'border-[#0071e3]/20 bg-[#eaf4ff] text-[#102033]'
-                      : 'border-transparent bg-transparent text-[#5b6472] hover:border-[#dfe7f0] hover:bg-white/70'
+                      ? 'border-[#E0793C]/30 bg-[#1E1912] text-[#FAF5EC]'
+                      : 'border-transparent text-[#6E6558] hover:border-[#FAF5EC]/10 hover:bg-[#1E1912]/60 hover:text-[#A79A87]'
                   }`}
                 >
                   {activeFilter === filter.id && (
                     <motion.span
-                      layoutId="desktop-filter-active-bg"
-                      className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_20%_0%,rgba(0,113,227,0.16),transparent_40%)]"
+                      layoutId="desktop-filter-active-glow"
+                      className="absolute left-0 top-1 bottom-1 w-0.5 rounded-r-full bg-[#E0793C] shadow-[0_0_12px_rgba(224,121,60,0.6)]"
                     />
                   )}
                    <span className="flex items-center gap-2.5">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${
+                      activeFilter === filter.id ? 'bg-[#FAF5EC]/10' : 'bg-[#16130F]/40'
+                    }`}>
                       {builderMode === 'workout'
-                        ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-6 w-6" />
-                        : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-6 w-6" />}
+                        ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-5 w-5" />
+                        : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-5 w-5" />}
                     </span>
-                    <span className="text-xs font-black uppercase tracking-[0.08em]">{filter.label}</span>
+                    <span className="text-xs font-['Big_Shoulders_Display',sans-serif] font-bold uppercase tracking-[0.06em]">{filter.label}</span>
                   </span>
-                  {activeFilter === filter.id && <Check size={15} />}
+                  {activeFilter === filter.id && <Check size={14} strokeWidth={2.5} className="text-[#E0793C]" />}
                 </motion.button>
               ))}
             </div>
