@@ -170,6 +170,11 @@ export function WirCanvasPreview({
   const totalItems = exercises.length + foods.length;
   const progress = totalItems === 0 ? 0 : Math.round((checkedItems.size / totalItems) * 100);
   const totalSets = exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 0), 0);
+
+  const checkedExercises = exercises.filter((_, i) => checkedItems.has(`ex_${i}`)).length;
+  const checkedFoods = foods.filter((_, i) => checkedItems.has(`food_${i}`)).length;
+  const exProgress = exercises.length === 0 ? 0 : Math.round((checkedExercises / exercises.length) * 100);
+  const foodProgress = foods.length === 0 ? 0 : Math.round((checkedFoods / foods.length) * 100);
   const displayTitle = formatDisplayTitle(title);
   const templateLabel = template === 'meal' ? 'Comida' : template === 'mixed' ? 'Mixto' : 'Rutina';
   const hasExercises = exercises.length > 0;
@@ -200,7 +205,11 @@ export function WirCanvasPreview({
             </div>
             <div className="min-w-0">
               <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide text-[#FAF5EC]">Fit Legacy</p>
-              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#A79A87]">Routine link</p>
+              <div className="flex items-center gap-1.5">
+                <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: `${theme.accent}` }}
+                  animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} />
+                <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#A79A87]">Routine link</span>
+              </div>
             </div>
           </div>
 
@@ -247,20 +256,23 @@ export function WirCanvasPreview({
           </div>
 
           {totalItems > 0 && (
-            <div className="rounded-[1.35rem] p-4" style={{ background: 'rgba(30,25,18,0.6)', border: '1px solid rgba(250,245,236,0.06)' }}>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#A79A87]">Progreso</span>
-                <span className="font-['Big_Shoulders_Display',sans-serif] text-sm font-bold" style={{ color: theme.accent }}>{progress}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full" style={{ background: 'rgba(250,245,236,0.06)' }}>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.35 }}
-                  className="h-full rounded-full"
-                  style={{ background: `linear-gradient(90deg, ${theme.accent}, #F2A468, ${theme.glowTo.replace('0.08', '1').replace('0.12', '1') || '#8A2F14'})` }}
-                />
-              </div>
+            <div className="flex flex-col items-center gap-4">
+              <ProgressRing
+                progress={progress}
+                total={totalItems}
+                done={checkedItems.size}
+                accent={theme.accent}
+              />
+              {(hasExercises && hasFoods) && (
+                <div className="flex items-center gap-4">
+                  {hasExercises && (
+                    <MiniRing progress={exProgress} done={checkedExercises} total={exercises.length} label="Eje" accent={theme.accent} />
+                  )}
+                  {hasFoods && (
+                    <MiniRing progress={foodProgress} done={checkedFoods} total={foods.length} label="Com" accent={theme.accent} />
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -313,6 +325,103 @@ function StatCard({ label, value, unit, theme }: { label: string; value: string 
   );
 }
 
+function ProgressRing({ progress, total, done, accent }: { progress: number; total: number; done: number; accent: string; glowFrom?: string; glowTo?: string }) {
+  const radius = 44;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - progress / 100);
+  const isComplete = progress >= 100;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col items-center gap-3"
+    >
+      <div className="relative">
+        <svg width="120" height="120" className="-rotate-90">
+          <defs>
+            <linearGradient id="ringFill" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={accent} />
+              <stop offset="100%" stopColor="#8A2F14" />
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(250,245,236,0.06)" strokeWidth="6" />
+          <motion.circle
+            cx="60" cy="60" r={radius}
+            fill="none"
+            stroke="url(#ringFill)"
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            style={{ filter: `drop-shadow(0 0 8px ${accent}55)` }}
+          />
+          {isComplete && (
+            <motion.circle
+              cx="60" cy="60" r={radius + 5}
+              fill="none"
+              stroke={accent}
+              strokeWidth="2"
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: [0, 0.4, 0], scale: [0.92, 1.08, 1] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+            />
+          )}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <motion.span
+            key={Math.round(progress)}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold leading-none tracking-tight"
+            style={{ color: isComplete ? accent : '#FAF5EC' }}
+          >
+            {Math.round(progress)}%
+          </motion.span>
+          <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#A79A87] mt-0.5">
+            {done}/{total} items
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function MiniRing({ progress, done, total, label, accent }: { progress: number; done: number; total: number; label: string; accent: string }) {
+  const radius = 18;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - progress / 100);
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative w-10 h-10">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r={radius} fill="none" stroke="rgba(250,245,236,0.06)" strokeWidth="4" />
+          <motion.circle
+            cx="22" cy="22" r={radius}
+            fill="none"
+            stroke={accent}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            style={{ filter: `drop-shadow(0 0 4px ${accent}44)` }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="font-['Big_Shoulders_Display',sans-serif] text-[9px] font-extrabold leading-none" style={{ color: progress >= 100 ? accent : '#FAF5EC' }}>{Math.round(progress)}%</span>
+        </div>
+      </div>
+      <span className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase tracking-wider">{done}/{total} {label}</span>
+    </div>
+  );
+}
+
 interface ListSectionProps {
   title: string;
   items: Array<CanvasExercise | CanvasFood>;
@@ -339,6 +448,7 @@ function ListSection({ title, items, type, checkedItems, onToggle, variants, the
 
           return (
             <motion.div
+              layout
               key={itemId}
               custom={idx}
               variants={variants}
@@ -349,7 +459,9 @@ function ListSection({ title, items, type, checkedItems, onToggle, variants, the
               tabIndex={0}
               role="checkbox"
               aria-checked={isDone}
-                      className="cursor-pointer rounded-[1.35rem] p-3 outline-none transition-all hover:-translate-y-0.5 active:scale-[0.99] focus-visible:ring-2"
+              transition={{ layout: { type: 'spring', stiffness: 400, damping: 28 } }}
+              whileTap={{ scale: 0.97 }}
+              className="cursor-pointer rounded-[1.35rem] p-3 outline-none transition-all hover:-translate-y-0.5 active:scale-[0.99] focus-visible:ring-2"
               style={{
                 background: isDone ? `${theme.accentSoft}` : theme.surface,
                 border: isDone ? `1px solid ${theme.accent}44` : `1px solid ${theme.border}`,

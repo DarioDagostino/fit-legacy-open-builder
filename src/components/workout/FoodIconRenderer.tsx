@@ -183,76 +183,87 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
   // Supplement SVGs
   const SUPP_PATH = '/assets/suplementos';
 
-  if (lowercaseCategory === 'supplements' || lowercaseName.includes('whey') || lowercaseName.includes('proteina') || lowercaseName.includes('caseina') || lowercaseName.includes('creatina') || lowercaseName.includes('bcaa') || lowercaseName.includes('eaa') || lowercaseName.includes('amino') || lowercaseName.includes('glutamina') || lowercaseName.includes('beta alanina') || lowercaseName.includes('citrulina') || lowercaseName.includes('pre entreno') || lowercaseName.includes('preentreno') || lowercaseName.includes('cafeina') || lowercaseName.includes('carnitina') || lowercaseName.includes('colageno') || lowercaseName.includes('mass gainer') || lowercaseName.includes('multivit') || lowercaseName.includes('omega') || lowercaseName.includes('magnesio') || lowercaseName.includes('vitamina') || lowercaseName.includes('electrolito') || lowercaseName.includes('maltodextrina') || lowercaseName.includes('dextrosa')) {
+  if (lowercaseCategory === 'supplements' || lowercaseCategory.includes('suplemento') || lowercaseName.includes('whey') || lowercaseName.includes('proteina') || lowercaseName.includes('caseina') || lowercaseName.includes('creatina') || lowercaseName.includes('bcaa') || lowercaseName.includes('eaa') || lowercaseName.includes('amino') || lowercaseName.includes('glutamina') || lowercaseName.includes('beta alanina') || lowercaseName.includes('citrulina') || lowercaseName.includes('pre entreno') || lowercaseName.includes('preentreno') || lowercaseName.includes('cafeina') || lowercaseName.includes('carnitina') || lowercaseName.includes('colageno') || lowercaseName.includes('mass gainer') || lowercaseName.includes('multivit') || lowercaseName.includes('omega') || lowercaseName.includes('magnesio') || lowercaseName.includes('vitamina') || lowercaseName.includes('electrolito') || lowercaseName.includes('maltodextrina') || lowercaseName.includes('dextrosa')) {
     // Mass Gainer → proteinas/
     if (lowercaseName.includes('mass') || lowercaseName.includes('gainer')) {
       const gainerSvgs = ['mass_gainer_3KG.webp', 'mass_gainer_5KG.webp', 'mass_gainer_WOMEN.webp'];
-      return <img src={`${SUPP_PATH}/proteinas/${gainerSvgs[lowercaseName.length % gainerSvgs.length]}`} className={`${className} object-cover drop-shadow-sm`} alt={name || 'Mass Gainer'} />;
+      return <img src={`${SUPP_PATH}/proteinas/${gainerSvgs[lowercaseName.length % gainerSvgs.length]}`} className={`${className} object-contain drop-shadow-sm`} alt={name || 'Mass Gainer'} />;
     }
     // Whey / Protein → proteinas/
-    if (lowercaseName.includes('whey') || lowercaseName.includes('proteina') || lowercaseName.includes('protein')) {
-      const svgs = ['PROTEIN_WHEY.webp', 'PROTEIN_PLAN_BASED.webp', 'PROTEIN_VEGAN.webp', 'protein_isolate.webp', 'Protein.webp'];
-      return <img src={`${SUPP_PATH}/proteinas/${svgs[lowercaseName.length % svgs.length]}`} className={`${className} object-cover drop-shadow-sm`} alt={name || 'Proteína'} />;
+    if (lowercaseName.includes('whey') || lowercaseName.includes('suero') || lowercaseName.includes('proteina') || lowercaseName.includes('protein')) {
+      if (lowercaseName.includes('vegana') || lowercaseName.includes('vegan')) {
+        return <img src={`${SUPP_PATH}/proteinas/PROTEIN_VEGAN.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Proteína Vegana" />;
+      }
+      if (lowercaseName.includes('plant') || lowercaseName.includes('vegetal') || lowercaseName.includes('plan based')) {
+        return <img src={`${SUPP_PATH}/proteinas/PROTEIN_PLAN_BASED.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Proteína Vegetal" />;
+      }
+      if (lowercaseName.includes('isolate') || lowercaseName.includes('isolado') || lowercaseName.includes('aislada')) {
+        return <img src={`${SUPP_PATH}/proteinas/protein_isolate.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Protein Isolate" />;
+      }
+      if (lowercaseName.includes('whey') || lowercaseName.includes('suero')) {
+        return <img src={`${SUPP_PATH}/proteinas/PROTEIN_WHEY.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Proteína Whey" />;
+      }
+      return <img src={`${SUPP_PATH}/proteinas/Protein.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Proteína" />;
     }
     // Casein → caseina/
     if (lowercaseName.includes('caseina')) {
-      return <img src={`${SUPP_PATH}/caseina/caseina.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Caseína" />;
+      return <img src={`${SUPP_PATH}/caseina/caseina.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Caseína" />;
     }
     // Creatine → creatina/
     if (lowercaseName.includes('creatina')) {
-      return <img src={`${SUPP_PATH}/creatina/creatina_monohidrato.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Creatina" />;
+      return <img src={`${SUPP_PATH}/creatina/creatina_monohidrato.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Creatina" />;
     }
     // BCAA
     if (lowercaseName.includes('bcaa')) {
-      return <img src={`${SUPP_PATH}/bcaas/BCAAS.webp`} className={`${className} object-cover drop-shadow-sm`} alt="BCAA" />;
+      return <img src={`${SUPP_PATH}/bcaas/BCAAS.webp`} className={`${className} object-contain drop-shadow-sm`} alt="BCAA" />;
     }
     // EAA / Full Amino
     if (lowercaseName.includes('eaa') || lowercaseName.includes('amino')) {
-      return <img src={`${SUPP_PATH}/bcaas/FULL_AMINO.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Aminoácidos" />;
+      return <img src={`${SUPP_PATH}/bcaas/FULL_AMINO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Aminoácidos" />;
     }
     // Glutamine
     if (lowercaseName.includes('glutamina')) {
-      return <img src={`${SUPP_PATH}/bcaas/GLUTAMINA.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Glutamina" />;
+      return <img src={`${SUPP_PATH}/bcaas/GLUTAMINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Glutamina" />;
     }
     // Beta Alanina
     if (lowercaseName.includes('beta alanina')) {
-      return <img src={`${SUPP_PATH}/bcaas/BETA_ALANINA.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Beta Alanina" />;
+      return <img src={`${SUPP_PATH}/bcaas/BETA_ALANINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Beta Alanina" />;
     }
     // Citrulina
     if (lowercaseName.includes('citrulina')) {
-      return <img src={`${SUPP_PATH}/bcaas/CITRULINA.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Citrulina" />;
+      return <img src={`${SUPP_PATH}/bcaas/CITRULINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Citrulina" />;
     }
     // Pre-workout / Caffeine → fat_burning/
-    if (lowercaseName.includes('pre entreno') || lowercaseName.includes('preentreno') || lowercaseName.includes('cafeina')) {
-      return <img src={`${SUPP_PATH}/fat_burning/ignite_pre.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Pre-Entreno" />;
+    if (lowercaseName.includes('pre entreno') || lowercaseName.includes('preentreno') || lowercaseName.includes('cafeina') || lowercaseName.includes('entrena')) {
+      return <img src={`${SUPP_PATH}/fat_burning/ignite_pre.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Pre-Entreno" />;
     }
     // L-Carnitina → fat_burning/
     if (lowercaseName.includes('carnitina')) {
-      return <img src={`${SUPP_PATH}/fat_burning/L_CARNITINA.webp`} className={`${className} object-cover drop-shadow-sm`} alt="L-Carnitina" />;
+      return <img src={`${SUPP_PATH}/fat_burning/L_CARNITINA.webp`} className={`${className} object-contain drop-shadow-sm`} alt="L-Carnitina" />;
     }
     // Multivitamin → multivitaminicos/
     if (lowercaseName.includes('multivit')) {
-      return <img src={`${SUPP_PATH}/multivitaminicos/MULTIVITAMINICO.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Multivitamínico" />;
+      return <img src={`${SUPP_PATH}/multivitaminicos/MULTIVITAMINICO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Multivitamínico" />;
     }
     // Omega / Vitamin / Electrolytes → multivitaminicos/
     if (lowercaseName.includes('omega') || lowercaseName.includes('electrolito') || lowercaseName.includes('vitamina')) {
-      return <img src={`${SUPP_PATH}/multivitaminicos/MULTIVITAMINICO.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Multivitamínico" />;
+      return <img src={`${SUPP_PATH}/multivitaminicos/MULTIVITAMINICO.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Multivitamínico" />;
     }
     // Magnesium → magnesio/
     if (lowercaseName.includes('magnesio')) {
-      return <img src={`${SUPP_PATH}/magnesio/magnesio.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Magnesio" />;
+      return <img src={`${SUPP_PATH}/magnesio/magnesio.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Magnesio" />;
     }
     // Collagen → colageno/
     if (lowercaseName.includes('colageno')) {
-      return <img src={`${SUPP_PATH}/colageno/Colageno.webp`} className={`${className} object-cover drop-shadow-sm`} alt="Colágeno" />;
+      return <img src={`${SUPP_PATH}/colageno/Colageno.webp`} className={`${className} object-contain drop-shadow-sm`} alt="Colágeno" />;
     }
     // Maltodextrin / Dextrose → carbohidratos/
     if (lowercaseName.includes('maltodextrina') || lowercaseName.includes('dextrosa')) {
       const carbSvgs = ['maltodextrina.webp', 'maltodextrina_2kg.webp', 'Dextrosa.webp'];
-      return <img src={`${SUPP_PATH}/carbohidratos/${carbSvgs[lowercaseName.length % carbSvgs.length]}`} className={`${className} object-cover drop-shadow-sm`} alt={name || 'Carbohidratos'} />;
+      return <img src={`${SUPP_PATH}/carbohidratos/${carbSvgs[lowercaseName.length % carbSvgs.length]}`} className={`${className} object-contain drop-shadow-sm`} alt={name || 'Carbohidratos'} />;
     }
     // Generic supplement fallback
-    return <span className={`${className} flex items-center justify-center text-lg drop-shadow-sm`}>??</span>;
+    return <img src={`${SUPP_PATH}/proteinas/Protein.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt={name || 'Supplement'} />;
   }
 
   if (lowercaseCategory === 'protein' || lowercaseCategory === 'proteins') return <img src="/meat/Meat.webp" className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Protein" />;
@@ -261,5 +272,10 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
   if (lowercaseCategory === 'carbs') return <img src={`${path}/Sandwich.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Carbs" />;
   if (lowercaseCategory === 'fats') return <img src={`${path}/Olive Oil Bottle.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Fats" />;
 
-  return <span className={`${className} flex items-center justify-center text-lg`}>🍽️</span>;
+  return (
+    <svg className={`${className}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label={name || 'Food'}>
+      <circle cx="12" cy="12" r="9" fill="#6E6558" opacity="0.2" />
+      <path d="M8 12h8M12 8v8" stroke="#6E6558" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
 }
