@@ -51,7 +51,7 @@ const ExerciseIcon = ({ section, className = 'h-4 w-4' }: { section?: string; cl
 
 interface WirCanvasPreviewProps {
   template: 'routine' | 'meal' | 'mixed';
-  palette?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember';
+  palette?: 'ember' | 'onyx' | 'midnight' | 'bloom';
   title: string;
   exercises: CanvasExercise[];
   foods: CanvasFood[];
@@ -66,78 +66,86 @@ type CanvasTheme = {
   mutedSurface: string;
   border: string;
   text: string;
+  onSurface: string;
   mutedText: string;
+  subtle: string;
   accent: string;
   accentSoft: string;
+  noteBg: string;
+  trackBg: string;
   glowFrom: string;
   glowTo: string;
 };
 
 const THEMES: Record<string, CanvasTheme> = {
-  clean: {
-    background: '#16130F',
-    surface: '#FAF5EC',
-    mutedSurface: '#1E1912',
-    border: 'rgba(250,245,236,0.10)',
-    text: '#1E1A16',
-    mutedText: '#6E6558',
-    accent: '#E0793C',
-    accentSoft: 'rgba(224,121,60,0.12)',
-    glowFrom: 'rgba(224,121,60,0.06)',
-    glowTo: 'rgba(138,47,20,0.08)',
-  },
-  mist: {
-    background: '#16130F',
-    surface: '#FAF5EC',
-    mutedSurface: '#1E1912',
-    border: 'rgba(250,245,236,0.10)',
-    text: '#1E1A16',
-    mutedText: '#6E6558',
-    accent: '#7B8A9B',
-    accentSoft: 'rgba(123,138,155,0.12)',
-    glowFrom: 'rgba(123,138,155,0.06)',
-    glowTo: 'rgba(80,90,100,0.08)',
-  },
-  navy: {
-    background: '#16130F',
-    surface: '#FAF5EC',
-    mutedSurface: '#1E1912',
-    border: 'rgba(250,245,236,0.10)',
-    text: '#1E1A16',
-    mutedText: '#6E6558',
-    accent: '#4A7B9D',
-    accentSoft: 'rgba(74,123,157,0.12)',
-    glowFrom: 'rgba(74,123,157,0.06)',
-    glowTo: 'rgba(30,60,90,0.08)',
-  },
-  forest: {
-    background: '#16130F',
-    surface: '#FAF5EC',
-    mutedSurface: '#1E1912',
-    border: 'rgba(250,245,236,0.10)',
-    text: '#1E1A16',
-    mutedText: '#6E6558',
-    accent: '#7B9D6D',
-    accentSoft: 'rgba(123,157,109,0.12)',
-    glowFrom: 'rgba(123,157,109,0.06)',
-    glowTo: 'rgba(60,90,50,0.08)',
-  },
   ember: {
     background: '#16130F',
     surface: '#FAF5EC',
     mutedSurface: '#1E1912',
     border: 'rgba(250,245,236,0.10)',
     text: '#1E1A16',
+    onSurface: '#FAF5EC',
     mutedText: '#6E6558',
+    subtle: '#A79A87',
     accent: '#C85A1C',
     accentSoft: 'rgba(200,90,28,0.15)',
+    noteBg: 'rgba(30,26,22,0.06)',
+    trackBg: 'rgba(250,245,236,0.06)',
     glowFrom: 'rgba(200,90,28,0.08)',
     glowTo: 'rgba(138,47,20,0.12)',
+  },
+  onyx: {
+    background: '#0A0A0A',
+    surface: '#1A1A1A',
+    mutedSurface: '#222222',
+    border: 'rgba(255,255,255,0.08)',
+    text: '#F0F0F0',
+    onSurface: '#F0F0F0',
+    mutedText: '#888888',
+    subtle: '#6E6E6E',
+    accent: '#7DF4FF',
+    accentSoft: 'rgba(125,244,255,0.10)',
+    noteBg: 'rgba(255,255,255,0.05)',
+    trackBg: 'rgba(255,255,255,0.06)',
+    glowFrom: 'rgba(125,244,255,0.05)',
+    glowTo: 'rgba(0,180,200,0.08)',
+  },
+  midnight: {
+    background: '#0C1425',
+    surface: '#1A2744',
+    mutedSurface: '#243152',
+    border: 'rgba(255,255,255,0.06)',
+    text: '#DEE6F0',
+    onSurface: '#DEE6F0',
+    mutedText: '#8899B4',
+    subtle: '#6A7A95',
+    accent: '#D4AF37',
+    accentSoft: 'rgba(212,175,55,0.12)',
+    noteBg: 'rgba(255,255,255,0.04)',
+    trackBg: 'rgba(255,255,255,0.06)',
+    glowFrom: 'rgba(212,175,55,0.06)',
+    glowTo: 'rgba(100,80,20,0.10)',
+  },
+  bloom: {
+    background: '#FDFBF7',
+    surface: '#FFFFFF',
+    mutedSurface: '#F5EDE0',
+    border: 'rgba(30,26,22,0.12)',
+    text: '#2A2520',
+    onSurface: '#2A2520',
+    mutedText: '#7A7163',
+    subtle: '#A69A8A',
+    accent: '#D65A4E',
+    accentSoft: 'rgba(214,90,78,0.08)',
+    noteBg: 'rgba(30,26,22,0.04)',
+    trackBg: 'rgba(30,26,22,0.08)',
+    glowFrom: 'rgba(214,90,78,0.04)',
+    glowTo: 'rgba(180,70,60,0.06)',
   },
 };
 
 function getTheme(palette?: string): CanvasTheme {
-  return THEMES[palette || 'clean'] || THEMES.clean;
+  return THEMES[palette || 'ember'] || THEMES.ember;
 }
 
 const formatDisplayTitle = (value: string) => {
@@ -204,11 +212,11 @@ export function WirCanvasPreview({
               <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover opacity-80" />
             </div>
             <div className="min-w-0">
-              <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide text-[#FAF5EC]">Fit Legacy</p>
+              <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide" style={{ color: theme.onSurface }}>Fit Legacy</p>
               <div className="flex items-center gap-1.5">
                 <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: `${theme.accent}` }}
                   animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} />
-                <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#A79A87]">Routine link</span>
+                <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium" style={{ color: theme.subtle }}>Routine link</span>
               </div>
             </div>
           </div>
@@ -228,10 +236,10 @@ export function WirCanvasPreview({
 
         <div className="relative space-y-6">
           <div className="space-y-2">
-            <h1 className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-extrabold italic uppercase leading-tight tracking-tight text-[#FAF5EC]">
+            <h1 className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-extrabold italic uppercase leading-tight tracking-tight" style={{ color: theme.onSurface }}>
               {displayTitle}
             </h1>
-            <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-relaxed text-[#A79A87]">
+            <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-relaxed" style={{ color: theme.subtle }}>
               Checklist para completar desde el navegador, sin instalar otra app.
             </p>
           </div>
@@ -262,14 +270,15 @@ export function WirCanvasPreview({
                 total={totalItems}
                 done={checkedItems.size}
                 accent={theme.accent}
+                theme={theme}
               />
               {(hasExercises && hasFoods) && (
                 <div className="flex items-center gap-4">
                   {hasExercises && (
-                    <MiniRing progress={exProgress} done={checkedExercises} total={exercises.length} label="Eje" accent={theme.accent} />
+                    <MiniRing progress={exProgress} done={checkedExercises} total={exercises.length} label="Eje" accent={theme.accent} theme={theme} />
                   )}
                   {hasFoods && (
-                    <MiniRing progress={foodProgress} done={checkedFoods} total={foods.length} label="Com" accent={theme.accent} />
+                    <MiniRing progress={foodProgress} done={checkedFoods} total={foods.length} label="Com" accent={theme.accent} theme={theme} />
                   )}
                 </div>
               )}
@@ -302,7 +311,7 @@ export function WirCanvasPreview({
 
       {!isPreview && (
         <div className="border-t px-5 py-4 text-center" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
-          <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium text-[#A79A87]">
+          <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium" style={{ color: theme.subtle }}>
             Marca cada item como hecho y volve al link cuando lo necesites.
           </p>
         </div>
@@ -315,17 +324,17 @@ function StatCard({ label, value, unit, theme }: { label: string; value: string 
   return (
     <div className="rounded-[1.35rem] p-3" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
       <div className="mb-1">
-        <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-wide text-[#6E6558]">{label}</span>
+        <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-wide" style={{ color: theme.mutedText }}>{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
-        <span className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-bold leading-none text-[#1E1A16]">{value}</span>
-        <span className="font-['IBM_Plex_Mono',monospace] text-xs font-medium text-[#6E6558]">{unit}</span>
+        <span className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-bold leading-none" style={{ color: theme.text }}>{value}</span>
+        <span className="font-['IBM_Plex_Mono',monospace] text-xs font-medium" style={{ color: theme.mutedText }}>{unit}</span>
       </div>
     </div>
   );
 }
 
-function ProgressRing({ progress, total, done, accent }: { progress: number; total: number; done: number; accent: string; glowFrom?: string; glowTo?: string }) {
+function ProgressRing({ progress, total, done, accent, theme }: { progress: number; total: number; done: number; accent: string; theme: CanvasTheme }) {
   const radius = 44;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress / 100);
@@ -340,17 +349,11 @@ function ProgressRing({ progress, total, done, accent }: { progress: number; tot
     >
       <div className="relative">
         <svg width="120" height="120" className="-rotate-90">
-          <defs>
-            <linearGradient id="ringFill" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor={accent} />
-              <stop offset="100%" stopColor="#8A2F14" />
-            </linearGradient>
-          </defs>
-          <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(250,245,236,0.06)" strokeWidth="6" />
+          <circle cx="60" cy="60" r={radius} fill="none" stroke={theme.trackBg} strokeWidth="6" />
           <motion.circle
             cx="60" cy="60" r={radius}
             fill="none"
-            stroke="url(#ringFill)"
+            stroke={accent}
             strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -377,11 +380,11 @@ function ProgressRing({ progress, total, done, accent }: { progress: number; tot
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold leading-none tracking-tight"
-            style={{ color: isComplete ? accent : '#FAF5EC' }}
+            style={{ color: isComplete ? accent : theme.onSurface }}
           >
             {Math.round(progress)}%
           </motion.span>
-          <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#A79A87] mt-0.5">
+          <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium mt-0.5" style={{ color: theme.subtle }}>
             {done}/{total} items
           </span>
         </div>
@@ -390,7 +393,7 @@ function ProgressRing({ progress, total, done, accent }: { progress: number; tot
   );
 }
 
-function MiniRing({ progress, done, total, label, accent }: { progress: number; done: number; total: number; label: string; accent: string }) {
+function MiniRing({ progress, done, total, label, accent, theme }: { progress: number; done: number; total: number; label: string; accent: string; theme: CanvasTheme }) {
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress / 100);
@@ -399,7 +402,7 @@ function MiniRing({ progress, done, total, label, accent }: { progress: number; 
     <div className="flex flex-col items-center gap-1">
       <div className="relative w-10 h-10">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
-          <circle cx="22" cy="22" r={radius} fill="none" stroke="rgba(250,245,236,0.06)" strokeWidth="4" />
+          <circle cx="22" cy="22" r={radius} fill="none" stroke={theme.trackBg} strokeWidth="4" />
           <motion.circle
             cx="22" cy="22" r={radius}
             fill="none"
@@ -414,10 +417,10 @@ function MiniRing({ progress, done, total, label, accent }: { progress: number; 
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-['Big_Shoulders_Display',sans-serif] text-[9px] font-extrabold leading-none" style={{ color: progress >= 100 ? accent : '#FAF5EC' }}>{Math.round(progress)}%</span>
+          <span className="font-['Big_Shoulders_Display',sans-serif] text-[9px] font-extrabold leading-none" style={{ color: progress >= 100 ? accent : theme.onSurface }}>{Math.round(progress)}%</span>
         </div>
       </div>
-      <span className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase tracking-wider">{done}/{total} {label}</span>
+      <span className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium uppercase tracking-wider" style={{ color: theme.mutedText }}>{done}/{total} {label}</span>
     </div>
   );
 }
@@ -439,7 +442,7 @@ function ListSection({ title, items, type, checkedItems, onToggle, variants, the
 
   return (
     <section className="space-y-3">
-      <h2 className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-[0.12em] text-[#A79A87]">{title}</h2>
+      <h2 className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-[0.12em]" style={{ color: theme.subtle }}>{title}</h2>
 
       <div className="space-y-2">
         {items.map((item, idx) => {
@@ -472,7 +475,7 @@ function ListSection({ title, items, type, checkedItems, onToggle, variants, the
                 <div
                   className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 transition-all"
                   style={{
-                    borderColor: isDone ? theme.accent : '#6E6558',
+                    borderColor: isDone ? theme.accent : theme.mutedText,
                     background: isDone ? theme.accent : 'transparent',
                   }}
                 >
@@ -498,12 +501,12 @@ function ListSection({ title, items, type, checkedItems, onToggle, variants, the
                       <ExerciseIcon section={(item as CanvasExercise).section} />
                     )}
                     <p className={`truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-tight ${isDone ? 'line-through' : ''}`}
-                      style={{ color: isDone ? '#6E6558' : '#1E1A16' }}>
+                      style={{ color: isDone ? theme.mutedText : theme.text }}>
                       {item.name}
                     </p>
                   </div>
 
-                  <div className="mt-1 flex flex-wrap gap-1.5 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#6E6558]">
+                  <div className="mt-1 flex flex-wrap gap-1.5 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium" style={{ color: theme.mutedText }}>
                     {type === 'ex' ? (
                       <>
                         <span>{(item as CanvasExercise).sets} sets</span>
@@ -521,7 +524,7 @@ function ListSection({ title, items, type, checkedItems, onToggle, variants, the
 
                   {item.notes && (
                     <div className="mt-2 flex items-start gap-2 rounded-2xl px-3 py-2 text-xs font-medium leading-relaxed"
-                      style={{ background: 'rgba(30,25,18,0.08)', color: '#6E6558' }}>
+                      style={{ background: theme.noteBg, color: theme.mutedText }}>
                       <span className="mt-0.5 shrink-0 opacity-50">✎</span>
                       <p>{item.notes}</p>
                     </div>

@@ -43,8 +43,8 @@ interface WorkoutState {
   setCoverImage: (url: string) => void;
   clearRoutine: () => void;
   loadRoutine: (data: any) => void;
-  getShareableWir: (paletteId?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember') => WirDocument | null;
-  getShareableLink: (paletteId?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember') => string;
+  getShareableWir: (paletteId?: 'ember' | 'onyx' | 'midnight' | 'bloom') => WirDocument | null;
+  getShareableLink: (paletteId?: 'ember' | 'onyx' | 'midnight' | 'bloom') => string;
 }
 
 function normalizeRoutine(routine: any): WorkoutState['currentRoutine'] {

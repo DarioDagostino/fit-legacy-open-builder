@@ -34,7 +34,7 @@ export type WirFoodItem = z.infer<typeof WirFoodSchema>;
 export const WirTemplateSchema = z.enum(['routine', 'meal', 'mixed']);
 export type WirTemplate = z.infer<typeof WirTemplateSchema>;
 
-export const WirPaletteSchema = z.enum(['clean', 'mist', 'navy', 'forest', 'ember']);
+export const WirPaletteSchema = z.enum(['ember', 'onyx', 'midnight', 'bloom']);
 export type WirPalette = z.infer<typeof WirPaletteSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────

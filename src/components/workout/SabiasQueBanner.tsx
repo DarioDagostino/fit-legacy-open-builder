@@ -2,34 +2,46 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lightbulb } from 'lucide-react';
 
-const SABIAS_TIPS = [
+type Tip = {
+  text: string;
+  img: string;
+  focusY: number;
+};
+
+const SABIAS_TIPS: Tip[] = [
   {
     text: 'Podés combinar ejercicios y comidas en un mismo plan para tener una visión completa de tu entrenamiento.',
     img: '/assets_coach_tips/athletic_woman_protein.webp',
+    focusY: 16,
   },
   {
     text: 'Tus rutinas se guardan automáticamente en el calendario con analytics en tiempo real.',
     img: '/assets_coach_tips/confident_athlete_standing.webp',
+    focusY: 14,
   },
   {
     text: 'Compartí tu rutina como un link .wir — quien lo abre puede verla completa sin descargar nada.',
     img: '/assets_coach_tips/dynamic_protein_celebration.webp',
+    focusY: 25,
   },
   {
     text: 'El coach Legacito analiza tu plan y te da recomendaciones personalizadas al instante.',
     img: '/assets_coach_tips/confident_coach_standing.webp',
+    focusY: 12,
   },
   {
     text: 'Podés personalizar el fondo del catálogo entre 5 presets visuales distintos.',
     img: '/assets_coach_tips/athletic_woman_confident_pose.webp',
+    focusY: 18,
   },
   {
     text: 'Cada ejercicio acepta notas personalizadas para recordar técnica, peso o series.',
     img: '/assets_coach_tips/athletic_woman_squat.webp',
+    focusY: 20,
   },
 ];
 
-const DISMISSED_KEY = 'fl-sabias-que-dismissed-v1';
+const DISMISSED_KEY = 'fl-sabias-que-dismissed-v2';
 const INTERVAL_MS = 18000;
 
 export function SabiasQueBanner({ className }: { className?: string }) {
@@ -64,22 +76,30 @@ export function SabiasQueBanner({ className }: { className?: string }) {
       exit={{ opacity: 0, y: 12 }}
       className={className}
     >
-      <div className="mx-auto max-w-md rounded-[1.25rem] border border-[#2A2520] bg-[#1E1A16]/90 px-3 py-2.5 backdrop-blur-lg">
-        <div className="flex items-start gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#2A2520]">
-            <img
+      <div className="builder-apple-card overflow-hidden">
+        <div className="relative h-[120px] overflow-hidden sm:h-[140px]">
+          <AnimatePresence mode="popLayout">
+            <motion.img
+              key={index}
               src={tip.img}
               alt=""
+              initial={{ opacity: 0, scale: 1.08 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.04 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="h-full w-full object-cover"
+              style={{ objectPosition: `50% ${tip.focusY}%` }}
             />
+          </AnimatePresence>
+        </div>
+        <div className="flex items-start gap-3 p-3 sm:p-4">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F2A468]/12">
+            <Lightbulb className="h-3.5 w-3.5 text-[#F2A468]" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <Lightbulb className="h-3 w-3 text-[#F2A468]" />
-              <span className="text-[9px] font-black uppercase tracking-widest text-[#F2A468]">
-                ¿Sabías que?
-              </span>
-            </div>
+            <span className="text-[9px] font-black uppercase tracking-widest text-[#F2A468]">
+              ¿Sabías que?
+            </span>
             <AnimatePresence mode="wait">
               <motion.p
                 key={index}
@@ -87,7 +107,7 @@ export function SabiasQueBanner({ className }: { className?: string }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.25 }}
-                className="mt-0.5 text-[11px] font-semibold leading-snug text-[#A79A87]"
+                className="mt-0.5 text-[12px] font-semibold leading-snug text-[#A79A87]"
               >
                 {tip.text}
               </motion.p>

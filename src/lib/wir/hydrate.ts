@@ -8,7 +8,7 @@ import { getExerciseById, getFoodById } from '@fit-legacy/shared';
 
 export interface HydratedRoutine {
   template: 'routine' | 'meal' | 'mixed';
-  palette?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember';
+  palette?: 'ember' | 'onyx' | 'midnight' | 'bloom';
   name: string;
   coverImageUrl: string | null;
   exercises: Array<{

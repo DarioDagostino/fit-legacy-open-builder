@@ -26,7 +26,7 @@ type Food = {
 
 type RoutineData = {
   template: 'routine' | 'meal' | 'mixed';
-  palette?: 'clean' | 'mist' | 'navy' | 'forest' | 'ember';
+  palette?: 'ember' | 'onyx' | 'midnight' | 'bloom';
   title: string;
   duration: number;
   exercises: Exercise[];

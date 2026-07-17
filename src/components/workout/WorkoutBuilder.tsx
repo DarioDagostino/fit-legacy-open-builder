@@ -63,38 +63,31 @@ const CUSTOMIZE_KEY = 'catalog-customize-config';
 const ONBOARDING_KEY = 'fl-builder-onboarding-v1';
 const CATALOG_BG_PRESETS = [
   {
-    id: 'clean',
-    label: 'Clean',
-    style: {
-      background: 'radial-gradient(circle at 12% 18%, rgba(255,255,255,0.96), rgba(243,246,252,0.92) 48%, rgba(231,238,247,0.9) 100%)',
-    },
-  },
-  {
-    id: 'mist',
-    label: 'Mist',
-    style: {
-      background: 'linear-gradient(145deg, #f8fcff 0%, #dceaf7 45%, #c6dbf0 100%)',
-    },
-  },
-  {
-    id: 'navy',
-    label: 'Navy',
-    style: {
-      background: 'linear-gradient(145deg, #0f1a2c 0%, #1f3f66 52%, #2f5f8f 100%)',
-    },
-  },
-  {
-    id: 'forest',
-    label: 'Forest',
-    style: {
-      background: 'linear-gradient(145deg, #ecfaf0 0%, #d8efdf 45%, #c2e4cf 100%)',
-    },
-  },
-  {
     id: 'ember',
     label: 'Ember',
     style: {
       background: 'linear-gradient(145deg, #fff4f1 0%, #ffdcd2 45%, #ffc2b2 100%)',
+    },
+  },
+  {
+    id: 'onyx',
+    label: 'Onyx',
+    style: {
+      background: 'linear-gradient(145deg, #1a1a1a 0%, #0a0a0a 52%, #000000 100%)',
+    },
+  },
+  {
+    id: 'midnight',
+    label: 'Midnight',
+    style: {
+      background: 'linear-gradient(145deg, #1a2744 0%, #0c1425 52%, #080e1a 100%)',
+    },
+  },
+  {
+    id: 'bloom',
+    label: 'Bloom',
+    style: {
+      background: 'radial-gradient(circle at 20% 30%, #fffcf8, #fdf6ef 50%, #f5ede0 100%)',
     },
   },
 ];
@@ -546,11 +539,11 @@ export default function MobileFirstBuilder() {
           ? 'Track shared routines and progress.'
           : 'Preview the client view and send the link.';
 
-  const selectedWirPalette = useMemo<'clean' | 'mist' | 'navy' | 'forest' | 'ember' | undefined>(() => {
+  const selectedWirPalette = useMemo<'ember' | 'onyx' | 'midnight' | 'bloom' | undefined>(() => {
     if (catalogBgImage) {
       return undefined;
     }
-    const allowed = ['clean', 'mist', 'navy', 'forest', 'ember'] as const;
+    const allowed = ['ember', 'onyx', 'midnight', 'bloom'] as const;
     return (allowed as readonly string[]).includes(catalogBgId) ? (catalogBgId as (typeof allowed)[number]) : undefined;
   }, [catalogBgId, catalogBgImage]);
 
@@ -877,15 +870,11 @@ export default function MobileFirstBuilder() {
                       className="absolute left-0 top-1 bottom-1 w-0.5 rounded-r-full bg-[#E0793C] shadow-[0_0_12px_rgba(224,121,60,0.6)]"
                     />
                   )}
-                   <span className="flex items-center gap-2.5">
-                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${
-                      activeFilter === filter.id ? 'bg-[#FAF5EC]/10' : 'bg-[#16130F]/40'
-                    }`}>
-                      {builderMode === 'workout'
-                        ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-5 w-5" />
-                        : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-5 w-5" />}
-                    </span>
-                    <span className="text-xs font-['Big_Shoulders_Display',sans-serif] font-bold uppercase tracking-[0.06em]">{filter.label}</span>
+                   <span className="flex items-center gap-5">
+          {builderMode === 'workout'
+            ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-9 w-9 shrink-0" />
+            : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-9 w-9 shrink-0" />}
+                    <span className="text-sm font-['Big_Shoulders_Display',sans-serif] font-bold uppercase tracking-[0.06em]">{filter.label}</span>
                   </span>
                   {activeFilter === filter.id && <Check size={14} strokeWidth={2.5} className="text-[#E0793C]" />}
                 </motion.button>
@@ -960,17 +949,13 @@ export default function MobileFirstBuilder() {
                      <button
                        key={f.id}
                        onClick={() => setActiveFilter(f.id)}
-                       className={`group flex min-w-[112px] snap-start items-center gap-2.5 whitespace-nowrap px-3.5 py-3 text-left transition-all active:scale-95 ${
+                       className={`group flex min-w-[112px] snap-start items-center gap-4 whitespace-nowrap px-4 py-3 text-left transition-all active:scale-95 ${
                          activeFilter === f.id ? 'builder-cta-primary' : 'builder-focus-pill'
                        }`}
-                     >
-                       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl transition-colors ${
-                          activeFilter === f.id ? 'bg-[#FAF5EC]/15 text-white' : 'bg-[#16130F]/60 text-[#6E6558]'
-                        }`}>
-                         {builderMode === 'workout'
-                           ? <ExerciseIcon section={f.id === 'all' ? 'fullbody' : f.id} className="h-6 w-6" />
-                           : <FoodIcon category={f.id === 'all' ? 'protein' : f.id} className="h-5 w-5" />}
-                       </span>
+                      >
+          {builderMode === 'workout'
+            ? <ExerciseIcon section={f.id === 'all' ? 'fullbody' : f.id} className="h-9 w-9 shrink-0" />
+            : <FoodIcon category={f.id === 'all' ? 'protein' : f.id} className="h-9 w-9 shrink-0" />}
                         <span className="flex min-w-0 flex-col">
                           <span className="truncate font-['Big_Shoulders_Display',sans-serif] text-xs font-bold uppercase tracking-[0.06em]">{f.label}</span>
                           <span className={`text-[8px] font-medium font-['IBM_Plex_Mono',monospace] uppercase tracking-[0.16em] ${
@@ -1493,14 +1478,14 @@ export default function MobileFirstBuilder() {
                 Open
               </motion.button>
             </div>
-            <div className="mb-3 rounded-[1.35rem] border border-[#e6ecf2] bg-white/80 p-3">
+            <div className="builder-apple-card p-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E0793C] text-white shadow-[0_16px_30px_-22px_rgba(224,121,60,0.8)]">
                   {shareTemplate === 'meal' ? <Apple size={18} /> : shareTemplate === 'mixed' ? <Share2 size={18} /> : <Dumbbell size={18} />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold tracking-[-0.03em] text-[#FAF5EC]">{routineDisplayName}</p>
-                  <p className="mt-0.5 text-[10px] font-bold text-[#7b8797]">
+                  <p className="mt-0.5 text-[10px] font-bold text-[#A79A87]">
                     {shareTemplate === 'meal' ? 'Plan de comidas' : shareTemplate === 'mixed' ? 'Rutina + comidas' : 'Rutina'} · {routineItemCount} items
                   </p>
                 </div>
@@ -1512,8 +1497,8 @@ export default function MobileFirstBuilder() {
                 ['palette', selectedWirPalette],
                 ['items', routineItemCount],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl border border-[#e6ecf2] bg-white/70 p-2">
-                  <p className="text-[8px] font-black uppercase tracking-[0.14em] text-[#7b8797]">{label}</p>
+                <div key={label} className="rounded-2xl border border-[#FAF5EC]/8 bg-[#1E1A16]/60 p-2 backdrop-blur-sm">
+                  <p className="text-[8px] font-black uppercase tracking-[0.14em] text-[#6E6558]">{label}</p>
                   <p className="mt-1 truncate font-['Big_Shoulders_Display',sans-serif] text-[10px] font-bold uppercase text-[#FAF5EC]">{value}</p>
                 </div>
               ))}
@@ -1521,10 +1506,10 @@ export default function MobileFirstBuilder() {
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowPayloadPreview((current) => !current)}
-              className="flex w-full items-center justify-between rounded-2xl border border-[#e6ecf2] bg-white/75 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#35577d]"
+              className="flex w-full items-center justify-between rounded-2xl border border-[#FAF5EC]/8 bg-[#1E1A16]/50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#A79A87] backdrop-blur-sm"
             >
               <span>{showPayloadPreview ? 'Ocultar JSON' : 'Ver JSON'}</span>
-              <span className="text-[#0071e3]">{showPayloadPreview ? '−' : '+'}</span>
+              <span className="text-[#E0793C]">{showPayloadPreview ? '−' : '+'}</span>
             </motion.button>
             <AnimatePresence initial={false}>
               {showPayloadPreview && (
@@ -1544,9 +1529,10 @@ export default function MobileFirstBuilder() {
               )}
             </AnimatePresence>
           </motion.div>
-          <div className="mt-4 rounded-[1.35rem] border border-[#e6ecf2] bg-white/60 p-3 shadow-[0_16px_38px_-32px_rgba(20,30,48,0.45)]">
+          <div className="builder-apple-card p-3">
             <SocialJoin
               title="Únete"
+              variant="dark"
               align="center"
               className="[&_h4]:mb-3 [&_h4]:text-[9px] [&_div]:gap-2 [&_a]:h-8 [&_a]:w-8"
             />
@@ -1772,7 +1758,7 @@ export default function MobileFirstBuilder() {
               </div>
 
               <div className="relative -mx-3 mb-3 overflow-hidden">
-                <div className="relative h-40 bg-gradient-to-b from-[#1E1A16] to-[#2A2520]">
+                <div className="relative h-40">
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={onboardingStep}
@@ -1789,10 +1775,10 @@ export default function MobileFirstBuilder() {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.25 }}
                       className="h-full w-full object-cover"
+                      style={{ objectPosition: `50% ${[28, 16, 12, 32][onboardingStep]}%` }}
                       alt=""
                     />
                   </AnimatePresence>
-                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#16130F] to-transparent" />
                 </div>
               </div>
               <div className="grid gap-2">
