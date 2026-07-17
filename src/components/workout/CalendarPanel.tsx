@@ -7,9 +7,9 @@ import {
   Dumbbell,
   Apple,
   TrendingUp,
-  Calendar as CalendarIcon,
   Clock,
   Award,
+  Target,
 } from 'lucide-react';
 import CalendarAnalyticsDashboard from './CalendarAnalyticsDashboard';
 

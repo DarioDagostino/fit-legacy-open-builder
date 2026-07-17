@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MentorService, ChatMessage, LegacitoMode, MODE_META } from '@/lib/integrations/perplexity';
-import { Send, X, Crosshair, SlidersHorizontal, Flame } from 'lucide-react';
+import { Send, X, Crosshair, SlidersHorizontal, Flame, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBioLedgerStore } from '@/lib/bioledger-store';
 import { useWorkoutStore } from '@/lib/store';
@@ -30,6 +30,7 @@ export const AiMentorChat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<LegacitoMode>('tecnico');
   const [modeJustSwitched, setModeJustSwitched] = useState(false);
+  const [showModePicker, setShowModePicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bioStats = useBioLedgerStore(s => s.stats);
   const sessions = useBioLedgerStore(s => s.sessions);
@@ -73,6 +74,7 @@ export const AiMentorChat: React.FC = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    setShowModePicker(false);
     const userMsg: ChatMessage = { role: 'user', content: input };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
@@ -115,30 +117,11 @@ export const AiMentorChat: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-bold text-[#FAF5EC] tracking-tight leading-none text-sm">Legacito</h3>
-                    <p className="text-[9px] uppercase tracking-wider text-[#6E6558] font-semibold mt-0.5">{MODE_META[mode].title}</p>
                   </div>
                 </div>
                 <button onClick={() => setIsOpen(false)} className="text-[#6E6558] hover:text-[#FAF5EC] transition-colors p-1.5 hover:bg-[#2A2520] rounded-full">
                   <X className="w-4 h-4" />
                 </button>
-              </div>
-
-              {/* Mode Selector */}
-              <div className="flex gap-1.5">
-                {(Object.keys(MODE_META) as LegacitoMode[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => handleModeSwitch(m)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase transition-all ${
-                      mode === m
-                        ? `${MODE_BG[m]} text-[#FAF5EC] shadow-lg`
-                        : 'bg-[#2A2520] text-[#6E6558] hover:text-[#FAF5EC] hover:bg-[#3A3228]'
-                    }`}
-                  >
-                    {MODE_ICONS[m]}
-                    {MODE_META[m].label}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -186,9 +169,18 @@ export const AiMentorChat: React.FC = () => {
               )}
             </div>
 
-            {/* Input */}
-            <div className="p-4 pb-2 bg-[#1E1A16]/80 backdrop-blur-md border-t border-[#2A2520]">
-              <div className="relative flex items-center">
+            {/* Input + Model picker */}
+            <div className="p-4 pt-3 pb-4 bg-[#1E1A16]/80 backdrop-blur-md border-t border-[#2A2520] relative">
+              <div className="relative flex items-center gap-2">
+                <button
+                  onClick={() => setShowModePicker(!showModePicker)}
+                  className={`flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-full text-[9px] font-black uppercase tracking-wider transition-all ${
+                    MODE_BG[mode]} text-[#FAF5EC] shadow-lg hover:opacity-85`}
+                >
+                  {MODE_ICONS[mode]}
+                  {MODE_META[mode].label}
+                  <ChevronUp className={`w-3 h-3 transition-transform ${showModePicker ? 'rotate-180' : ''}`} />
+                </button>
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -198,26 +190,44 @@ export const AiMentorChat: React.FC = () => {
                     mode === 'ajuste' ? 'Cómo estás hoy?' :
                     'Describime el ejercicio...'
                   }
-                  className="w-full bg-[#2A2520] border border-[#3A3228] rounded-full pl-5 pr-12 py-3 text-[14px] text-[#FAF5EC] placeholder:text-[#6E6558] focus:outline-none focus:ring-2 focus:ring-[#E0793C]/30 transition-all shadow-inner"
+                  className="flex-1 bg-[#2A2520] border border-[#3A3228] rounded-full pl-4 pr-11 py-2.5 text-[14px] text-[#FAF5EC] placeholder:text-[#6E6558] focus:outline-none focus:ring-2 focus:ring-[#E0793C]/30 transition-all shadow-inner"
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim()}
-                  className={`absolute right-1.5 p-2 ${MODE_BG[mode]} disabled:bg-[#2A2520] text-[#FAF5EC] rounded-full hover:opacity-80 transition-all shadow-md disabled:opacity-40`}
+                  className={`absolute right-3.5 p-1.5 ${MODE_BG[mode]} disabled:bg-[#2A2520] text-[#FAF5EC] rounded-full hover:opacity-80 transition-all shadow-md disabled:opacity-40`}
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </div>
 
-            {/* Disclaimer */}
-            <div className="flex items-center justify-center gap-2 px-4 pb-3 text-[8px] font-medium tracking-[0.04em] text-[#6E6558]">
-              <span className="flex items-center gap-1">
-                <span className={`h-1 w-1 rounded-full ${MODE_BG[mode]}`} />
-                Legacito activo
-              </span>
-              <span>·</span>
-              <span>IA puede cometer errores. Verifica las respuestas.</span>
+              {/* Mode picker dropdown */}
+              <AnimatePresence>
+                {showModePicker && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute bottom-full left-4 mb-2 flex gap-1 rounded-2xl border border-[#2A2520] bg-[#1E1A16] p-1.5 shadow-2xl"
+                  >
+                    {(Object.keys(MODE_META) as LegacitoMode[]).map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => { handleModeSwitch(m); setShowModePicker(false); }}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                          mode === m
+                            ? `${MODE_BG[m]} text-[#FAF5EC] shadow-lg`
+                            : 'text-[#6E6558] hover:text-[#FAF5EC] hover:bg-[#2A2520]'
+                        }`}
+                      >
+                        {MODE_ICONS[m]}
+                        {MODE_META[m].label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}

@@ -41,18 +41,18 @@ REGLAS:
 
 export const MODE_META: Record<LegacitoMode, { label: string; greeting: string; title: string }> = {
   tecnico: {
-    label: 'Técnico',
-    title: 'Coach Técnico',
+    label: 'Basic',
+    title: 'Coach Básico',
     greeting: 'Pasame el video o describime el ejercicio. Te digo si está bien o si estamos a tiempo de corregir.'
   },
   ajuste: {
-    label: 'Ajuste',
-    title: 'Coach de Ajuste',
+    label: 'Fit',
+    title: 'Coach Fit',
     greeting: 'Contame cómo estás hoy. Dormiste? Duele algo? Energía? Ajustamos sobre la marcha.'
   },
   sargento: {
-    label: 'Sargento',
-    title: 'Modo Sargento',
+    label: 'Deep',
+    title: 'Modo Deep',
     greeting: 'Bueno... qué pasó? Días sin moverte. No voy a juzgar... bueno sí, un poco. Pero arranquemos.'
   }
 };

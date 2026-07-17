@@ -23,6 +23,8 @@ import {
 import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { DynamicLogoIcon } from '../DynamicLogoIcon';
 import { SabiasQueBanner } from './SabiasQueBanner';
+import { StreakGuard } from './StreakGuard';
+import { NotificationBell } from './NotificationBell';
 import { useWorkoutStore } from '../../lib/store';
 import { createPersistentWirShare } from '../../lib/share';
 import { loadRoutineAnalyticsStats } from '../../lib/routineAnalytics';
@@ -715,7 +717,7 @@ export default function MobileFirstBuilder() {
 
   return (
     <div className="min-h-screen bg-[#16130F] text-[#FAF5EC] font-sans selection:bg-[#E0793C]/20 flex flex-col overflow-hidden">
-      
+      <StreakGuard />
       {/* App Header */}
       <header className="shrink-0 z-10 border-b border-[#FAF5EC]/[0.06] bg-[#1E1912]/90 px-3 py-2 text-[#FAF5EC] shadow-[0_16px_34px_-30px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:px-4 sm:py-3" role="banner">
         <div className="flex min-h-[42px] items-center justify-between gap-2 sm:min-h-[48px] sm:gap-4">
@@ -743,6 +745,7 @@ export default function MobileFirstBuilder() {
             <div className="builder-status-chip hidden px-3 py-2 text-xs font-black sm:block">
               {routineItemCount} items
             </div>
+            <NotificationBell />
             <button
               onClick={() => setShowCustomize(true)}
               className="builder-cta-ghost flex h-9 items-center justify-center gap-1.5 px-2.5 text-[10px] font-black uppercase tracking-wide sm:h-auto sm:px-3 sm:py-2 sm:text-xs"
