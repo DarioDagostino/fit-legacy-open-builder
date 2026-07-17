@@ -31,6 +31,7 @@ import { loadRoutineAnalyticsStats } from '../../lib/routineAnalytics';
 import { toast } from 'sonner';
 import CalendarPanel, { loadCalendarEntries, saveCalendarEntry, type CalendarEntry } from './CalendarPanel';
 import mobileFirstBuilderConfig from '../../config/mobileFirstBuilder.json';
+import { AiMentorChat } from '../../app/components/integrations/AiMentorChat';
 
 const WirCanvasPreview = lazy(() =>
   import('../wir/WirCanvasPreview').then((module) => ({ default: module.WirCanvasPreview }))
@@ -2048,6 +2049,8 @@ export default function MobileFirstBuilder() {
           </div>
         </div>
       </nav>
+
+      <AiMentorChat />
 
     </div>
   );
