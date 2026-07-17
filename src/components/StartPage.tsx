@@ -73,12 +73,7 @@ export function StartPage() {
             'Ajusta series, reps y peso a tu medida',
             'Legacito te sugiere variantes y corrige el plan',
           ].map((item) => (
-            <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5 text-left backdrop-blur-sm">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md" style={{ background: 'rgba(212,175,55,0.12)' }}>
-                <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none">
-                  <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#D4AF37" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
+            <div key={item} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5 text-left backdrop-blur-sm">
               <span className="text-sm font-medium text-[#B0A89A]">{item}</span>
             </div>
           ))}
@@ -86,15 +81,20 @@ export function StartPage() {
 
         <button
           onClick={() => navigate('/build?start=1')}
-          className="w-full cursor-pointer rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-widest transition-all"
+          className="group w-full cursor-pointer rounded-2xl border border-[#D4AF37]/25 px-6 py-5 text-sm font-black uppercase tracking-widest shadow-[0_0_30px_rgba(212,175,55,0.10)] transition-all duration-300 hover:shadow-[0_0_50px_rgba(212,175,55,0.25)]"
           style={{
-            background: 'rgba(212,175,55,0.10)',
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))',
             color: '#D4AF37',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212,175,55,0.20)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(212,175,55,0.10)'}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.10))'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))'}
         >
-          Ir al builder
+          <span className="flex items-center justify-center gap-3">
+            Ir al builder
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-300 group-hover:translate-x-1">
+              <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="#D4AF37" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
         </button>
 
         <p className="mt-4 text-xs text-[#6E6558]">
