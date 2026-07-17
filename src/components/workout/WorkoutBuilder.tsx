@@ -266,7 +266,8 @@ export default function MobileFirstBuilder() {
     updateRoutineName,
     getShareableWir,
     getShareableLink,
-    loadRoutine 
+    loadRoutine,
+    clearRoutine,
   } = useWorkoutStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('catalog');
@@ -374,8 +375,13 @@ export default function MobileFirstBuilder() {
         loadRoutine(decoded);
         setActiveTab('build');
       } catch (e) {}
+      return;
     }
-  }, [searchParams, loadRoutine]);
+    if (searchParams.get('start') === '1') {
+      clearRoutine();
+      setActiveTab('build');
+    }
+  }, [searchParams, loadRoutine, clearRoutine]);
 
   // Reset search and filter when changing modes
   useEffect(() => {

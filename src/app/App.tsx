@@ -5,6 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import WorkoutBuilder from '../components/workout/WorkoutBuilder';
+import { StartPage } from '../components/StartPage';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { initGoogleAnalytics } from '@/lib/analytics/google';
 
@@ -87,6 +88,7 @@ function AppRoutes() {
             <Route path="/" element={<WorkoutBuilder />} />
             <Route path="/build" element={<WorkoutBuilder />} />
             <Route path="/arsenal" element={<WorkoutBuilder />} />
+            <Route path="/start" element={<StartPage />} />
             <Route path="/shared-routine" element={<LegacySharedRoutineRedirect />} />
 
             <Route
