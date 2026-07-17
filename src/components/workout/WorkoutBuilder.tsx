@@ -380,8 +380,21 @@ export default function MobileFirstBuilder() {
     if (searchParams.get('start') === '1') {
       clearRoutine();
       setActiveTab('build');
+      return;
     }
-  }, [searchParams, loadRoutine, clearRoutine]);
+    const plan = searchParams.get('plan');
+    if (plan === 'strength' || plan === 'conditioning') {
+      import('../../lib/templates').then(({ ROUTINE_TEMPLATES }) => {
+        const template = ROUTINE_TEMPLATES[plan];
+        if (template) {
+          clearRoutine();
+          template.exercises.forEach((ex) => addExercise(ex));
+          updateRoutineName(template.name);
+          setActiveTab('build');
+        }
+      });
+    }
+  }, [searchParams, loadRoutine, clearRoutine, addExercise, updateRoutineName]);
 
   // Reset search and filter when changing modes
   useEffect(() => {
