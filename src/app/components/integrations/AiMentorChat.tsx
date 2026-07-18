@@ -23,9 +23,11 @@ const MODE_BG: Record<LegacitoMode, string> = {
   sargento: 'bg-[#8A2F14]',
 };
 
-export const AiMentorChat: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen || false);
+  const [messages, setMessages] = useState<ChatMessage[]>(defaultOpen
+    ? [{ role: 'assistant', content: '¡Bienvenido, guerrero! Estoy aquí para ayudarte a construir tu rutina. ¿Qué objetivo tienes hoy?' }]
+    : []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<LegacitoMode>('tecnico');

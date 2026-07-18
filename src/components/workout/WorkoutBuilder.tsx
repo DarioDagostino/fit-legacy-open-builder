@@ -2050,7 +2050,7 @@ export default function MobileFirstBuilder() {
         </div>
       </nav>
 
-      <AiMentorChat />
+      <AiMentorChat defaultOpen={searchParams.get('start') === '1'} />
 
     </div>
   );
