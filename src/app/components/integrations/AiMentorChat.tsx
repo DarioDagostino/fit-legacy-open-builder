@@ -1,45 +1,54 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MentorService, ChatMessage, LegacitoMode, MODE_META } from '@/lib/integrations/perplexity';
-import { Send, X, Crosshair, SlidersHorizontal, Flame, ChevronUp } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Crosshair, Flame, Send, SlidersHorizontal, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useBioLedgerStore } from '@/lib/bioledger-store';
 import { useWorkoutStore } from '@/lib/store';
 
 const MODE_ICONS: Record<LegacitoMode, React.ReactNode> = {
-  tecnico: <Crosshair className="w-3.5 h-3.5" />,
-  ajuste: <SlidersHorizontal className="w-3.5 h-3.5" />,
-  sargento: <Flame className="w-3.5 h-3.5" />,
-};
-
-const MODE_BORDER: Record<LegacitoMode, string> = {
-  tecnico: 'border-[#E0793C]',
-  ajuste: 'border-[#F2A468]',
-  sargento: 'border-[#8A2F14]',
+  tecnico: <Crosshair className="h-3.5 w-3.5" />,
+  ajuste: <SlidersHorizontal className="h-3.5 w-3.5" />,
+  sargento: <Flame className="h-3.5 w-3.5" />,
 };
 
 const MODE_BG: Record<LegacitoMode, string> = {
   tecnico: 'bg-[#E0793C]',
-  ajuste: 'bg-[#F2A468]',
-  sargento: 'bg-[#8A2F14]',
+  ajuste: 'bg-[#B86F42]',
+  sargento: 'bg-[#7D351F]',
+};
+
+const MODE_COPY: Record<LegacitoMode, { hint: string; placeholder: string }> = {
+  tecnico: {
+    hint: 'Describí tu situación. Analizo la técnica y te marco el siguiente paso.',
+    placeholder: 'Describime el ejercicio...',
+  },
+  ajuste: {
+    hint: 'Contame cómo venís y ajustamos carga, volumen o recuperación.',
+    placeholder: '¿Cómo estás hoy?',
+  },
+  sargento: {
+    hint: 'Vamos directo: contexto, decisión y la próxima acción.',
+    placeholder: 'Decime en qué andás...',
+  },
 };
 
 export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen || false);
   const [messages, setMessages] = useState<ChatMessage[]>(defaultOpen
-    ? [{ role: 'assistant', content: '¡Bienvenido, guerrero! Estoy aquí para ayudarte a construir tu rutina. ¿Qué objetivo tienes hoy?' }]
+    ? [{ role: 'assistant', content: 'Bienvenido. Contame qué querés trabajar y lo resolvemos paso a paso.' }]
     : []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<LegacitoMode>('tecnico');
   const [modeJustSwitched, setModeJustSwitched] = useState(false);
-  const [showModePicker, setShowModePicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const bioStats = useBioLedgerStore(s => s.stats);
-  const sessions = useBioLedgerStore(s => s.sessions);
-  const routine = useWorkoutStore(s => s.currentRoutine);
+  const bioStats = useBioLedgerStore((state) => state.stats);
+  const sessions = useBioLedgerStore((state) => state.sessions);
+  const routine = useWorkoutStore((state) => state.currentRoutine);
 
   const athleteContext = useMemo(() => {
     const lines: string[] = [];
+
     if (bioStats) {
       lines.push(`- Nivel: ${bioStats.level}`);
       lines.push(`- XP total: ${bioStats.totalXp}`);
@@ -48,16 +57,18 @@ export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen 
       lines.push(`- Sesiones totales: ${bioStats.totalSessions}`);
       lines.push(`- Coincitos: ${bioStats.coincitos}`);
     }
+
     if (sessions?.length) {
       const last = sessions[sessions.length - 1];
       const daysSince = Math.floor((Date.now() - new Date(last.date).getTime()) / 86400000);
       lines.push(`- Última sesión: ${daysSince === 0 ? 'hoy' : `hace ${daysSince} día${daysSince > 1 ? 's' : ''}`}`);
     }
+
     if (routine?.exercises?.length) {
-      lines.push(`- Ejercicios en rutina actual: ${routine.exercises.map(e => e.name).join(', ')}`);
+      lines.push(`- Ejercicios en rutina actual: ${routine.exercises.map((exercise) => exercise.name).join(', ')}`);
     }
-    if (!lines.length) return undefined;
-    return lines.join('\n');
+
+    return lines.length ? lines.join('\n') : undefined;
   }, [bioStats, sessions, routine]);
 
   useEffect(() => {
@@ -68,16 +79,17 @@ export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen 
 
   const handleModeSwitch = (newMode: LegacitoMode) => {
     if (newMode === mode) return;
+
     setMode(newMode);
     setModeJustSwitched(true);
-    setTimeout(() => setModeJustSwitched(false), 2000);
+    window.setTimeout(() => setModeJustSwitched(false), 1800);
   };
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    const cleanInput = input.trim();
+    if (!cleanInput || isTyping) return;
 
-    setShowModePicker(false);
-    const userMsg: ChatMessage = { role: 'user', content: input };
+    const userMsg: ChatMessage = { role: 'user', content: cleanInput };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setInput('');
@@ -85,9 +97,12 @@ export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen 
 
     try {
       const response = await MentorService.getMentorResponse(updatedMessages, mode, athleteContext);
-      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
-    } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Mis pensamientos están nublados. Inténtalo de nuevo, guerrero." }]);
+      setMessages((previous) => [...previous, { role: 'assistant', content: response }]);
+    } catch {
+      setMessages((previous) => [
+        ...previous,
+        { role: 'assistant', content: 'No pude leer la señal ahora. Probá otra vez en unos segundos.' },
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -95,143 +110,177 @@ export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen 
 
   return (
     <>
-      <button
+      <motion.button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#16130F] flex items-center justify-center shadow-2xl hover:scale-110 transition-transform active:scale-95 z-50 border border-[#E0793C]/40"
+        whileHover={{ y: -3, scale: 1.04 }}
+        whileTap={{ scale: 0.94 }}
+        aria-label="Abrir chat de Legacito"
+        className="fixed bottom-5 right-5 z-50 grid h-14 w-14 place-items-center rounded-[18px] border border-[#A84E28]/50 bg-[#18130F] text-[#F18343] shadow-[0_12px_35px_rgba(0,0,0,0.34)] transition-colors hover:border-[#E0793C] hover:bg-[#211811]"
       >
-        <Flame className="text-[#E0793C] w-6 h-6" />
-      </button>
+        <Flame className="h-5 w-5" />
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          <motion.section
+            role="dialog"
+            aria-modal="true"
+            aria-label="Chat con Legacito"
+            initial={{ opacity: 0, y: 22, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 right-6 w-[350px] max-w-[90vw] h-[580px] rounded-[2rem] flex flex-col shadow-2xl z-50 overflow-hidden bg-[#16130F] border border-[#2A2520]"
+            exit={{ opacity: 0, y: 16, scale: 0.985 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            className="fixed inset-0 z-[60] flex h-[100dvh] flex-col overflow-hidden bg-[#12100E] text-[#F9F4EC] shadow-2xl sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[min(720px,calc(100dvh-3rem))] sm:w-[400px] sm:rounded-[28px] sm:border sm:border-[#3A3128]"
           >
-            {/* Header */}
-            <div className="px-5 pt-5 pb-3 flex flex-col gap-3 bg-[#1E1A16]/60 backdrop-blur-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-full ${MODE_BG[mode]}`}>
-                    {MODE_ICONS[mode]}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-[#FAF5EC] tracking-tight leading-none text-sm">Legacito</h3>
-                  </div>
-                </div>
-                <button onClick={() => setIsOpen(false)} className="text-[#6E6558] hover:text-[#FAF5EC] transition-colors p-1.5 hover:bg-[#2A2520] rounded-full">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-4">
-              {modeJustSwitched && (
-                <div className={`text-center py-2 px-4 rounded-xl border ${MODE_BORDER[mode]} bg-[#1E1A16]`}>
-                  <p className="text-[11px] font-medium text-[#FAF5EC]">Modo {MODE_META[mode].label} activado</p>
-                </div>
-              )}
-
-              {messages.length === 0 && !modeJustSwitched && (
-                <div className="text-center py-10 px-4 flex flex-col items-center justify-center h-full">
-                  <div className={`p-3 rounded-full ${MODE_BG[mode]} mb-4`}>
-                    {MODE_ICONS[mode]}
-                  </div>
-                  <p className="text-sm font-medium text-[#FAF5EC] mb-2">{MODE_META[mode].title}</p>
-                  <p className="text-xs text-[#6E6558] leading-relaxed">{MODE_META[mode].greeting}</p>
-                </div>
-              )}
-
-              {messages.map((msg, i) => {
-                const isUser = msg.role === 'user';
-                return (
-                  <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[88%] px-4 py-2.5 text-[14px] leading-relaxed ${
-                      isUser
-                        ? `${MODE_BG[mode]} text-[#FAF5EC] rounded-2xl rounded-tr-sm`
-                        : 'bg-[#2A2520] text-[#FAF5EC] rounded-2xl rounded-tl-sm border border-[#3A3228]'
-                    }`}>
-                      {msg.content}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-[#2A2520] px-4 py-3 rounded-2xl rounded-tl-sm border border-[#3A3228] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-[#6E6558] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-[#6E6558] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-[#6E6558] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Input + Model picker */}
-            <div className="p-4 pt-3 pb-4 bg-[#1E1A16]/80 backdrop-blur-md border-t border-[#2A2520] relative">
-              <div className="relative flex items-center gap-2">
-                <button
-                  onClick={() => setShowModePicker(!showModePicker)}
-                  className={`flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-full text-[9px] font-black uppercase tracking-wider transition-all ${
-                    MODE_BG[mode]} text-[#FAF5EC] shadow-lg hover:opacity-85`}
+            <header className="flex items-center justify-between border-b border-[#2C2721] bg-[#16130F]/96 px-4 py-3 backdrop-blur-xl sm:px-5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <motion.span
+                  key={mode}
+                  initial={{ scale: 0.75, rotate: -12 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#FFF8F0] ${MODE_BG[mode]}`}
                 >
                   {MODE_ICONS[mode]}
-                  {MODE_META[mode].label}
-                  <ChevronUp className={`w-3 h-3 transition-transform ${showModePicker ? 'rotate-180' : ''}`} />
-                </button>
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder={
-                    mode === 'sargento' ? 'Decime, en qué andás...' :
-                    mode === 'ajuste' ? 'Cómo estás hoy?' :
-                    'Describime el ejercicio...'
-                  }
-                  className="flex-1 bg-[#2A2520] border border-[#3A3228] rounded-full pl-4 pr-11 py-2.5 text-[14px] text-[#FAF5EC] placeholder:text-[#6E6558] focus:outline-none focus:ring-2 focus:ring-[#E0793C]/30 transition-all shadow-inner"
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim()}
-                  className={`absolute right-3.5 p-1.5 ${MODE_BG[mode]} disabled:bg-[#2A2520] text-[#FAF5EC] rounded-full hover:opacity-80 transition-all shadow-md disabled:opacity-40`}
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
+                </motion.span>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-bold tracking-[-0.02em]">Legacito</h2>
+                  <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#8C8174]">Coach de bolsillo · en línea</p>
+                </div>
               </div>
 
-              {/* Mode picker dropdown */}
-              <AnimatePresence>
-                {showModePicker && (
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="Cerrar chat"
+                className="grid h-10 w-10 place-items-center rounded-full text-[#8C8174] transition-colors hover:bg-[#27211C] hover:text-[#F9F4EC]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </header>
+
+            <main ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+              <AnimatePresence mode="wait">
+                {messages.length === 0 && !modeJustSwitched ? (
                   <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.12 }}
-                    className="absolute bottom-full left-4 mb-2 flex gap-1 rounded-2xl border border-[#2A2520] bg-[#1E1A16] p-1.5 shadow-2xl"
+                    key={`empty-${mode}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="mx-auto flex min-h-[50dvh] max-w-[290px] flex-col items-center justify-center pb-10 text-center"
                   >
-                    {(Object.keys(MODE_META) as LegacitoMode[]).map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => { handleModeSwitch(m); setShowModePicker(false); }}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                          mode === m
-                            ? `${MODE_BG[m]} text-[#FAF5EC] shadow-lg`
-                            : 'text-[#6E6558] hover:text-[#FAF5EC] hover:bg-[#2A2520]'
-                        }`}
-                      >
-                        {MODE_ICONS[m]}
-                        {MODE_META[m].label}
-                      </button>
-                    ))}
+                    <span className={`mb-4 grid h-12 w-12 place-items-center rounded-full text-[#FFF8F0] shadow-[0_0_0_8px_rgba(224,121,60,0.07)] ${MODE_BG[mode]}`}>
+                      {MODE_ICONS[mode]}
+                    </span>
+                    <h3 className="text-base font-semibold tracking-[-0.02em]">{MODE_META[mode].title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-[#887D70]">{MODE_COPY[mode].hint}</p>
                   </motion.div>
+                ) : (
+                  <div className="space-y-3 pb-4">
+                    {modeJustSwitched && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mx-auto w-fit rounded-full border border-[#3A3128] bg-[#1A1613] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#B9AEA0]"
+                      >
+                        Modo {MODE_META[mode].label} activado
+                      </motion.p>
+                    )}
+
+                    {messages.map((message, index) => {
+                      const isUser = message.role === 'user';
+
+                      return (
+                        <motion.article
+                          key={`${message.role}-${index}-${message.content.slice(0, 20)}`}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.18, delay: Math.min(index * 0.025, 0.12) }}
+                          className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`max-w-[86%] ${isUser ? 'text-right' : 'text-left'}`}>
+                            {!isUser && <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#8C8174]">Legacito</p>}
+                            <p className={`rounded-[18px] px-3.5 py-3 text-[13px] leading-relaxed ${
+                              isUser
+                                ? `${MODE_BG[mode]} rounded-br-[4px] text-[#FFF9F1]`
+                                : 'rounded-bl-[4px] border border-[#332B24] bg-[#201B17] text-[#E6DED4]'
+                            }`}>
+                              {message.content}
+                            </p>
+                          </div>
+                        </motion.article>
+                      );
+                    })}
+
+                    {isTyping && (
+                      <div className="flex justify-start">
+                        <div className="rounded-[18px] rounded-bl-[4px] border border-[#332B24] bg-[#201B17] px-3.5 py-3">
+                          <div className="flex items-center gap-1.5" aria-label="Legacito está escribiendo">
+                            {[0, 1, 2].map((dot) => (
+                              <span key={dot} className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#A69A8C]" style={{ animationDelay: `${dot * 120}ms` }} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </AnimatePresence>
-            </div>
-          </motion.div>
+            </main>
+
+            <footer className="border-t border-[#2C2721] bg-[#171410]/98 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:px-4">
+              <div className="mb-3 grid grid-cols-3 rounded-2xl border border-[#302921] bg-[#1F1A16] p-1" role="tablist" aria-label="Modo de Legacito">
+                {(Object.keys(MODE_META) as LegacitoMode[]).map((availableMode) => {
+                  const isActive = mode === availableMode;
+
+                  return (
+                    <button
+                      key={availableMode}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => handleModeSwitch(availableMode)}
+                      className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-1 text-[9px] font-bold uppercase tracking-[0.09em] transition-all ${
+                        isActive
+                          ? `${MODE_BG[availableMode]} text-[#FFF8F0] shadow-[0_6px_16px_rgba(0,0,0,0.2)]`
+                          : 'text-[#877B6D] hover:bg-[#28211B] hover:text-[#E8E0D6]'
+                      }`}
+                    >
+                      {MODE_ICONS[availableMode]}
+                      <span>{MODE_META[availableMode].label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-2 rounded-[18px] border border-[#393027] bg-[#24201C] p-1.5 shadow-inner">
+                <input
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                  placeholder={MODE_COPY[mode].placeholder}
+                  aria-label="Mensaje para Legacito"
+                  className="min-w-0 flex-1 bg-transparent px-2.5 py-2 text-sm text-[#F5EDE3] outline-none placeholder:text-[#766C61]"
+                />
+                <motion.button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  disabled={!input.trim() || isTyping}
+                  whileTap={{ scale: 0.9 }}
+                  aria-label="Enviar mensaje"
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#FFF8F0] transition-opacity disabled:cursor-not-allowed disabled:opacity-30 ${MODE_BG[mode]}`}
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </motion.button>
+              </div>
+            </footer>
+          </motion.section>
         )}
       </AnimatePresence>
     </>
