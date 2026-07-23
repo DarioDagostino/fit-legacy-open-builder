@@ -288,6 +288,7 @@ export default function MobileFirstBuilder() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [showPayloadPreview, setShowPayloadPreview] = useState(false);
   const [navVisible, setNavVisible] = useState(true);
+  const [chatOpen, setChatOpen] = useState(searchParams.get('start') === '1');
   const lastScrollYRef = useRef(0);
 
   useEffect(() => {
@@ -1921,6 +1922,16 @@ export default function MobileFirstBuilder() {
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={() => setChatOpen(true)}
+            className="builder-footer-nav-btn"
+            aria-label="Legacito chat"
+          >
+            <span className="builder-footer-nav-btn-icon">
+              <MessageCircle size={18} />
+            </span>
+          </button>
         </nav>
         <button
           type="button"
@@ -1932,7 +1943,7 @@ export default function MobileFirstBuilder() {
         </button>
       </div>
 
-      <AiMentorChat defaultOpen={searchParams.get('start') === '1'} />
+      <AiMentorChat open={chatOpen} onOpenChange={setChatOpen} />
 
     </div>
   );

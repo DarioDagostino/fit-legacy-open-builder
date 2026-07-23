@@ -32,8 +32,13 @@ const MODE_COPY: Record<LegacitoMode, { hint: string; placeholder: string }> = {
   },
 };
 
-export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen || false);
+export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: boolean) => void }> = ({ open, onOpenChange }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setIsOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setInternalOpen(v);
+  };
   const [messages, setMessages] = useState<ChatMessage[]>(defaultOpen
     ? [{ role: 'assistant', content: 'Bienvenido. Contame qué querés trabajar y lo resolvemos paso a paso.' }]
     : []);
@@ -109,19 +114,7 @@ export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen 
   };
 
   return (
-    <>
-      <motion.button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        whileHover={{ y: -3, scale: 1.04 }}
-        whileTap={{ scale: 0.94 }}
-        aria-label="Abrir chat de Legacito"
-        className="fixed bottom-5 right-5 z-50 grid h-14 w-14 place-items-center rounded-[18px] border border-[#A84E28]/50 bg-[#18130F] text-[#F18343] shadow-[0_12px_35px_rgba(0,0,0,0.34)] transition-colors hover:border-[#E0793C] hover:bg-[#211811]"
-      >
-        <Flame className="h-5 w-5" />
-      </motion.button>
-
-      <AnimatePresence>
+    <AnimatePresence>
         {isOpen && (
           <motion.section
             role="dialog"
@@ -283,6 +276,5 @@ export const AiMentorChat: React.FC<{ defaultOpen?: boolean }> = ({ defaultOpen 
           </motion.section>
         )}
       </AnimatePresence>
-    </>
   );
 };
