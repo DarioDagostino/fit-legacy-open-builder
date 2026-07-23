@@ -1027,8 +1027,8 @@ export default function MobileFirstBuilder() {
                         <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase text-[#6E6558]">Sets</p>
                         <div className="builder-apple-tile flex items-center justify-between px-2 py-1.5">
                           <button onClick={() => setCustomSeries(v => Math.max(1, v - 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                          <span className="text-xs font-black text-[#F1F0F4]">{customSeries}</span>
-                          <button onClick={() => setCustomSeries(v => Math.min(20, v + 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
+<span className="text-lg font-black leading-none text-[#F1F0F4]">{customSeries}</span>
+                           <button onClick={() => setCustomSeries(v => Math.min(20, v + 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                         </div>
                       </div>
 
@@ -1036,8 +1036,8 @@ export default function MobileFirstBuilder() {
                         <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase text-[#6E6558]">Reps</p>
                         <div className="builder-apple-tile flex items-center justify-between px-2 py-1.5">
                           <button onClick={() => setCustomReps(v => Math.max(1, v - 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                          <span className="text-xs font-black text-[#F1F0F4]">{customReps}</span>
-                          <button onClick={() => setCustomReps(v => Math.min(100, v + 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
+<span className="text-lg font-black leading-none text-[#F1F0F4]">{customReps}</span>
+                           <button onClick={() => setCustomReps(v => Math.min(100, v + 1))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                         </div>
                       </div>
 
@@ -1045,8 +1045,8 @@ export default function MobileFirstBuilder() {
                         <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase text-[#6E6558]">Weight</p>
                         <div className="builder-apple-tile flex items-center justify-between px-2 py-1.5">
                           <button onClick={() => setCustomWeight(v => Math.max(0, v - 2.5))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                          <span className="text-xs font-black text-[#F1F0F4]">{customWeight}</span>
-                          <button onClick={() => setCustomWeight(v => Math.min(500, Number((v + 2.5).toFixed(1))))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
+<span className="text-lg font-black leading-none text-[#F1F0F4]">{customWeight}</span>
+                           <button onClick={() => setCustomWeight(v => Math.min(500, Number((v + 2.5).toFixed(1))))} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                         </div>
                       </div>
                     </div>
@@ -1128,28 +1128,28 @@ export default function MobileFirstBuilder() {
                       <FoodIcon category="carbs" name="rice" className="w-4 h-4" />
                     </div>
                     <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Kcal</p>
-                    <p className="text-sm font-black text-[#F2A468]">{Math.round(totalMacros.calories)}</p>
+                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#F2A468]">{Math.round(totalMacros.calories)}</p>
                   </div>
                   <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
                       <FoodIcon category="protein" name="egg" className="w-4 h-4" />
                     </div>
                     <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Prot</p>
-                    <p className="text-sm font-black text-[#E0793C]">{Math.round(totalMacros.protein)}g</p>
+                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#E0793C]">{Math.round(totalMacros.protein)}g</p>
                   </div>
                   <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
                       <FoodIcon category="carbs" name="noodles" className="w-4 h-4" />
                     </div>
                     <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Carb</p>
-                    <p className="text-sm font-black text-[#9CA0A6]">{Math.round(totalMacros.carbs)}g</p>
+                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#9CA0A6]">{Math.round(totalMacros.carbs)}g</p>
                   </div>
                   <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
                       <FoodIcon category="fats" name="avocado" className="w-4 h-4" />
                     </div>
                     <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Fat</p>
-                    <p className="text-sm font-black text-[#8A2F14]">{Math.round(totalMacros.fats)}g</p>
+                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#8A2F14]">{Math.round(totalMacros.fats)}g</p>
                   </div>
               </div>
 
@@ -1180,7 +1180,7 @@ export default function MobileFirstBuilder() {
                         <div className="flex flex-col gap-3">
                            <div className="builder-apple-tile flex items-center gap-3 p-2">
                               <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Minus size={16} /></button>
-                              <span className="text-xs font-black w-10 text-center text-[#F1F0F4]">{food.quantity}g</span>
+                               <span className="text-lg font-black w-12 text-center leading-none text-[#F1F0F4]">{food.quantity}g</span>
                               <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Plus size={16} /></button>
                               <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#F1F0F4]/10 text-[#6E6558] transition-colors hover:text-[#E0793C]"><Trash2 size={16} /></button>
                            </div>
@@ -1230,21 +1230,21 @@ export default function MobileFirstBuilder() {
                     <ExerciseIcon section="fullbody" className="w-5 h-5" />
                   </div>
                   <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Ejercicios</p>
-                  <p className="text-sm font-black text-[#F1F0F4]">{currentRoutine.exercises.length}</p>
+                  <p className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black leading-none text-[#F1F0F4]">{currentRoutine.exercises.length}</p>
                 </div>
                 <div className="builder-apple-tile p-3 text-center">
                   <div className="mb-1 flex justify-center">
                     <ExerciseIcon section="arms" className="w-5 h-5" />
                   </div>
                   <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Sets</p>
-                  <p className="text-sm font-black text-[#F1F0F4]">{totalSets}</p>
+                  <p className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black leading-none text-[#F1F0F4]">{totalSets}</p>
                 </div>
                 <div className="builder-apple-tile p-3 text-center">
                   <div className="mb-1 flex justify-center">
                     <ExerciseIcon section="legs" className="w-5 h-5" />
                   </div>
                   <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Volumen</p>
-                  <p className="text-sm font-black text-[#F1F0F4]">{Math.round(totalVolume)}</p>
+                  <p className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black leading-none text-[#F1F0F4]">{Math.round(totalVolume)}</p>
                 </div>
               </div>
 
@@ -1267,7 +1267,7 @@ export default function MobileFirstBuilder() {
                       <div className="flex justify-between items-center">
                          <div className="flex items-center gap-3">
                             <ExerciseIcon section={ex.section} className="w-8 h-8" />
-                             <h4 className="font-black italic uppercase text-xs tracking-tight text-[#F1F0F4]">{ex.name}</h4>
+                             <h4 className="font-black italic uppercase text-sm tracking-tight text-[#F1F0F4]">{ex.name}</h4>
                          </div>
                          <button onClick={() => removeExercise(ex.id)} className="builder-icon-button -mr-2 flex h-8 w-8 items-center justify-center hover:text-red-500"><X size={16} /></button>
                       </div>
@@ -1276,24 +1276,24 @@ export default function MobileFirstBuilder() {
                              <label className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Sets</label>
                             <div className="builder-apple-tile flex items-center justify-between p-2">
                                <button onClick={() => updateExercise(ex.id, { sets: Math.max(1, ex.sets - 1) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                                <span className="text-xs font-black text-[#F1F0F4]">{ex.sets}</span>
-                               <button onClick={() => updateExercise(ex.id, { sets: ex.sets + 1 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
+                                 <span className="text-lg font-black leading-none text-[#F1F0F4]">{ex.sets}</span>
+                                <button onClick={() => updateExercise(ex.id, { sets: ex.sets + 1 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                             </div>
                          </div>
                          <div className="space-y-1">
                              <label className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Reps</label>
                             <div className="builder-apple-tile flex items-center justify-between p-2">
                                <button onClick={() => updateExercise(ex.id, { reps: Math.max(1, ex.reps - 1) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                                <span className="text-xs font-black text-[#F1F0F4]">{ex.reps}</span>
-                               <button onClick={() => updateExercise(ex.id, { reps: ex.reps + 1 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
+                                 <span className="text-lg font-black leading-none text-[#F1F0F4]">{ex.reps}</span>
+                                <button onClick={() => updateExercise(ex.id, { reps: ex.reps + 1 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                             </div>
                          </div>
                          <div className="space-y-1">
                              <label className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">kg</label>
                             <div className="builder-apple-tile flex items-center justify-between p-2">
                                <button onClick={() => updateExercise(ex.id, { weight: Math.max(0, ex.weight - 2.5) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                                <span className="text-xs font-black text-[#F1F0F4]">{ex.weight}</span>
-                               <button onClick={() => updateExercise(ex.id, { weight: ex.weight + 2.5 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
+                                 <span className="text-lg font-black leading-none text-[#F1F0F4]">{ex.weight}</span>
+                                <button onClick={() => updateExercise(ex.id, { weight: ex.weight + 2.5 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
                             </div>
                          </div>
                       </div>
@@ -1462,7 +1462,7 @@ export default function MobileFirstBuilder() {
             ].map(([label, value]) => (
               <div key={label} className="builder-apple-tile p-3 text-center">
                 <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase tracking-[0.12em] text-[#6E6558]">{label}</p>
-                <p className="mt-1 text-lg font-black text-[#F1F0F4]">{value}</p>
+                <p className="mt-1 font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#F1F0F4]">{value}</p>
               </div>
             ))}
           </div>
