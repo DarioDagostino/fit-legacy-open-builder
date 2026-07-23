@@ -629,8 +629,8 @@
   transition: transform 140ms cubic-bezier(.2,.8,.2,1), color 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 .builder-footer-nav-btn.is-active {
-  background: linear-gradient(145deg, #ef7aa6, #c75078);
-  box-shadow: 0 2px 0 #8a3a5c, 0 6px 14px rgba(199,80,120,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: linear-gradient(145deg, #E0793C, #8A2F14);
+  box-shadow: 0 2px 0 #6b1e23, 0 6px 14px rgba(224,121,60,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   color: #ffffff;
 }
 .builder-footer-nav-btn:active {
@@ -653,7 +653,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #c75078;
+  background: #E0793C;
   color: #ffffff;
   font-size: 7px;
   font-weight: 900;
@@ -670,7 +670,7 @@
   width: 16px;
   height: 22px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 235, 250, 0.12);
+  border: 1px solid rgba(224, 121, 60, 0.15);
   background: rgba(10, 10, 12, 0.85);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   cursor: pointer;
@@ -681,7 +681,7 @@
 }
 .builder-footer-nav-toggle:hover {
   background: rgba(30, 28, 32, 0.95);
-  box-shadow: 0 3px 12px rgba(199, 80, 120, 0.25);
+  box-shadow: 0 3px 12px rgba(224, 121, 60, 0.25);
 }
 .builder-footer-nav-toggle:active {
   transform: translateY(-50%) scale(0.88);
