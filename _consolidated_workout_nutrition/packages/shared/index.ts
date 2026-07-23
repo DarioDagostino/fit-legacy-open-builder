@@ -1,4 +1,6 @@
 export * from './SocialJoin';
+export * from './legacito';
+export * from './LegacitoActionButton';
 /**
  * @fit-legacy/shared
  * Catálogos maestros UNIFIED de ejercicios y alimentos
