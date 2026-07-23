@@ -31,7 +31,7 @@ export function NotificationBell() {
       <button
         onClick={() => { setOpen(!open); if (!open) notifications.forEach((n) => markRead(n.id)); }}
         className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-all ${
-          open ? 'bg-[#E0793C]/10 text-[#E0793C]' : 'text-[#6E6558] hover:text-[#A79A87] hover:bg-[#2A2520]'
+          open ? 'bg-[#E0793C]/10 text-[#E0793C]' : 'text-[#6E6558] hover:text-[#9CA0A6] hover:bg-[#2A2520]'
         }`}
         aria-label="Notificaciones"
       >
@@ -50,7 +50,7 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-[#2A2520] bg-[#1E1A16] shadow-2xl shadow-black/50 overflow-hidden"
+            className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-[#2A2520] bg-[#0a0a0c] shadow-2xl shadow-black/50 overflow-hidden"
           >
             <div className="px-4 py-3 border-b border-[#2A2520]">
               <p className="text-[10px] font-black uppercase tracking-widest text-[#6E6558]">Notificaciones</p>
@@ -80,8 +80,8 @@ function NotificationItem({ notification, onDismiss }: { notification: AppNotifi
     <div className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[#2A2520]/50 ${notification.read ? 'opacity-60' : ''}`}>
       <div className="mt-0.5 shrink-0">{ICON_MAP[notification.type] || <Bell className="h-3.5 w-3.5 text-[#6E6558]" />}</div>
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-bold text-[#FAF5EC] leading-tight">{notification.title}</p>
-        <p className="mt-0.5 text-[10px] font-medium text-[#A79A87] leading-relaxed">{notification.body}</p>
+        <p className="text-[12px] font-bold text-[#F1F0F4] leading-tight">{notification.title}</p>
+        <p className="mt-0.5 text-[10px] font-medium text-[#9CA0A6] leading-relaxed">{notification.body}</p>
         {notification.action && (
           <button
             onClick={notification.action.onClick}
@@ -93,7 +93,7 @@ function NotificationItem({ notification, onDismiss }: { notification: AppNotifi
       </div>
       <button
         onClick={() => onDismiss(notification.id)}
-        className="shrink-0 rounded-full p-1 text-[#6E6558] hover:text-[#FAF5EC] hover:bg-[#2A2520] transition-colors"
+        className="shrink-0 rounded-full p-1 text-[#6E6558] hover:text-[#F1F0F4] hover:bg-[#2A2520] transition-colors"
       >
         <X className="h-3 w-3" />
       </button>

@@ -47,14 +47,14 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
     <div className={`cal-root ${className}`}>
       <style>{`
         .cal-root {
-          --blt-obsidian: #16130F;
-          --blt-obsidian-soft: #1E1912;
-          --blt-bone: #FAF5EC;
-          --blt-ink: #1E1A16;
+          --blt-obsidian: #0c0c0e;
+          --blt-obsidian-soft: #18181c;
+          --blt-bone: #F1F0F4;
+          --blt-ink: #0a0a0c;
           --blt-ember: #E0793C;
           --blt-ember-2: #F2A468;
           --blt-molten: #8A2F14;
-          --blt-stone: #A79A87;
+          --blt-stone: #9CA0A6;
           --blt-stone-dim: #6E6558;
 
           background: var(--blt-obsidian);
@@ -165,7 +165,7 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
           padding: 6px 12px;
           border-radius: 999px;
           background: var(--blt-obsidian-soft);
-          border: 1px solid rgba(250,245,236,0.08);
+          border: 1px solid rgba(245,235,255,0.08);
           font-family: 'IBM Plex Mono', monospace;
           font-size: 9.5px;
           font-weight: 500;
@@ -277,7 +277,7 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
           flex: 1;
         }
         .cal-mixrow-value { font-family: 'Big Shoulders Display', sans-serif; font-weight: 700; font-size: 14px; color: var(--blt-ink); }
-        .cal-mixrow-track { height: 4px; border-radius: 4px; background: rgba(30,26,22,0.08); overflow: hidden; }
+        .cal-mixrow-track { height: 4px; border-radius: 4px; background: rgba(10,10,12,0.08); overflow: hidden; }
         .cal-mixrow-fill { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.22,1,0.36,1); }
         .cal-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .cal-dot--ember, .cal-mixrow-fill--ember { background: var(--blt-ember); }
@@ -470,7 +470,7 @@ function ProgressRing({ percent = 0, size = 84, strokeWidth = 8, value, unit }) 
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(30,26,22,0.08)"
+          stroke="rgba(10,10,12,0.08)"
           strokeWidth={strokeWidth}
         />
         <circle

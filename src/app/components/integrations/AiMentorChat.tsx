@@ -130,7 +130,7 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
             className="fixed inset-0 z-[60] flex h-[100dvh] flex-col overflow-hidden bg-[#12100E] text-[#F9F4EC] shadow-2xl sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[min(720px,calc(100dvh-3rem))] sm:w-[400px] sm:rounded-[28px] sm:border sm:border-[#3A3128]"
           >
-            <header className="flex items-center justify-between border-b border-[#2C2721] bg-[#16130F]/96 px-4 py-3 backdrop-blur-xl sm:px-5">
+            <header className="flex items-center justify-between border-b border-[#2C2721] bg-[#0c0c0e]/96 px-4 py-3 backdrop-blur-xl sm:px-5">
               <div className="flex min-w-0 items-center gap-2.5">
                 <motion.span
                   key={mode}

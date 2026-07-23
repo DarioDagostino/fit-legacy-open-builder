@@ -107,7 +107,7 @@ export function SabiasQueBanner({ className }: { className?: string }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.25 }}
-                className="mt-0.5 text-[12px] font-semibold leading-snug text-[#A79A87]"
+                className="mt-0.5 text-[12px] font-semibold leading-snug text-[#9CA0A6]"
               >
                 {tip.text}
               </motion.p>
@@ -115,7 +115,7 @@ export function SabiasQueBanner({ className }: { className?: string }) {
           </div>
           <button
             onClick={handleDismiss}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#6E6558] hover:bg-[#2A2520] hover:text-[#FAF5EC]"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#6E6558] hover:bg-[#2A2520] hover:text-[#F1F0F4]"
             aria-label="Cerrar tip"
           >
             <X className="h-3 w-3" />

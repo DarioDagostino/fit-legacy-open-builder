@@ -71,7 +71,7 @@ export function StartPage() {
         <h1 className="mb-3 font-['Montserrat',sans-serif] text-4xl font-black uppercase leading-[1.02] tracking-[-0.04em] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.6)]">
           Arranca de cero
         </h1>
-        <p className="mb-10 text-base leading-relaxed text-[#A79A87] drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
+        <p className="mb-10 text-base leading-relaxed text-[#9CA0A6] drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
           No hay plan cargado. Empeza desde el builder y deja que Legacito te guie paso a paso.
         </p>
 
