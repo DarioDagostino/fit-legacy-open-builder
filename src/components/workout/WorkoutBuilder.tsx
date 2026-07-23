@@ -287,6 +287,22 @@ export default function MobileFirstBuilder() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [showPayloadPreview, setShowPayloadPreview] = useState(false);
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    const THRESHOLD = 10;
+    const onScroll = () => {
+      const sy = window.scrollY;
+      const delta = sy - lastScrollYRef.current;
+      if (Math.abs(delta) > THRESHOLD) {
+        setNavVisible(delta < 0);
+        lastScrollYRef.current = sy;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const workoutFilters = useMemo(() => {
     return [
@@ -1875,180 +1891,46 @@ export default function MobileFirstBuilder() {
         )}
       </AnimatePresence>
 
-      <SabiasQueBanner className="fixed bottom-[78px] left-0 right-0 z-40 px-3 lg:hidden" />
+      <SabiasQueBanner className="fixed bottom-0 left-0 right-0 z-40 px-3 lg:hidden" />
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden" role="navigation">
-        <div className="border-t border-[#FAF5EC]/[0.06] bg-[#1E1A16]/95 backdrop-blur-2xl">
-          <div className="mx-auto flex max-w-md items-end justify-around px-1 pb-1.5 pt-1">
-            <button
-              onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }}
-              aria-label="Add exercises"
-              className={`relative flex flex-1 flex-col items-center gap-0.5 px-1 pt-2 transition-all duration-200 ${
-                activeTab === 'catalog'
-                  ? 'text-[#E0793C]'
-                  : 'text-[#6E6558] hover:text-[#A79A87]'
-              }`}
-            >
-              <div className={`flex items-center justify-center transition-all duration-200 ${
-                activeTab === 'catalog'
-                  ? 'h-11 w-11 rounded-2xl bg-[#E0793C]/10 shadow-[0_0_20px_-6px_rgba(224,121,60,0.25)]'
-                  : 'h-9 w-9 rounded-xl'
-              }`}>
-                <img src="/icons/fit-legacy-mark.svg" alt="" aria-hidden="true" className="h-6 w-6 object-contain" />
-              </div>
-              <AnimatePresence>
-                {activeTab === 'catalog' && (
-                  <motion.span
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="text-[8px] font-black uppercase tracking-[0.18em]"
-                  >
-                    Add
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-            <button
-              onClick={() => setActiveTab('food')}
-              aria-label={`View meals (${currentRoutine.foods.length} items)`}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 px-1 pt-2 transition-all duration-200 ${
-                activeTab === 'food'
-                  ? 'text-[#E0793C]'
-                  : 'text-[#6E6558] hover:text-[#A79A87]'
-              }`}
-            >
-              <div className={`relative flex items-center justify-center transition-all duration-200 ${
-                activeTab === 'food'
-                  ? 'h-11 w-11 rounded-2xl bg-[#E0793C]/10 shadow-[0_0_20px_-6px_rgba(224,121,60,0.25)]'
-                  : 'h-9 w-9 rounded-xl'
-              }`}>
-                <Apple size={22} />
-                {currentRoutine.foods.length > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#28623a] text-[7px] font-black text-white shadow-lg">
-                    {currentRoutine.foods.length}
-                  </span>
-                )}
-              </div>
-              <AnimatePresence>
-                {activeTab === 'food' && (
-                  <motion.span
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="text-[8px] font-black uppercase tracking-[0.18em]"
-                  >
-                    Meals
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-            <button
-              onClick={() => setActiveTab('build')}
-              aria-label={`View routine (${currentRoutine.exercises.length} exercises)`}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 px-1 pt-2 transition-all duration-200 ${
-                activeTab === 'build'
-                  ? 'text-[#E0793C]'
-                  : 'text-[#6E6558] hover:text-[#A79A87]'
-              }`}
-            >
-              <div className={`relative flex items-center justify-center transition-all duration-200 ${
-                activeTab === 'build'
-                  ? 'h-11 w-11 rounded-2xl bg-[#E0793C]/10 shadow-[0_0_20px_-6px_rgba(224,121,60,0.25)]'
-                  : 'h-9 w-9 rounded-xl'
-              }`}>
-                <ExerciseIcon section="fullbody" className="h-6 w-6" />
-                {currentRoutine.exercises.length > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#8A2F14] text-[7px] font-black text-white shadow-lg">
-                    {currentRoutine.exercises.length}
-                  </span>
-                )}
-              </div>
-              <AnimatePresence>
-                {activeTab === 'build' && (
-                  <motion.span
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="text-[8px] font-black uppercase tracking-[0.18em]"
-                  >
-                    Routine
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-            <button
-              onClick={() => setActiveTab('calendar')}
-              aria-label="Calendar and analytics"
-              className={`relative flex flex-1 flex-col items-center gap-0.5 px-1 pt-2 transition-all duration-200 ${
-                activeTab === 'calendar'
-                  ? 'text-[#E0793C]'
-                  : 'text-[#6E6558] hover:text-[#A79A87]'
-              }`}
-            >
-              <div className={`relative flex items-center justify-center transition-all duration-200 ${
-                activeTab === 'calendar'
-                  ? 'h-11 w-11 rounded-2xl bg-[#E0793C]/10 shadow-[0_0_20px_-6px_rgba(224,121,60,0.25)]'
-                  : 'h-9 w-9 rounded-xl'
-              }`}>
-                <CalendarDays size={22} />
-                {calendarEntries.length > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#F2A468] text-[7px] font-black text-[#1E1A16] shadow-lg">
-                    {calendarEntries.length > 9 ? '9+' : calendarEntries.length}
-                  </span>
-                )}
-              </div>
-              <AnimatePresence>
-                {activeTab === 'calendar' && (
-                  <motion.span
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="text-[8px] font-black uppercase tracking-[0.18em]"
-                  >
-                    Calendar
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-            <button
-              onClick={() => setActiveTab('export')}
-              aria-label="Share routine"
-              className={`relative flex flex-1 flex-col items-center gap-0.5 px-1 pt-2 transition-all duration-200 ${
-                activeTab === 'export'
-                  ? 'text-[#E0793C]'
-                  : 'text-[#6E6558] hover:text-[#A79A87]'
-              }`}
-            >
-              <div className={`flex items-center justify-center transition-all duration-200 ${
-                activeTab === 'export'
-                  ? 'h-11 w-11 rounded-2xl bg-[#E0793C]/10 shadow-[0_0_20px_-6px_rgba(224,121,60,0.25)]'
-                  : 'h-9 w-9 rounded-xl'
-              }`}>
-                <img src="/icons/fl-1.svg" alt="" aria-hidden="true" className="h-6 w-6 object-contain" />
-              </div>
-              <AnimatePresence>
-                {activeTab === 'export' && (
-                  <motion.span
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="text-[8px] font-black uppercase tracking-[0.18em]"
-                  >
-                    Share
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-          </div>
-        </div>
-      </nav>
+      {/* Mobile Footer Nav */}
+      <div className="builder-footer-nav-wrapper">
+        <nav className={`builder-footer-nav${navVisible ? '' : ' builder-footer-nav--hidden'}`} role="navigation">
+          {[
+            { id: 'catalog' as TabType, icon: () => <img src="/icons/fit-legacy-mark.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />, badge: null },
+            { id: 'food' as TabType, icon: () => <Apple size={18} />, badge: currentRoutine.foods.length > 0 ? currentRoutine.foods.length : null },
+            { id: 'build' as TabType, icon: () => <ExerciseIcon section="fullbody" className="h-5 w-5" />, badge: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.length : null },
+            { id: 'calendar' as TabType, icon: () => <CalendarDays size={18} />, badge: calendarEntries.length > 0 ? (calendarEntries.length > 9 ? '9+' : calendarEntries.length) : null },
+            { id: 'export' as TabType, icon: () => <img src="/icons/fl-1.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />, badge: null },
+          ].map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => { setActiveTab(item.id); if (item.id === 'catalog') setBuilderMode('workout'); }}
+                className={`builder-footer-nav-btn${isActive ? ' is-active' : ''}`}
+                aria-label={item.id}
+              >
+                <span className="builder-footer-nav-btn-icon">
+                  <item.icon />
+                  {item.badge !== null && (
+                    <span className="builder-footer-nav-btn-badge">{item.badge}</span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+        <button
+          type="button"
+          className={`builder-footer-nav-toggle${navVisible ? '' : ' builder-footer-nav-toggle--pinned'}`}
+          onClick={() => setNavVisible((v) => !v)}
+          aria-label={navVisible ? 'Collapse navigation' : 'Expand navigation'}
+        >
+          <i className="builder-footer-nav-toggle-icon" style={{ transform: navVisible ? 'rotate(0deg)' : 'rotate(180deg)' }} />
+        </button>
+      </div>
 
       <AiMentorChat defaultOpen={searchParams.get('start') === '1'} />
 
