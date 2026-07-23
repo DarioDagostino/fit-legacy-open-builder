@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useMemo, useEffect, useCallback, type ComponentType } from 'react';
+import { lazy, Suspense, useState, useMemo, useEffect, useCallback, useRef, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { 
