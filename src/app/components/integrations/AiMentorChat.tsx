@@ -39,9 +39,7 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
     if (onOpenChange) onOpenChange(v);
     else setInternalOpen(v);
   };
-  const [messages, setMessages] = useState<ChatMessage[]>(defaultOpen
-    ? [{ role: 'assistant', content: 'Bienvenido. Contame qué querés trabajar y lo resolvemos paso a paso.' }]
-    : []);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<LegacitoMode>('tecnico');
@@ -81,6 +79,12 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      setMessages([{ role: 'assistant', content: 'Bienvenido. Contame qué querés trabajar y lo resolvemos paso a paso.' }]);
+    }
+  }, [isOpen]);
 
   const handleModeSwitch = (newMode: LegacitoMode) => {
     if (newMode === mode) return;
