@@ -1,6 +1,8 @@
 export * from './SocialJoin';
 export * from './legacito';
 export * from './LegacitoActionButton';
+export { resolveFitLegacyAppUrls } from './appUrls';
+export type { FitLegacyAppUrls } from './appUrls';
 /**
  * @fit-legacy/shared
  * Catálogos maestros UNIFIED de ejercicios y alimentos

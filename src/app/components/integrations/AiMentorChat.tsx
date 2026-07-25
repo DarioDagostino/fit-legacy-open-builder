@@ -1,11 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronUp, Mic, PanelLeftOpen, Plus, SendHorizontal, X } from 'lucide-react';
-import { Legacito, LegacitoActionButton } from '@fit-legacy/shared';
+import '@/styles/legacy-coach-ui.css';
+import { ChevronUp, Copy, FileText, Image as ImageIcon, Link as LinkIcon, Mic, PanelLeftOpen, PhoneOff, Plus, SendHorizontal, Share2, Trophy, Volume2, X, Zap } from 'lucide-react';
+import { Legacito, LegacitoActionButton, LegacitoMood, resolveFitLegacyAppUrls, SocialJoin } from '@fit-legacy/shared';
 import { MentorService, ChatMessage, LegacitoMode, MODE_META } from '@/lib/integrations/perplexity';
 import { useBioLedgerStore } from '@/lib/bioledger-store';
 import { useWorkoutStore } from '@/lib/store';
+
+const APP_URLS = resolveFitLegacyAppUrls(import.meta.env);
+const BUILDER_APP_URL = APP_URLS.builder;
+const ROAD_APP_URL = APP_URLS.road;
+const ANALYTICS_APP_URL = APP_URLS.analytics;
+const CHAT_HISTORY_KEY = 'fit_legacy_builder_chat_history_v1';
+
+type CoachChatMode = 'text' | 'agent' | 'link' | 'media' | 'document';
 
 const MODE_CHIP: Record<LegacitoMode, { active: string; marker: string }> = {
   tecnico: {
@@ -34,6 +43,15 @@ const SUBTITLES = [
   'Decime el objetivo y armamos el siguiente paso.',
 ];
 
+const RAPID_CLICK_WINDOW_MS = 1800;
+const EASTER_EGG_THRESHOLD = 3;
+const EASTER_EGG_MESSAGES = [
+  'Conócete a ti mismo. — Sócrates ⚡',
+  'La disciplina es el puente entre metas y logros. — Jim Rohn',
+  'Lo que no se mide, no se mejora. — Peter Drucker',
+  'Sé el cambio que quieres ver en el mundo. — Gandhi',
+];
+
 export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: boolean) => void }> = ({
   open,
   onOpenChange,
@@ -51,7 +69,16 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
   const [mode, setMode] = useState<LegacitoMode>('tecnico');
   const [modeOpen, setModeOpen] = useState(false);
   const [showPro, setShowPro] = useState(true);
+  const [showOptions, setShowOptions] = useState(false);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [chatSubMode, setChatSubMode] = useState<CoachChatMode>('text');
   const [subIdx, setSubIdx] = useState(0);
+  const [isShaking, setIsShaking] = useState(false);
+  const [isDancing, setIsDancing] = useState(false);
+  const rapidClicksRef = useRef(0);
+  const lastClickTimeRef = useRef(0);
+  const easterEggCountRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const bioStats = useBioLedgerStore((state) => state.stats);
@@ -111,13 +138,83 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
     }
   };
 
+  const startVoiceSession = () => {
+    setIsVoiceActive(true);
+  };
+
+  const stopVoiceSession = () => {
+    setIsVoiceActive(false);
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text.trim());
+        return true;
+      }
+    } catch { /* fallback */ }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text.trim();
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch { return false; }
+  };
+
+  const shareMessage = (text: string) => {
+    if (navigator.share) {
+      navigator.share({ title: 'Legacito AI - Fit Legacy', text }).catch(() => {});
+    }
+  };
+
+  const startNewChat = () => {
+    setMessages([]);
+    setIsHistoryOpen(false);
+  };
+
+  const mascotMood: LegacitoMood = isTyping || isVoiceActive ? 'thinking' : messages.length > 0 ? 'celebrating' : 'neutral';
+
+  const handleMascotClick = () => {
+    const now = Date.now();
+    if (now - lastClickTimeRef.current < RAPID_CLICK_WINDOW_MS) {
+      rapidClicksRef.current += 1;
+    } else {
+      rapidClicksRef.current = 1;
+    }
+    lastClickTimeRef.current = now;
+
+    if (rapidClicksRef.current >= EASTER_EGG_THRESHOLD) {
+      rapidClicksRef.current = 0;
+      easterEggCountRef.current += 1;
+      const idx = (easterEggCountRef.current - 1) % EASTER_EGG_MESSAGES.length;
+      const msg = EASTER_EGG_MESSAGES[idx];
+      setMessages((prev) => [...prev, { role: 'assistant', content: msg }]);
+      setTimeout(() => setMessages((prev) => prev.filter((m) => m.content !== msg)), 4000);
+      if (Math.random() > 0.5) {
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 500);
+      } else {
+        setIsDancing(true);
+        setTimeout(() => setIsDancing(false), 2500);
+      }
+    } else {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 150);
+    }
+  };
+
   const ui = (
     <>
       {/* Floating Legacito — same as Legacy IA */}
       {!isOpen && (
         <div
-          className="fixed z-[99990]"
-          style={{ bottom: 'calc(5.25rem + env(safe-area-inset-bottom, 0px))', right: '0.75rem' }}
+          className="fixed right-3 z-[99990]"
+          style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
           <div className="builder-legacito-glitch relative drop-shadow-[0_16px_34px_rgba(74,55,24,0.18)] sm:bottom-0">
             <LegacitoActionButton
@@ -216,9 +313,10 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
                     <div className="absolute left-3 top-3 z-40">
                       <button
                         type="button"
-                        className="flex h-9 w-9 items-center justify-center rounded-full border text-white/50 hover:bg-white/10 hover:text-white"
-                        style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)' }}
-                        aria-label="Historial"
+                        onClick={() => setIsHistoryOpen(true)}
+                        className="legacy-coach-header-action legacy-coach-header-action--history pointer-events-auto"
+                        aria-label="Ver Historial"
+                        title="Historial"
                       >
                         <PanelLeftOpen size={16} strokeWidth={1.8} />
                       </button>
@@ -227,37 +325,90 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
                       <button
                         type="button"
                         onClick={() => setIsOpen(false)}
-                        className="flex h-9 w-9 items-center justify-center rounded-full border text-white/50 hover:bg-white/10 hover:text-white"
-                        style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)' }}
+                        className="legacy-coach-header-action legacy-coach-header-action--close pointer-events-auto"
                         aria-label="Cerrar chat"
                       >
                         <X size={16} strokeWidth={1.8} />
                       </button>
                     </div>
 
-                    <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-12 sm:px-5 sm:pb-5 sm:pt-14">
-                      <p className="mb-1 text-center text-[7px] font-bold uppercase tracking-[0.18em] text-neutral-500">
-                        Mentor y Coach
-                      </p>
+<div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-12 sm:px-5 sm:pb-5 sm:pt-14">
+                        {/* HEADER MASCOT — Legacito con easter egg click */}
+                        <div className="mb-1 flex flex-col items-center">
+                          <div className="relative select-none">
+                            <motion.div
+                              onClick={handleMascotClick}
+                              className="pointer-events-auto cursor-pointer transition-transform active:scale-95"
+                              animate={
+                                isShaking
+                                  ? { x: [0, -6, 6, -4, 4, -2, 2, 0], rotate: [0, -5, 5, -3, 3, 0] }
+                                  : isDancing
+                                    ? { y: [0, -8, 0, -5, 0], rotate: [0, -8, 8, -5, 5, 0] }
+                                    : {}
+                              }
+                              transition={
+                                isShaking
+                                  ? { duration: 0.5, ease: 'easeInOut' }
+                                  : isDancing
+                                    ? { duration: 0.5, repeat: 4, ease: 'easeInOut' }
+                                    : {}
+                              }
+                            >
+                              <Legacito size={44} mood={mascotMood} />
+                            </motion.div>
+                            {isVoiceActive && (
+                              <motion.div
+                                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                                transition={{ repeat: Infinity, duration: 2 }}
+                                className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[3px] border-[#080a09] bg-emerald-500"
+                              />
+                            )}
+                            {isDancing && (
+                              <>
+                                {[0, 1, 2, 3].map((i) => (
+                                  <motion.div
+                                    key={`mascot-sparkle-${i}`}
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{
+                                      opacity: [0, 1, 0],
+                                      scale: [0, 1.2, 0],
+                                      x: [0, (i % 2 === 0 ? 1 : -1) * (18 + i * 6)],
+                                      y: [0, -(12 + i * 8)],
+                                    }}
+                                    transition={{ duration: 0.8, delay: i * 0.15, repeat: 2, ease: 'easeOut' }}
+                                    className="pointer-events-none absolute left-1/2 top-1/2 size-2 rounded-full"
+                                    style={{
+                                      background: ['#FFD700', '#AEEAF2', '#C084FC', '#FF6B6B'][i],
+                                      boxShadow: `0 0 8px ${['#FFD700', '#AEEAF2', '#C084FC', '#FF6B6B'][i]}`,
+                                    }}
+                                  />
+                                ))}
+                              </>
+                            )}
+                          </div>
+                          <p className="text-center text-[7px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+                            Mentor y Coach
+                          </p>
+                        </div>
 
-                      <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                      <div ref={scrollRef} className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 pb-16 [scrollbar-width:none]">
                         {messages.length === 0 ? (
-                          <div className="flex min-h-full flex-col items-center justify-center px-2 pb-6 text-center sm:px-6">
-                            <motion.h3
-                              initial={{ opacity: 0, y: 12 }}
+                          <div className="flex min-h-full flex-col items-center justify-start px-2 pt-6 pb-10 text-center">
+                            <motion.p
+                              initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className="max-w-[390px] text-balance font-black uppercase leading-[0.93] tracking-[-0.06em] text-[#F8F6F0]"
-                              style={{ fontSize: 'clamp(2.1rem, 8vw, 3rem)' }}
+                              className="max-w-[320px] text-balance text-[2rem] font-black uppercase leading-[0.9] tracking-[-0.035em] text-[#fbfaf6]"
                             >
                               ¿En qué puedo ayudarte hoy?
-                            </motion.h3>
-                            <p className="mt-5 max-w-[340px] text-balance text-[clamp(0.95rem,3.5vw,1.1rem)] font-semibold leading-[1.35] text-[#AEB5B0]">
+                            </motion.p>
+                            <p className="mt-2 max-w-[280px] text-[11px] font-medium leading-relaxed text-[#a8b4ad]">
                               <AnimatePresence mode="wait">
                                 <motion.span
                                   key={SUBTITLES[subIdx]}
-                                  initial={{ opacity: 0, y: 6 }}
+                                  initial={{ opacity: 0, y: 5 }}
                                   animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0, y: -6 }}
+                                  exit={{ opacity: 0, y: -5 }}
+                                  transition={{ duration: 0.28 }}
                                   className="inline-block"
                                 >
                                   {SUBTITLES[subIdx]}
@@ -266,44 +417,67 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
                             </p>
                           </div>
                         ) : (
-                          <div className="space-y-4 px-1 py-2">
+                          <div className="space-y-6 pb-4">
                             {messages.map((msg, i) => {
                               const isUser = msg.role === 'user';
                               return (
-                                <div key={`${msg.role}-${i}`} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                <motion.div
+                                  key={`${msg.role}-${i}`}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className={`flex flex-col gap-2 ${isUser ? 'items-end' : 'items-start'}`}
+                                >
                                   <div
-                                    className={`max-w-[88%] px-4 py-3 text-[14px] leading-relaxed ${
+                                    className={`legacy-chat-panel legacy-chat-text group relative max-w-[90%] select-text px-4 py-3 text-[15px] leading-relaxed shadow-[0_18px_42px_-32px_rgba(0,0,0,0.9)] sm:max-w-[86%] sm:px-5 ${
                                       isUser
-                                        ? 'rounded-[18px] rounded-tr-[4px] text-[#111715]'
-                                        : 'rounded-[18px] rounded-tl-[4px] text-[#f6f3ed]'
+                                        ? 'legacy-chat-panel--user border border-bronze-300/18 bg-bronze-100/[0.92] text-[#111715]'
+                                        : 'legacy-chat-panel--assistant border border-white/9 bg-white/[0.055] text-[#f6f3ed]'
                                     }`}
-                                    style={{
-                                      background: isUser ? 'rgba(232, 220, 196, 0.92)' : 'rgba(255,255,255,0.055)',
-                                      border: isUser
-                                        ? '1px solid rgba(196, 173, 124, 0.18)'
-                                        : '1px solid rgba(255,255,255,0.09)',
-                                    }}
                                   >
                                     {msg.content}
+                                    {!isUser && (
+                                      <div className="mt-3 flex items-center gap-1 border-t border-white/5 pt-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => { /* TTS placeholder */ }}
+                                          className="rounded-lg p-1.5 text-neutral-400 transition-all hover:bg-white/10 hover:text-white"
+                                          title="Escuchar"
+                                        >
+                                          <Volume2 size={14} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => void copyToClipboard(msg.content)}
+                                          className="rounded-lg p-1.5 text-neutral-400 transition-all hover:bg-white/10 hover:text-white"
+                                          title="Copiar"
+                                        >
+                                          <Copy size={14} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => shareMessage(msg.content)}
+                                          className="rounded-lg p-1.5 text-neutral-400 transition-all hover:bg-white/10 hover:text-white"
+                                          title="Compartir"
+                                        >
+                                          <Share2 size={14} />
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
+                                </motion.div>
                               );
                             })}
                             {isTyping && (
                               <div className="flex justify-start">
-                                <div
-                                  className="rounded-[18px] rounded-tl-[4px] px-4 py-3"
-                                  style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.09)' }}
-                                >
-                                  <div className="flex gap-1.5" aria-label="Legacito está escribiendo">
-                                    {[0, 1, 2].map((d) => (
-                                      <span
-                                        key={d}
-                                        className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40"
-                                        style={{ animationDelay: `${d * 120}ms` }}
-                                      />
-                                    ))}
-                                  </div>
+                                <div className="legacy-chat-panel legacy-chat-panel--assistant legacy-glass-panel flex items-center gap-2 border border-white/8 px-5 py-3">
+                                  <span className="legacy-thinking-switch legacy-thinking-switch--coach" aria-label="Legacito está escribiendo">
+                                    <span className="legacy-thinking-switch__word">Legacito AI</span>
+                                    <span className="legacy-thinking-switch__dots" aria-hidden="true">
+                                      <i />
+                                      <i />
+                                      <i />
+                                    </span>
+                                  </span>
                                 </div>
                               </div>
                             )}
@@ -313,137 +487,307 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
 
                       <div className="shrink-0 space-y-2.5">
                         {showPro && (
-                          <div
-                            className="flex items-center justify-between rounded-[1.15rem] px-3.5 py-2.5"
-                            style={{ border: '1px solid #272B29', background: 'rgba(255,255,255,0.015)' }}
-                          >
-                            <span className="text-[11px] font-black text-[#F8F6F0] sm:text-[13px]">Legacy Pro</span>
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-[11px] font-black text-[#F8F6F0] sm:text-[13px]">Actualizar</span>
+                          <div className="relative z-10 shrink-0 px-2 pb-1">
+                            <div className="flex w-full items-center gap-2 rounded-xl border border-white/8 bg-[#0d0d0d]/60 px-3 py-1.5 text-left text-[9px] font-bold text-[#f6f3ed]">
+                              <span className="truncate">Legacy Pro</span>
+                              <span className="shrink-0 text-[8px] text-white/70">Actualizar</span>
                               <button
                                 type="button"
                                 onClick={() => setShowPro(false)}
-                                className="grid h-7 w-7 place-items-center rounded-full"
-                                style={{ border: '1px solid #2C302E', color: '#8E938F' }}
-                                aria-label="Cerrar Legacy Pro"
+                                className="grid size-5 shrink-0 place-items-center rounded-full text-white/40 transition-colors hover:bg-white/8 hover:text-white"
+                                aria-label="Cerrar aviso de Legacy Pro"
                               >
-                                <X className="h-3.5 w-3.5" />
+                                <X size={10} />
                               </button>
                             </div>
                           </div>
                         )}
 
                         {messages.length === 0 && (
-                          <div className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none]">
-                            {SUGGESTIONS.map((label) => (
-                              <button
-                                key={label}
-                                type="button"
-                                onClick={() => void handleSend(label)}
-                                className="shrink-0 rounded-full px-3.5 py-2 text-[10px] font-bold text-[#BCC1BD] transition-all hover:-translate-y-0.5 hover:text-[#F8F6F0] sm:text-[11px]"
-                                style={{ border: '1px solid #272B29', background: 'rgba(255,255,255,0.01)' }}
-                              >
-                                {label}
-                              </button>
-                            ))}
+                          <div className="relative z-10 shrink-0 px-2 pb-2">
+                            <div className="flex gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
+                              {SUGGESTIONS.map((label) => (
+                                <button
+                                  key={label}
+                                  type="button"
+                                  onClick={() => void handleSend(label)}
+                                  className="shrink-0 touch-manipulation rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[9px] font-bold text-white/55 transition-colors hover:border-white/18 hover:bg-white/6 hover:text-white"
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
 
-                        {/* Composer */}
-                        <div className="rounded-[1.8rem] p-1.5 sm:p-2" style={{ border: '1px solid #292D2B', background: '#0B0D0C' }}>
-                          <div
-                            className="flex min-h-[64px] items-center gap-2 rounded-[1.35rem] px-2.5 sm:min-h-[72px] sm:px-3"
-                            style={{ border: '1px solid #171A18', background: '#080908' }}
-                          >
-                            <button
-                              type="button"
-                              aria-label="Agregar contexto"
-                              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[#D4D8D5] hover:bg-white/[0.03] sm:h-11 sm:w-11"
-                              style={{ border: '1px solid #292D2B' }}
-                            >
-                              <Plus className="h-5 w-5" />
-                            </button>
-
-                            <div className="relative">
-                              <button
-                                type="button"
-                                onClick={() => setModeOpen((v) => !v)}
-                                className={`flex h-10 items-center gap-1.5 rounded-full border px-3 text-[10px] font-black uppercase tracking-[0.12em] sm:h-11 sm:text-[11px] ${MODE_CHIP[mode].active}`}
-                                aria-expanded={modeOpen}
-                              >
-                                <span className={`size-1.5 rounded-full ${MODE_CHIP[mode].marker}`} />
-                                <span>{MODE_META[mode].label}</span>
-                                <ChevronUp className={`h-3.5 w-3.5 transition-transform ${modeOpen ? 'rotate-180' : ''}`} />
-                              </button>
-                              <AnimatePresence>
-                                {modeOpen && (
-                                  <motion.div
-                                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                                    className="absolute bottom-full left-0 z-30 mb-2 grid w-32 gap-1 rounded-2xl border border-zinc-700/80 bg-zinc-950/95 p-1.5 shadow-[0_18px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+                        {/* COMPOSER */}
+                        <div className="relative z-10 shrink-0 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-2">
+                          <div className="mx-auto flex min-h-[72px] w-full flex-col gap-2 rounded-[1.5rem] border border-white/10 bg-[#111111]/95 p-2 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.95)]">
+                            <AnimatePresence initial={false} mode="wait">
+                              {isVoiceActive ? (
+                                <motion.div
+                                  key="voice-composer"
+                                  initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                                  exit={{ opacity: 0, y: -8, filter: 'blur(3px)' }}
+                                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                                  className="relative flex items-center gap-2 rounded-[1.65rem] border border-white/10 bg-[#070707] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),inset_0_-18px_36px_rgba(255,255,255,0.025)]"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsVoiceActive(false)}
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/8 bg-transparent text-white/65 transition-all hover:bg-white/8 hover:text-white"
+                                    aria-label="Volver al chat"
                                   >
-                                    {(Object.keys(MODE_META) as LegacitoMode[]).map((m) => (
-                                      <button
-                                        key={m}
-                                        type="button"
-                                        onClick={() => {
-                                          setMode(m);
-                                          setModeOpen(false);
-                                        }}
-                                        className={`flex min-h-9 items-center gap-2 rounded-xl border px-2.5 text-left text-[9px] font-black uppercase tracking-[0.1em] ${
-                                          mode === m
-                                            ? MODE_CHIP[m].active
-                                            : 'border-transparent text-zinc-500 hover:border-zinc-800 hover:bg-zinc-900 hover:text-zinc-200'
-                                        }`}
+                                    <SendHorizontal size={20} />
+                                  </button>
+                                  <div className="relative flex h-11 flex-1 items-center justify-center overflow-hidden px-4 sm:h-12">
+                                    <div className="flex items-center gap-1.5">
+                                      {[...Array(9)].map((_, i) => (
+                                        <motion.div
+                                          key={i}
+                                          className="w-1 rounded-full"
+                                          style={{ background: '#22d3ee' }}
+                                          animate={{ height: [8, 20 + Math.sin(i) * 12 * 0.5, 8] }}
+                                          transition={{ duration: 0.35 + (i % 3) * 0.1, repeat: Infinity, ease: 'easeInOut' }}
+                                        />
+                                      ))}
+                                      <span className="ml-3 text-[10px] font-black uppercase tracking-[0.15em] text-bronze-400">Te escucho...</span>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={stopVoiceSession}
+                                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-red-300/25 bg-red-500/18 px-3 text-[10px] font-black uppercase tracking-[0.12em] text-red-100 animate-pulse"
+                                  >
+                                    <PhoneOff size={13} /> Cortar
+                                  </button>
+                                </motion.div>
+                              ) : (
+                                <motion.div
+                                  key="chat-composer"
+                                  initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                                  exit={{ opacity: 0, y: -8, filter: 'blur(3px)' }}
+                                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                                  className="flex flex-col gap-3"
+                                >
+                                  <AnimatePresence>
+                                    {showOptions && (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="mb-1 grid grid-cols-5 gap-1.5 rounded-2xl border border-white/10 bg-[#090909] p-2"
                                       >
-                                        <span className={`size-1.5 shrink-0 rounded-full ${MODE_CHIP[m].marker}`} />
-                                        <span>{MODE_META[m].label}</span>
+                                        {[
+                                          { key: 'agent', icon: Zap, label: 'Agente' },
+                                          { key: 'link', icon: LinkIcon, label: 'Link' },
+                                          { key: 'media', icon: ImageIcon, label: 'Media' },
+                                          { key: 'document', icon: FileText, label: 'Doc' },
+                                          { key: 'voice', icon: Volume2, label: 'Voz' },
+                                        ].map(({ key, icon: Icon, label }) => (
+                                          <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => {
+                                              if (key === 'voice') { startVoiceSession(); return; }
+                                              setChatSubMode(key as CoachChatMode);
+                                              setShowOptions(false);
+                                            }}
+                                            className={`flex flex-col items-center gap-1 rounded-xl border p-2 transition-all ${
+                                              chatSubMode === key
+                                                ? 'border-amber-500/30 bg-amber-500/20 text-amber-400'
+                                                : 'border-transparent bg-white/5 text-neutral-400 hover:border-white/10 hover:bg-white/8 hover:text-white'
+                                            }`}
+                                          >
+                                            <Icon size={18} />
+                                            <span className="text-[9px] font-black uppercase tracking-tight">{label}</span>
+                                          </button>
+                                        ))}
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+
+                                  <div className="relative flex items-center gap-1.5 rounded-[1.25rem] border border-white/10 bg-[#070707] p-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowOptions((v) => !v)}
+                                      aria-label="Agregar contexto"
+                                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/8 transition-all ${
+                                        showOptions ? 'rotate-45 bg-white/15 text-white' : 'bg-transparent text-white/65 hover:bg-white/8 hover:text-white'
+                                      }`}
+                                    >
+                                      <Plus size={16} />
+                                    </button>
+
+                                    <div className="relative">
+                                      <button
+                                        type="button"
+                                        onClick={() => setModeOpen((v) => !v)}
+                                        className={`flex h-8 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[8px] font-black uppercase tracking-[0.12em] transition-all active:translate-y-px ${MODE_CHIP[mode].active}`}
+                                        aria-label={`Modelo ${MODE_META[mode].label}. Cambiar modelo`}
+                                        aria-expanded={modeOpen}
+                                      >
+                                        <span className={`size-1.5 rounded-full ${MODE_CHIP[mode].marker}`} aria-hidden="true" />
+                                        <span>{MODE_META[mode].label}</span>
+                                        <ChevronUp className={`size-2.5 transition-transform duration-200 ${modeOpen ? 'rotate-180' : ''}`} />
                                       </button>
-                                    ))}
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
+                                      <AnimatePresence>
+                                        {modeOpen && (
+                                          <motion.div
+                                            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                            transition={{ duration: 0.12 }}
+                                            className="absolute bottom-full left-0 z-30 mb-2 grid w-36 gap-1 rounded-2xl border border-zinc-700/80 bg-zinc-950/95 p-1.5 shadow-[0_18px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+                                          >
+                                            {(Object.keys(MODE_META) as LegacitoMode[]).map((m) => (
+                                              <button
+                                                key={m}
+                                                type="button"
+                                                onClick={() => {
+                                                  setMode(m);
+                                                  setModeOpen(false);
+                                                }}
+                                                className={`flex min-h-9 items-center gap-2 rounded-xl border px-2.5 text-left text-[9px] font-black uppercase tracking-[0.1em] transition-all active:translate-y-px ${
+                                                  mode === m
+                                                    ? MODE_CHIP[m].active
+                                                    : 'border-transparent text-zinc-500 hover:border-zinc-800 hover:bg-zinc-900 hover:text-zinc-200'
+                                                }`}
+                                              >
+                                                <span className={`size-1.5 shrink-0 rounded-full ${MODE_CHIP[m].marker}`} aria-hidden="true" />
+                                                <span>{MODE_META[m].label}</span>
+                                              </button>
+                                            ))}
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
 
-                            <input
-                              value={input}
-                              onChange={(e) => setInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  void handleSend();
-                                }
-                              }}
-                              placeholder="Armemos un plan..."
-                              disabled={isTyping}
-                              aria-label="Mensaje para Legacito"
-                              className="min-w-0 flex-1 bg-transparent py-2 text-[14px] font-semibold text-[#F8F6F0] outline-none placeholder:text-white/25"
-                            />
-
-                            <button
-                              type="button"
-                              aria-label="Voz"
-                              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#E6E8E5] hover:bg-white/[0.04] sm:h-10 sm:w-10"
-                            >
-                              <Mic className="h-5 w-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void handleSend()}
-                              disabled={!input.trim() || isTyping}
-                              aria-label="Enviar mensaje"
-                              className="grid h-10 w-10 shrink-0 place-items-center rounded-full transition-all hover:-translate-y-0.5 disabled:opacity-40 sm:h-11 sm:w-11"
-                              style={{ background: '#201A10', color: '#9B937F' }}
-                            >
-                              <SendHorizontal className="h-5 w-5" />
-                            </button>
+                                    <div className="relative flex flex-1 items-center">
+                                      <input
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            void handleSend();
+                                          }
+                                        }}
+                                        placeholder=""
+                                        disabled={isTyping}
+                                        aria-label="Escribir mensaje para Legacito"
+                                        className="relative z-10 w-full rounded-full border border-transparent bg-transparent py-2.5 pl-3 pr-[5.2rem] text-[14px] font-semibold text-[#f6f3ed] outline-none focus:ring-0"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={startVoiceSession}
+                                        className="absolute right-[2.6rem] z-20 flex h-8 w-8 items-center justify-center rounded-full text-[#f6f3ed] transition-colors hover:bg-white/8"
+                                        title="Sesión de voz"
+                                        aria-label="Abrir sesión de voz"
+                                      >
+                                        <Mic size={16} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleSend()}
+                                        disabled={!input.trim() || isTyping}
+                                        className="absolute right-1 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-bronze-600/70 bg-gradient-to-br from-[#4a3718] to-[#5c4620] text-[#f0ede7] shadow-[0_8px_20px_rgba(74,55,24,0.12)] transition-all hover:from-[#5c4620] hover:to-[#6d5428] hover:scale-105 disabled:pointer-events-none disabled:opacity-40"
+                                        aria-label="Enviar mensaje"
+                                      >
+                                        <SendHorizontal size={14} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* HISTORY PANEL */}
+                <AnimatePresence>
+                  {isHistoryOpen && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsHistoryOpen(false)}
+                        className="absolute inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
+                      />
+                      <motion.div
+                        initial={{ x: '-100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '-100%' }}
+                        transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute inset-y-0 left-0 z-50 flex w-[280px] flex-col overflow-y-auto border-r border-white/6 bg-[#090909] pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[18px_0_60px_rgba(0,0,0,0.58)] sm:w-[320px]"
+                      >
+<div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/6 bg-[#090909]/96 px-4 py-4 text-white">
+                            <div>
+                              <h4 className="text-sm font-semibold tracking-[-0.01em]">Historial</h4>
+                              <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-white/30">Legacy AI</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setIsHistoryOpen(false)}
+                              className="grid size-10 place-items-center rounded-full text-neutral-400 transition-colors hover:bg-white/[0.045] hover:text-white"
+                              aria-label="Cerrar historial"
+                            >
+                              <X size={20} />
+                            </button>
+                          </div>
+                          <div className="shrink-0 border-b border-white/6 px-4 py-3">
+                            <button
+                              onClick={startNewChat}
+                              className="legacy-brush-button flex min-h-11 w-full items-center justify-center gap-2 bg-white py-2 text-xs font-black uppercase tracking-[0.12em] text-black transition-transform active:scale-[0.98]"
+                            >
+                              <Plus size={15} /> Nuevo chat
+                            </button>
+                          </div>
+                          <div className="shrink-0 space-y-2 border-b border-white/6 px-4 py-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/34">Aplicaciones</p>
+                            <div className="grid gap-1">
+                              {[
+                                { url: BUILDER_APP_URL, icon: 'fl', label: 'Builder', desc: 'Crear planes y links .wir' },
+                                { url: ROAD_APP_URL, icon: 'Road', label: 'The Road', desc: 'Rachas, progreso y tienda' },
+                                { url: ANALYTICS_APP_URL, icon: 'AN', label: 'Analytics', desc: 'Estado, carga y progreso' },
+                              ].map(({ url, icon, label, desc }) => (
+                                <button
+                                  key={label}
+                                  type="button"
+                                  onClick={() => { window.location.href = url; }}
+                                  className="legacy-brush-row group flex items-center gap-3 px-2 py-2 text-left transition-colors hover:bg-white/[0.045]"
+                                >
+                                  <span className="grid size-8 shrink-0 place-items-center bg-white/[0.045] text-[10px] font-black lowercase tracking-[-0.08em] text-white/58 [clip-path:polygon(8px_0,100%_0,100%_calc(100%-8px),calc(100%-8px)_100%,0_100%,0_8px)]">{icon}</span>
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block text-[12px] font-semibold text-white/88">{label}</span>
+                                    <span className="block truncate text-[10px] font-medium text-white/32">{desc}</span>
+                                  </span>
+                                  <LinkIcon size={13} className="text-white/28 transition-transform group-hover:translate-x-0.5" />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        <SocialJoin
+                          className="shrink-0 border-b border-white/6 px-4 py-3"
+                          title="Únete"
+                          variant="dark"
+                          align="left"
+                          compact
+                        />
+                        <div className="flex flex-1 items-center justify-center px-4 py-8 text-center">
+                          <p className="text-[11px] font-medium text-white/30">Sin conversaciones guardadas</p>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
 
                 {/* Legacito peeking outside phone */}
                 <div className="pointer-events-none absolute -bottom-3 -left-12 z-20 hidden sm:block">

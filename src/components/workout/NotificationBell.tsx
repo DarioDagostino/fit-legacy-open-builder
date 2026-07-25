@@ -37,9 +37,16 @@ export function NotificationBell() {
       >
         {unread > 0 ? <BellRing className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#8A2F14] text-[7px] font-black text-white shadow-lg">
-            {unread > 9 ? '9+' : unread}
-          </span>
+          <>
+            <motion.span
+              animate={{ scale: [1, 1.5], opacity: [0.6, 0] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
+              className="pointer-events-none absolute inset-0 rounded-xl bg-[#E0793C]"
+            />
+            <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#E0793C] text-[7px] font-black text-white shadow-lg shadow-[#E0793C]/40">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          </>
         )}
       </button>
 

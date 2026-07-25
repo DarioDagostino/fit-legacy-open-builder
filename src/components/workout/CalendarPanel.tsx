@@ -271,7 +271,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
           >
             <ChevronLeft size={18} />
           </motion.button>
-          <p className="text-sm font-black uppercase tracking-widest text-[#141e30]">
+          <p className="text-sm font-black uppercase tracking-widest text-[#F1F0F4]">
             {MONTH_NAMES[viewMonth]} {viewYear}
           </p>
           <motion.button
@@ -286,7 +286,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
         {/* Day headers */}
         <div className="grid grid-cols-7 gap-1">
           {DAY_LABELS.map((d) => (
-            <div key={d} className="text-center text-[8px] font-black uppercase tracking-widest text-[#9aa9ba] py-1">
+            <div key={d} className="text-center text-[8px] font-black uppercase tracking-widest text-[#6E6558] py-1">
               {d}
             </div>
           ))}
@@ -317,20 +317,20 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                 className={`
                   aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-black transition-all relative
                   ${isSelected
-                    ? 'bg-[#0071e3] text-white scale-110 shadow-lg shadow-[#0071e3]/30 z-10'
+                    ? 'bg-[#E0793C] text-white scale-110 shadow-lg shadow-[#E0793C]/30 z-10'
                     : isToday
-                      ? 'bg-[#eaf5ff] text-[#141e30] ring-2 ring-[#0071e3]/24'
+                      ? 'bg-[#E0793C]/10 text-[#F1F0F4] ring-2 ring-[#E0793C]/30'
                       : hasEntry
-                        ? 'bg-[#f0f9f3] text-[#28623a] hover:bg-[#e0f2e5]'
-                        : 'text-[#5b6472] hover:bg-[#f7f9fc]'
+                        ? 'bg-[#F2A468]/10 text-[#F2A468] hover:bg-[#F2A468]/15'
+                        : 'text-[#6E6558] hover:bg-[#F1F0F4]/5'
                   }
                 `}
               >
                 <span className="text-[11px]">{day}</span>
                 {hasEntry && !isSelected && (
                   <div className="absolute bottom-1 flex gap-0.5">
-                    {entry.exercises > 0 && <div className="w-1 h-1 rounded-full bg-[#35577d]" />}
-                    {entry.foods > 0 && <div className="w-1 h-1 rounded-full bg-[#28623a]" />}
+                    {entry.exercises > 0 && <div className="w-1 h-1 rounded-full bg-[#E0793C]" />}
+                    {entry.foods > 0 && <div className="w-1 h-1 rounded-full bg-[#F2A468]" />}
                   </div>
                 )}
               </motion.button>
@@ -354,19 +354,19 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                 <div className="builder-apple-card p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#5b6472]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#6E6558]">
                         {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
                       </p>
-                      <h3 className="text-lg font-black italic uppercase tracking-tight text-[#141e30] mt-1">
+                      <h3 className="text-lg font-black italic uppercase tracking-tight text-[#F1F0F4] mt-1">
                         {selectedEntry.name}
                       </h3>
                     </div>
                     <div className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest ${
                       selectedEntry.type === 'workout'
-                        ? 'bg-[#eff4fa] text-[#35577d]'
+                        ? 'bg-[#E0793C]/12 text-[#E0793C]'
                         : selectedEntry.type === 'nutrition'
-                          ? 'bg-[#f0f9f3] text-[#28623a]'
-                          : 'bg-[#fdf2f2] text-[#6b1e23]'
+                          ? 'bg-[#F2A468]/12 text-[#F2A468]'
+                          : 'bg-[#8A2F14]/12 text-[#8A2F14]'
                     }`}>
                       {selectedEntry.type === 'workout' ? 'Workout' : selectedEntry.type === 'nutrition' ? 'Nutrition' : 'Mixed'}
                     </div>
@@ -374,40 +374,40 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
 
                     <div className="grid grid-cols-4 gap-2">
                     <div className="builder-apple-tile p-2.5 text-center">
-                      <Dumbbell className="mx-auto mb-1 h-3.5 w-3.5 text-[#35577d]" />
-                      <p className="text-[7px] font-black text-[#5b6472] uppercase">Exercises</p>
-                      <p className="text-xs font-black text-[#141e30]">{selectedEntry.exercises}</p>
+                      <Dumbbell className="mx-auto mb-1 h-3.5 w-3.5 text-[#E0793C]" />
+                      <p className="text-[7px] font-black text-[#6E6558] uppercase">Exercises</p>
+                      <p className="text-xs font-black text-[#F1F0F4]">{selectedEntry.exercises}</p>
                     </div>
                     <div className="builder-apple-tile p-2.5 text-center">
-                      <Apple className="mx-auto mb-1 h-3.5 w-3.5 text-[#28623a]" />
-                      <p className="text-[7px] font-black text-[#5b6472] uppercase">Foods</p>
-                      <p className="text-xs font-black text-[#141e30]">{selectedEntry.foods}</p>
+                      <Apple className="mx-auto mb-1 h-3.5 w-3.5 text-[#F2A468]" />
+                      <p className="text-[7px] font-black text-[#6E6558] uppercase">Foods</p>
+                      <p className="text-xs font-black text-[#F1F0F4]">{selectedEntry.foods}</p>
                     </div>
                     <div className="builder-apple-tile p-2.5 text-center">
-                      <TrendingUp className="mx-auto mb-1 h-3.5 w-3.5 text-[#6b1e23]" />
-                      <p className="text-[7px] font-black text-[#5b6472] uppercase">Volume</p>
-                      <p className="text-xs font-black text-[#141e30]">{Math.round(selectedEntry.totalVolume)}</p>
+                      <TrendingUp className="mx-auto mb-1 h-3.5 w-3.5 text-[#8A2F14]" />
+                      <p className="text-[7px] font-black text-[#6E6558] uppercase">Volume</p>
+                      <p className="text-xs font-black text-[#F1F0F4]">{Math.round(selectedEntry.totalVolume)}</p>
                     </div>
                     <div className="builder-apple-tile p-2.5 text-center">
-                      <Flame className="mx-auto mb-1 h-3.5 w-3.5 text-[#e67700]" />
-                      <p className="text-[7px] font-black text-[#5b6472] uppercase">Kcal</p>
-                      <p className="text-xs font-black text-[#141e30]">{Math.round(selectedEntry.totalCalories)}</p>
+                      <Flame className="mx-auto mb-1 h-3.5 w-3.5 text-[#E0793C]" />
+                      <p className="text-[7px] font-black text-[#6E6558] uppercase">Kcal</p>
+                      <p className="text-xs font-black text-[#F1F0F4]">{Math.round(selectedEntry.totalCalories)}</p>
                     </div>
                     </div>
 
                   {(selectedEntry.views || selectedEntry.completions || selectedEntry.reshares) && (
                     <div className="grid grid-cols-3 gap-2">
                       <div className="builder-apple-tile p-2.5 text-center">
-                        <p className="text-[7px] font-black uppercase text-[#5b6472]">Views</p>
-                        <p className="text-xs font-black text-[#35577d]">{selectedEntry.views || 0}</p>
+                        <p className="text-[7px] font-black uppercase text-[#6E6558]">Views</p>
+                        <p className="text-xs font-black text-[#E0793C]">{selectedEntry.views || 0}</p>
                       </div>
                       <div className="builder-apple-tile p-2.5 text-center">
-                        <p className="text-[7px] font-black uppercase text-[#5b6472]">Done</p>
-                        <p className="text-xs font-black text-[#28623a]">{selectedEntry.completions || 0}</p>
+                        <p className="text-[7px] font-black uppercase text-[#6E6558]">Done</p>
+                        <p className="text-xs font-black text-[#F2A468]">{selectedEntry.completions || 0}</p>
                       </div>
                       <div className="builder-apple-tile p-2.5 text-center">
-                        <p className="text-[7px] font-black uppercase text-[#5b6472]">Shares</p>
-                        <p className="text-xs font-black text-[#c55a00]">{selectedEntry.reshares || 0}</p>
+                        <p className="text-[7px] font-black uppercase text-[#6E6558]">Shares</p>
+                        <p className="text-xs font-black text-[#E0793C]">{selectedEntry.reshares || 0}</p>
                       </div>
                     </div>
                   )}
@@ -415,11 +415,11 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
               </>
             ) : (
               <div className="builder-apple-card p-8 text-center space-y-3">
-                <Clock className="mx-auto h-10 w-10 text-[#9aa9ba]" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#5b6472]">
+                <Clock className="mx-auto h-10 w-10 text-[#6E6558]" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#6E6558]">
                   {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
-                <p className="text-xs font-bold text-[#9aa9ba]">
+                <p className="text-xs font-bold text-[#6E6558]">
                   No routine shared on this day
                 </p>
               </div>
@@ -432,8 +432,8 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
       {monthStats.totalDays > 0 && (
         <motion.section variants={sectionVariants} className="builder-apple-card p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-[#35577d]" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#5b6472]">
+            <Target className="h-4 w-4 text-[#E0793C]" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#6E6558]">
               Monthly summary
             </p>
           </div>
@@ -441,10 +441,10 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
           {/* Volume bar chart (simple visual) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-[#5b6472]">Total volume</p>
-              <p className="text-xs font-black text-[#141e30]">{Math.round(monthStats.totalVolume).toLocaleString()} kg</p>
+              <p className="text-xs font-bold text-[#6E6558]">Total volume</p>
+              <p className="text-xs font-black text-[#F1F0F4]">{Math.round(monthStats.totalVolume).toLocaleString()} kg</p>
             </div>
-            <div className="h-2 bg-[#f7f9fc] rounded-full overflow-hidden">
+            <div className="h-2 bg-[#F1F0F4]/5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, (monthStats.totalVolume / 50000) * 100)}%` }}
@@ -456,10 +456,10 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-[#5b6472]">Total calories</p>
-              <p className="text-xs font-black text-[#141e30]">{Math.round(monthStats.totalCalories).toLocaleString()} kcal</p>
+              <p className="text-xs font-bold text-[#6E6558]">Total calories</p>
+              <p className="text-xs font-black text-[#F1F0F4]">{Math.round(monthStats.totalCalories).toLocaleString()} kcal</p>
             </div>
-            <div className="h-2 bg-[#f7f9fc] rounded-full overflow-hidden">
+            <div className="h-2 bg-[#F1F0F4]/5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, (monthStats.totalCalories / 60000) * 100)}%` }}
@@ -471,10 +471,10 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-[#5b6472]">Active days</p>
-              <p className="text-xs font-black text-[#141e30]">{monthStats.totalDays} / {daysInMonth}</p>
+              <p className="text-xs font-bold text-[#6E6558]">Active days</p>
+              <p className="text-xs font-black text-[#F1F0F4]">{monthStats.totalDays} / {daysInMonth}</p>
             </div>
-            <div className="h-2 bg-[#f7f9fc] rounded-full overflow-hidden">
+            <div className="h-2 bg-[#F1F0F4]/5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${(monthStats.totalDays / daysInMonth) * 100}%` }}
@@ -493,14 +493,14 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
           animate={{ scale: 1, opacity: 1 }}
           className="builder-apple-card flex items-center gap-3 p-4"
         >
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e67700]/10">
-            <Award className="h-6 w-6 text-[#e67700]" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E0793C]/10">
+            <Award className="h-6 w-6 text-[#E0793C]" />
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-[#c55a00]">
+            <p className="text-xs font-black uppercase tracking-wide text-[#E0793C]">
               {streak} day streak!
             </p>
-            <p className="text-[10px] font-bold text-[#e67700]/80">
+            <p className="text-[10px] font-bold text-[#E0793C]/70">
               Keep building routines every day to grow your streak.
             </p>
           </div>

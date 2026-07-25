@@ -1,12 +1,12 @@
 import { lazy, Suspense, useState, useMemo, useEffect, useCallback, useRef, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
-import { 
-  Search, 
-  Dumbbell, 
-  Trash2, 
-  Plus, 
-  Share2, 
+import {
+  Search,
+  Dumbbell,
+  Trash2,
+  Plus,
+  Share2,
   Copy,
   Image as ImageIcon,
   Minus,
@@ -18,7 +18,8 @@ import {
   Check,
   CalendarDays,
   SlidersHorizontal,
-  Pencil
+  Pencil,
+  Settings2,
 } from 'lucide-react';
 import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { DynamicLogoIcon } from '../DynamicLogoIcon';
@@ -549,7 +550,7 @@ export default function MobileFirstBuilder() {
   }, [currentRoutine.name, shareTemplate]);
 
   const screenTitle = activeTab === 'catalog'
-    ? 'Powered By Fit Legacy Team'
+    ? 'Builder'
     : activeTab === 'food'
       ? 'Meals'
       : activeTab === 'build'
@@ -565,7 +566,11 @@ export default function MobileFirstBuilder() {
     return () => clearTimeout(t);
   }, [activeTab, subtitleTick]);
 
-  const subtitleOptions = ['Add exercises or meals to create a shareable routine link.', 'For Fitness No Brand'];
+  const subtitleOptions = [
+    'Construye rutinas y planes de nutrición compartibles en segundos.',
+    'Tu estudio personalizado para forjar el legado de cada cliente.',
+    'Diseña, comparte y mide el progreso de cada plan.',
+  ];
   const screenSubtitle = activeTab === 'catalog'
     ? subtitleOptions[subtitleTick % 2]
     : activeTab === 'food'
@@ -755,21 +760,22 @@ export default function MobileFirstBuilder() {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#18181c] p-0.5 shadow-[0_0_0_1px_rgba(245,235,255,0.06)] sm:h-11 sm:w-11 sm:p-1">
                 <DynamicLogoIcon />
               </div>
-             <div className="min-w-0">
-               <p className="truncate text-sm font-black leading-tight sm:text-lg">{screenTitle}</p>
-                <AnimatePresence mode="wait">
-                  <motion.p
-                    key={`${activeTab}-${subtitleTick}`}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.2 }}
-                    className="hidden text-[11px] font-bold leading-tight text-[#6E6558] min-[390px]:line-clamp-1 sm:block sm:text-xs"
-                  >
-                    {screenSubtitle}
-                  </motion.p>
-                </AnimatePresence>
-             </div>
+<div className="min-w-0">
+                <p className="truncate text-sm font-black leading-tight sm:text-lg">{screenTitle}</p>
+                <p className="hidden font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-[0.18em] text-[#F2A468] sm:block">Fit Legacy</p>
+                 <AnimatePresence mode="wait">
+                   <motion.p
+                     key={`${activeTab}-${subtitleTick}`}
+                     initial={{ opacity: 0, y: 4 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     exit={{ opacity: 0, y: -4 }}
+                     transition={{ duration: 0.2 }}
+                     className="hidden text-[11px] font-bold leading-tight text-[#6E6558] min-[390px]:line-clamp-1 sm:block sm:text-xs"
+                   >
+                     {screenSubtitle}
+                   </motion.p>
+                 </AnimatePresence>
+              </div>
            </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <div className="builder-status-chip hidden px-3 py-2 text-xs font-black sm:block">
@@ -778,11 +784,10 @@ export default function MobileFirstBuilder() {
             <NotificationBell />
             <button
               onClick={() => setShowCustomize(true)}
-              className="builder-cta-ghost flex h-9 items-center justify-center gap-1.5 px-2.5 text-[10px] font-black uppercase tracking-wide sm:h-auto sm:px-3 sm:py-2 sm:text-xs"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6E6558] transition-all hover:bg-[#2A2520] hover:text-[#E0793C]"
               aria-label="Open share settings"
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden min-[360px]:inline">Settings</span>
+              <Settings2 className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -907,11 +912,18 @@ export default function MobileFirstBuilder() {
                       className="absolute left-0 top-1 bottom-1 w-0.5 rounded-r-full bg-[#E0793C] shadow-[0_0_12px_rgba(224,121,60,0.6)]"
                     />
                   )}
-                   <span className="flex items-center gap-5">
+                   <span className="flex items-center gap-3">
           {builderMode === 'workout'
-            ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-9 w-9 shrink-0" />
-            : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-9 w-9 shrink-0" />}
-                    <span className="text-sm font-['Big_Shoulders_Display',sans-serif] font-bold uppercase tracking-[0.06em]">{filter.label}</span>
+            ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-8 w-8 shrink-0" />
+            : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-8 w-8 shrink-0" />}
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-sm font-['Big_Shoulders_Display',sans-serif] font-bold uppercase tracking-[0.06em]">{filter.label}</span>
+                      <span className={`font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase tracking-[0.16em] ${
+                        activeFilter === filter.id ? 'text-[#F2A468]' : 'text-[#6E6558]'
+                      }`}>
+                        {filter.id === 'all' ? 'All' : builderMode === 'workout' ? 'Muscle' : 'Meal'}
+                      </span>
+                    </span>
                   </span>
                   {activeFilter === filter.id && <Check size={14} strokeWidth={2.5} className="text-[#E0793C]" />}
                 </motion.button>
@@ -974,7 +986,7 @@ export default function MobileFirstBuilder() {
                     placeholder={`Search ${builderMode === 'workout' ? 'exercises' : 'foods'}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="builder-apple-input w-full py-4 pl-12 pr-4 focus:outline-none font-bold text-[15px] text-[#F1F0F4] placeholder:text-[#6E6558]"
+                    className="builder-apple-input w-full py-4 pl-12 pr-4 focus:outline-none font-bold text-[15px] text-[#F1F0F4] placeholder:text-[#9CA0A6]"
                   />
                 </div>
                 <div className="flex items-center justify-between px-1">
@@ -990,9 +1002,9 @@ export default function MobileFirstBuilder() {
                          activeFilter === f.id ? 'builder-cta-primary' : 'builder-focus-pill'
                        }`}
                       >
-          {builderMode === 'workout'
-            ? <ExerciseIcon section={f.id === 'all' ? 'fullbody' : f.id} className="h-9 w-9 shrink-0" />
-            : <FoodIcon category={f.id === 'all' ? 'protein' : f.id} className="h-9 w-9 shrink-0" />}
+{builderMode === 'workout'
+            ? <ExerciseIcon section={f.id === 'all' ? 'fullbody' : f.id} className="h-8 w-8 shrink-0" />
+            : <FoodIcon category={f.id === 'all' ? 'protein' : f.id} className="h-8 w-8 shrink-0" />}
                         <span className="flex min-w-0 flex-col">
                           <span className="truncate font-['Big_Shoulders_Display',sans-serif] text-xs font-bold uppercase tracking-[0.06em]">{f.label}</span>
                           <span className={`text-[8px] font-medium font-['IBM_Plex_Mono',monospace] uppercase tracking-[0.16em] ${
@@ -1019,7 +1031,7 @@ export default function MobileFirstBuilder() {
                       value={customExerciseName}
                       onChange={(e) => setCustomExerciseName(e.target.value)}
                       placeholder="Exercise name"
-                      className="builder-apple-input w-full py-2.5 px-3 text-xs font-bold text-[#F1F0F4] placeholder:text-[#6E6558] focus:outline-none"
+                      className="builder-apple-input w-full py-2.5 px-3 text-xs font-bold text-[#F1F0F4] placeholder:text-[#9CA0A6] focus:outline-none"
                     />
 
                     <div className="grid grid-cols-3 gap-2">
@@ -1069,7 +1081,7 @@ export default function MobileFirstBuilder() {
                   filteredItems.map((item, index) => {
                     const isSupp = builderMode === 'nutrition' && ((item as any).category === 'supplements' || normalizeFilterId((item as any).category) === 'supplements');
                     return (
-                      <motion.div
+                  <motion.div
                         key={`${builderMode}-${item.id}`}
                         initial={{ opacity: 0, y: 18, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1079,25 +1091,49 @@ export default function MobileFirstBuilder() {
                           builderMode === 'workout' ? addExercise(item as any) : addFood(item as any);
                           toast.success(`${item.name} added`);
                         }}
-                        className="builder-apple-card flex min-h-[82px] cursor-pointer items-center justify-between gap-3 p-3.5 transition-all group hover:-translate-y-0.5 sm:min-h-0 sm:p-4"
+                        className={`builder-apple-card flex cursor-pointer items-center justify-between gap-3 p-3.5 transition-all group hover:-translate-y-0.5 sm:p-4 ${
+                          index % 2 === 0 ? 'min-h-[100px]' : 'min-h-[72px]'
+                        } sm:min-h-0`}
                       >
-                        <div className="flex min-w-0 items-center gap-3.5">
-                           {builderMode === 'workout' ? (
-                              <ExerciseIconTile section={(item as any).section} className="h-20 w-20" />
-                           ) : isSupp ? (
-                             <div className="builder-apple-tile flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden bg-white p-0">
-                               <FoodIcon category={(item as any).category} name={item.name} className="h-full w-full" />
+                        {index % 2 === 0 ? (
+                          /* Even cards: large icon + small name below */
+                          <div className="flex min-w-0 items-center gap-4">
+                             {builderMode === 'workout' ? (
+                                <ExerciseIconTile section={(item as any).section} className="h-24 w-24 sm:h-28 sm:w-28" />
+                             ) : isSupp ? (
+                                <div className="builder-apple-icon-tile flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden p-1.5 sm:h-28 sm:w-28">
+                                  <FoodIcon category={(item as any).category} name={item.name} className="h-full w-full object-contain" />
+                                </div>
+                             ) : (
+                                <FoodIconTile category={(item as any).category} name={item.name} className="h-24 w-24 sm:h-28 sm:w-28" />
+                             )}
+                             <div className="min-w-0">
+                              <p className="line-clamp-2 font-black italic uppercase text-[13px] leading-tight text-[#F1F0F4] sm:text-sm">{item.name}</p>
+                              <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase tracking-widest">
+                                 {builderMode === 'workout' ? (item as any).section : (item as any).category}
+                               </p>
                              </div>
-                           ) : (
-                             <FoodIconTile category={(item as any).category} name={item.name} className="h-20 w-20" />
-                           )}
-                           <div className="min-w-0">
-                            <p className="line-clamp-2 font-black italic uppercase text-[13px] leading-tight text-[#F1F0F4] sm:text-sm">{item.name}</p>
-                            <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase tracking-widest">
-                               {builderMode === 'workout' ? (item as any).section : (item as any).category}
-                             </p>
-                           </div>
-                        </div>
+                          </div>
+                        ) : (
+                          /* Odd cards: large name + small icon badge */
+                          <div className="flex min-w-0 items-center gap-3.5">
+                             <div className="flex min-w-0 flex-col">
+                              <p className="line-clamp-2 font-black italic uppercase text-[15px] leading-tight text-[#F1F0F4] sm:text-base">{item.name}</p>
+                              <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase tracking-widest">
+                                 {builderMode === 'workout' ? (item as any).section : (item as any).category}
+                               </p>
+                             </div>
+                             <div className="ml-auto flex shrink-0 items-center">
+                               {builderMode === 'workout' ? (
+                                  <ExerciseIcon section={(item as any).section} className="h-12 w-12 sm:h-14 sm:w-14" />
+                               ) : isSupp ? (
+                                  <FoodIcon category={(item as any).category} name={item.name} className="h-12 w-12 sm:h-14 sm:w-14" />
+                               ) : (
+                                  <FoodIcon category={(item as any).category} name={item.name} className="h-12 w-12 sm:h-14 sm:w-14" />
+                               )}
+                             </div>
+                          </div>
+                        )}
                         <button className="builder-icon-button flex h-10 w-10 shrink-0 items-center justify-center group-active:bg-[#F1F0F4]/20 group-active:text-white sm:h-8 sm:w-8">
                            <Plus size={18} />
                         </button>
@@ -1191,7 +1227,7 @@ export default function MobileFirstBuilder() {
                                 placeholder="Note..."
                                 value={food.notes || ''}
                                 onChange={(e) => updateFood(food.id, { notes: e.target.value })}
-                                className="builder-apple-input w-full py-1.5 pl-8 pr-3 text-[10px] font-bold text-[#F1F0F4] placeholder:text-[#6E6558] placeholder:italic focus:outline-none"
+                                className="builder-apple-input w-full py-1.5 pl-8 pr-3 text-[10px] font-bold text-[#F1F0F4] placeholder:text-[#9CA0A6] placeholder:italic focus:outline-none"
                               />
                            </div>
                         </div>
@@ -1216,7 +1252,7 @@ export default function MobileFirstBuilder() {
                     type="text"
                     value={currentRoutine.name}
                     onChange={(e) => updateRoutineName(e.target.value)}
-                    className="w-full bg-transparent border-none p-0 pr-8 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-[#6E6558] text-[#F1F0F4]"
+                    className="w-full bg-transparent border-none p-0 pr-8 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-[#9CA0A6] text-[#F1F0F4]"
                     placeholder="Untitled routine"
                   />
                   <Pencil size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-[#6E6558] pointer-events-none opacity-40" />
@@ -1763,7 +1799,7 @@ export default function MobileFirstBuilder() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[55] bg-white/55 backdrop-blur-[2px]"
+              className="fixed inset-0 z-[55] bg-black/70 backdrop-blur-[2px]"
               aria-hidden="true"
             />
             <motion.section
@@ -1781,13 +1817,13 @@ export default function MobileFirstBuilder() {
                   <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#7895b2]">
                     Primer ingreso
                   </p>
-                  <h2 className="text-lg font-black italic uppercase tracking-tight text-[#141e30]">
+                  <h2 className="text-lg font-black italic uppercase tracking-tight text-[#F1F0F4]">
                     Como funciona
                   </h2>
                 </div>
                 <button
                   onClick={completeOnboarding}
-                  className="builder-icon-button flex h-9 w-9 shrink-0 items-center justify-center text-[#5b6472] hover:bg-white hover:text-[#141e30]"
+                  className="builder-icon-button flex h-9 w-9 shrink-0 items-center justify-center text-[#6E6558] hover:bg-[#2A2520] hover:text-[#F1F0F4]"
                   aria-label="Cerrar guia inicial"
                 >
                   <X className="h-4 w-4" />
@@ -1829,9 +1865,9 @@ export default function MobileFirstBuilder() {
                       initial={false}
                       animate={{ opacity: isActive ? 1 : 0.78 }}
                       className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${
-                        isActive
-                          ? 'border-[#b8cce0] bg-[#eff4fa] shadow-sm'
-                          : 'border-[#edf1f5] bg-white'
+isActive
+? 'border-[#E0793C]/30 bg-[#E0793C]/10 shadow-sm'
+: 'border-[#F1F0F4]/[0.06] bg-[#18181c]'
                       }`}
                     >
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
@@ -1848,14 +1884,14 @@ export default function MobileFirstBuilder() {
                             <motion.span
                               initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              className="rounded-full bg-white px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#35577d]"
+                              className="rounded-full bg-[#E0793C] px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white"
                             >
                               ahora
                             </motion.span>
                           )}
                         </div>
-                        <p className="mt-0.5 text-sm font-black text-[#141e30]">{step.title}</p>
-                        <p className="mt-0.5 text-[11px] font-bold leading-snug text-[#5b6472]">{step.body}</p>
+<p className="mt-0.5 text-sm font-black text-[#F1F0F4]">{step.title}</p>
+                <p className="mt-0.5 text-[11px] font-bold leading-snug text-[#9CA0A6]">{step.body}</p>
                       </div>
                     </motion.button>
                   );
@@ -1865,7 +1901,7 @@ export default function MobileFirstBuilder() {
               <div className="mt-3 flex items-center justify-between gap-3">
                 <button
                   onClick={completeOnboarding}
-                  className="builder-cta-ghost px-3 py-3 text-[10px] font-black uppercase tracking-widest text-[#5b6472]"
+                  className="builder-cta-ghost px-3 py-3 text-[10px] font-black uppercase tracking-widest text-[#9CA0A6]"
                 >
                   Saltar
                 </button>
@@ -1922,16 +1958,6 @@ export default function MobileFirstBuilder() {
               </button>
             );
           })}
-          <button
-            type="button"
-            onClick={() => setChatOpen(true)}
-            className="builder-footer-nav-btn"
-            aria-label="Legacito chat"
-          >
-            <span className="builder-footer-nav-btn-icon">
-              <MessageCircle size={18} />
-            </span>
-          </button>
         </nav>
         <button
           type="button"
@@ -1951,8 +1977,8 @@ export default function MobileFirstBuilder() {
 
 function ExportPreviewFallback() {
   return (
-    <div className="w-full max-w-sm aspect-[9/16] rounded-[1.5rem] border border-[#e6ecf2] bg-white flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-[#35577d] border-t-transparent rounded-full animate-spin" />
+<div className="w-full max-w-sm aspect-[9/16] rounded-[1.5rem] border border-[#F1F0F4]/[0.06] bg-[#0a0a0a] flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-[#E0793C] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
