@@ -4,47 +4,61 @@ import { X, Lightbulb } from 'lucide-react';
 
 type Tip = {
   text: string;
-  img: string;
   focusY: number;
 };
 
 const SABIAS_TIPS: Tip[] = [
   {
     text: 'Podés combinar ejercicios y comidas en un mismo plan para tener una visión completa de tu entrenamiento.',
-    img: '/assets_coach_tips/athletic_woman_protein.webp',
     focusY: 16,
   },
   {
     text: 'Tus rutinas se guardan automáticamente en el calendario con analytics en tiempo real.',
-    img: '/assets_coach_tips/confident_athlete_standing.webp',
     focusY: 14,
   },
   {
     text: 'Compartí tu rutina como un link .wir — quien lo abre puede verla completa sin descargar nada.',
-    img: '/assets_coach_tips/dynamic_protein_celebration.webp',
     focusY: 25,
   },
   {
     text: 'El coach Legacito analiza tu plan y te da recomendaciones personalizadas al instante.',
-    img: '/assets_coach_tips/confident_coach_standing.webp',
     focusY: 12,
   },
   {
     text: 'Podés personalizar el fondo del catálogo entre 5 presets visuales distintos.',
-    img: '/assets_coach_tips/athletic_woman_confident_pose.webp',
     focusY: 18,
   },
   {
     text: 'Cada ejercicio acepta notas personalizadas para recordar técnica, peso o series.',
-    img: '/assets_coach_tips/athletic_woman_squat.webp',
     focusY: 20,
   },
 ];
 
+type BuilderProfile = 'woman' | 'man';
+
+const PROFILE_TIP_IMAGES: Record<BuilderProfile, string[]> = {
+  woman: [
+    '/assets_coach_tips/women_orange_energetico/athletic_woman_protein.webp',
+    '/assets_coach_tips/women_orange_energetico/athletic_woman_confident_pose.webp',
+    '/assets_coach_tips/women_orange_energetico/victory_jump_illustration.webp',
+    '/assets_coach_tips/women_orange_energetico/confident_coach_standing.webp',
+    '/assets_coach_tips/women_orange_energetico/athletic_woman_lunge_pose.webp',
+    '/assets_coach_tips/women_orange_energetico/athletic_woman_squat.webp',
+  ],
+  man: [
+    '/assets_coach_tips/man_orange_energetico/athletic_man_protein.webp',
+    '/assets_coach_tips/man_orange_energetico/confident_athlete_standing.webp',
+    '/assets_coach_tips/man_orange_energetico/dynamic_protein_celebration.webp',
+    '/assets_coach_tips/man_orange_energetico/751897927_1376542741270294_1485225782041362540_n.webp',
+    '/assets_coach_tips/man_orange_energetico/752514664_1665291831230549_680017816444529485_n.webp',
+    '/assets_coach_tips/man_orange_energetico/759756342_1063792812889272_5857949442508654311_n.webp',
+  ],
+};
+
 const DISMISSED_KEY = 'fl-sabias-que-dismissed-v2';
 const INTERVAL_MS = 18000;
 
-export function SabiasQueBanner({ className }: { className?: string }) {
+export function SabiasQueBanner({ className, profile }: { className?: string; profile: BuilderProfile }) {
   const [dismissed, setDismissed] = useState(() => {
     try { return localStorage.getItem(DISMISSED_KEY) === 'true'; } catch { return false; }
   });
@@ -68,6 +82,7 @@ export function SabiasQueBanner({ className }: { className?: string }) {
   if (dismissed) return null;
 
   const tip = SABIAS_TIPS[index];
+  const tipImage = PROFILE_TIP_IMAGES[profile][index];
 
   return (
     <motion.div
@@ -80,8 +95,8 @@ export function SabiasQueBanner({ className }: { className?: string }) {
         <div className="relative h-[120px] overflow-hidden sm:h-[140px]">
           <AnimatePresence mode="popLayout">
             <motion.img
-              key={index}
-              src={tip.img}
+              key={`${profile}-${index}`}
+              src={tipImage}
               alt=""
               initial={{ opacity: 0, scale: 1.08 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -93,11 +108,14 @@ export function SabiasQueBanner({ className }: { className?: string }) {
           </AnimatePresence>
         </div>
         <div className="flex items-start gap-3 p-3 sm:p-4">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F2A468]/12">
-            <Lightbulb className="h-3.5 w-3.5 text-[#F2A468]" />
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+            style={{ background: 'color-mix(in srgb, var(--builder-accent) 12%, transparent)' }}
+          >
+            <Lightbulb className="h-3.5 w-3.5 text-[var(--builder-accent-soft)]" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-[#F2A468]">
+            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--builder-accent-soft)]">
               ¿Sabías que?
             </span>
             <AnimatePresence mode="wait">

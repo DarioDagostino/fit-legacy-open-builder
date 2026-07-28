@@ -20,6 +20,7 @@ import {
   SlidersHorizontal,
   Pencil,
   Settings2,
+  UserRound,
 } from 'lucide-react';
 import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
 import { DynamicLogoIcon } from '../DynamicLogoIcon';
@@ -60,9 +61,38 @@ function loadFoodIconRenderer() {
 }
 
 type TabType = 'catalog' | 'food' | 'build' | 'calendar' | 'export';
+type BuilderProfile = 'woman' | 'man';
 
 const CUSTOMIZE_KEY = 'catalog-customize-config';
 const ONBOARDING_KEY = 'fl-builder-onboarding-v1';
+const BUILDER_PROFILE_KEY = 'fl-builder-profile-v1';
+
+const BUILDER_PROFILE_ASSETS: Record<BuilderProfile, string[]> = {
+  woman: [
+    '/assets_coach_tips/women_orange_energetico/athletic_woman_confident_pose.webp',
+    '/assets_coach_tips/women_orange_energetico/athletic_woman_lunge_pose.webp',
+    '/assets_coach_tips/women_orange_energetico/athletic_woman_protein.webp',
+    '/assets_coach_tips/women_orange_energetico/athletic_woman_squat.webp',
+    '/assets_coach_tips/women_orange_energetico/victory_jump_illustration.webp',
+  ],
+  man: [
+    '/assets_coach_tips/man_orange_energetico/confident_athlete_standing.webp',
+    '/assets_coach_tips/man_orange_energetico/751897927_1376542741270294_1485225782041362540_n.webp',
+    '/assets_coach_tips/man_orange_energetico/athletic_man_protein.webp',
+    '/assets_coach_tips/man_orange_energetico/752514664_1665291831230549_680017816444529485_n.webp',
+    '/assets_coach_tips/man_orange_energetico/dynamic_protein_celebration.webp',
+  ],
+};
+
+const BUILDER_PROFILE_OPTIONS: Array<{
+  value: BuilderProfile;
+  label: string;
+  theme: string;
+  image: string;
+}> = [
+  { value: 'woman', label: 'Woman', theme: 'Rose signal', image: BUILDER_PROFILE_ASSETS.woman[0] },
+  { value: 'man', label: 'Man', theme: 'Orange signal', image: BUILDER_PROFILE_ASSETS.man[0] },
+];
 const CATALOG_BG_PRESETS = [
   {
     id: 'ember',
@@ -219,8 +249,14 @@ const ONBOARDING_STEPS: Array<{
   title: string;
   body: string;
   tab: TabType;
-  icon: 'add' | 'meals' | 'routine' | 'share';
+  icon: 'profile' | 'add' | 'meals' | 'routine' | 'share';
 }> = [
+  {
+    title: 'Elige tu señal',
+    body: 'Rose para Woman u Orange para Man. Ambos viven sobre negro mate.',
+    tab: 'catalog',
+    icon: 'profile',
+  },
   {
     title: 'Agrega ejercicios',
     body: 'Busca por grupo muscular, toca el + y arma la base del plan en segundos.',
@@ -247,7 +283,8 @@ const ONBOARDING_STEPS: Array<{
   },
 ];
 
-function OnboardingIcon({ type }: { type: 'add' | 'meals' | 'routine' | 'share' }) {
+function OnboardingIcon({ type }: { type: 'profile' | 'add' | 'meals' | 'routine' | 'share' }) {
+  if (type === 'profile') return <UserRound className="h-5 w-5" />;
   if (type === 'meals') return <Apple className="h-5 w-5" />;
   if (type === 'routine') return <Dumbbell className="h-5 w-5" />;
   if (type === 'share') return <Share2 className="h-5 w-5" />;
@@ -287,7 +324,9 @@ export default function MobileFirstBuilder() {
   const [calendarEntries, setCalendarEntries] = useState<CalendarEntry[]>(() => loadCalendarEntries());
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [showPayloadPreview, setShowPayloadPreview] = useState(false);
+  const [builderProfile, setBuilderProfile] = useState<BuilderProfile>(() => (
+    localStorage.getItem(BUILDER_PROFILE_KEY) === 'woman' ? 'woman' : 'man'
+  ));
   const [navVisible, setNavVisible] = useState(true);
   const [chatOpen, setChatOpen] = useState(searchParams.get('start') === '1');
   const lastScrollYRef = useRef(0);
@@ -370,6 +409,11 @@ export default function MobileFirstBuilder() {
   useEffect(() => {
     setShowOnboarding(localStorage.getItem(ONBOARDING_KEY) !== 'done');
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(BUILDER_PROFILE_KEY, builderProfile);
+    document.documentElement.dataset.builderProfile = builderProfile;
+  }, [builderProfile]);
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem(CUSTOMIZE_KEY) || '{}');
@@ -535,6 +579,12 @@ export default function MobileFirstBuilder() {
 
   const hasRoutineItems = currentRoutine.exercises.length > 0 || currentRoutine.foods.length > 0;
   const routineItemCount = currentRoutine.exercises.length + currentRoutine.foods.length;
+  const canvasProgress = Math.min(100,
+    (currentRoutine.exercises.length > 0 ? 40 : 0)
+    + (currentRoutine.foods.length > 0 ? 25 : 0)
+    + (routineItemCount >= 3 ? 20 : routineItemCount * 5)
+    + (currentRoutine.name.trim() && currentRoutine.name !== 'Untitled routine' ? 15 : 0)
+  );
   const routineDisplayName = useMemo(() => {
     const trimmed = currentRoutine.name.trim();
     const fallbackName = shareTemplate === 'meal'
@@ -595,14 +645,6 @@ export default function MobileFirstBuilder() {
     
     return `¿Estás listo para empezar tu nuev@ ${contentType} personalizado?\nHaz clic en este link ahora y accede a tu plan sin instalar nada.\n\n${link}`;
   }, [shareTemplate, getShareableLink, selectedWirPalette]);
-
-  const sharePayloadPreview = useMemo(() => {
-    const wir = getShareableWir(selectedWirPalette);
-    if (!wir) {
-      return '{\n  "v": 1,\n  "status": "add_items_first"\n}';
-    }
-    return JSON.stringify(wir, null, 2);
-  }, [getShareableWir, selectedWirPalette]);
 
   const analyticsSlugKey = useMemo(() => {
     return Array.from(new Set(calendarEntries.map((entry) => entry.slug).filter(Boolean))).join('|');
@@ -734,7 +776,7 @@ export default function MobileFirstBuilder() {
     const step = ONBOARDING_STEPS[stepIndex];
     setOnboardingStep(stepIndex);
     setActiveTab(step.tab);
-    if (step.tab === 'catalog') {
+    if (step.tab === 'catalog' && step.icon !== 'profile') {
       setBuilderMode('workout');
     }
     if (step.tab === 'food') {
@@ -751,40 +793,54 @@ export default function MobileFirstBuilder() {
   }, [completeOnboarding, goToOnboardingStep, onboardingStep]);
 
   return (
-    <div className="min-h-screen bg-[#0c0c0e] text-[#F1F0F4] font-sans selection:bg-[#E0793C]/20 flex flex-col overflow-hidden">
+    <div data-builder-profile={builderProfile} className="builder-profile-root flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#0c0c0e] font-sans text-[#F1F0F4]">
       <StreakGuard />
       {/* App Header */}
-      <header className="shrink-0 z-10 border-b border-[#F1F0F4]/[0.06] bg-[#18181c]/90 px-3 py-2 text-[#F1F0F4] shadow-[0_16px_34px_-30px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:px-4 sm:py-3" role="banner">
-        <div className="flex min-h-[42px] items-center justify-between gap-2 sm:min-h-[48px] sm:gap-4">
-           <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#18181c] p-0.5 shadow-[0_0_0_1px_rgba(245,235,255,0.06)] sm:h-11 sm:w-11 sm:p-1">
-                <DynamicLogoIcon />
-              </div>
-<div className="min-w-0">
-                <p className="truncate text-sm font-black leading-tight sm:text-lg">{screenTitle}</p>
-                <p className="hidden font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-[0.18em] text-[#F2A468] sm:block">Fit Legacy</p>
-                 <AnimatePresence mode="wait">
-                   <motion.p
-                     key={`${activeTab}-${subtitleTick}`}
-                     initial={{ opacity: 0, y: 4 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     exit={{ opacity: 0, y: -4 }}
-                     transition={{ duration: 0.2 }}
-                     className="hidden text-[11px] font-bold leading-tight text-[#6E6558] min-[390px]:line-clamp-1 sm:block sm:text-xs"
-                   >
-                     {screenSubtitle}
-                   </motion.p>
-                 </AnimatePresence>
-              </div>
-           </div>
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <div className="builder-status-chip hidden px-3 py-2 text-xs font-black sm:block">
-              {routineItemCount} items
+      <header className="builder-studio-header relative z-20 shrink-0 px-3 sm:px-5" role="banner">
+        <div className="mx-auto flex h-[64px] max-w-[1600px] items-center justify-between gap-3 sm:h-[76px]">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="builder-studio-header__mark flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden sm:h-12 sm:w-12">
+              <DynamicLogoIcon />
             </div>
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2">
+                <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-lg font-black uppercase leading-none tracking-[0.02em] sm:text-2xl">Builder</p>
+                <span className="hidden font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase tracking-[0.18em] text-[var(--builder-accent-soft)] sm:inline">Studio</span>
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={`${activeTab}-${subtitleTick}`}
+                  initial={{ opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -3 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-1 max-w-[48vw] truncate font-['IBM_Plex_Mono',monospace] text-[9px] font-medium text-[#6E6558] sm:max-w-sm sm:text-[10px]"
+                >
+                  {screenSubtitle}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <div className="builder-studio-header__status hidden min-w-[280px] items-center gap-3 lg:flex">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate font-['IBM_Plex_Mono',monospace] text-[9px] font-bold uppercase tracking-[0.16em] text-[#9CA0A6]">{routineDisplayName}</span>
+                <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-black text-[var(--builder-accent-soft)]">{canvasProgress}%</span>
+              </div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                <motion.div className="h-full rounded-full bg-[var(--builder-accent)]" animate={{ width: `${canvasProgress}%` }} />
+              </div>
+            </div>
+            <span className="builder-status-chip whitespace-nowrap px-3 py-2 text-[10px] font-black">{routineItemCount} blocks</span>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <button onClick={() => setActiveTab('export')} className="builder-header-share hidden px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.14em] md:block" disabled={!hasRoutineItems}>Preview</button>
             <NotificationBell />
             <button
               onClick={() => setShowCustomize(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6E6558] transition-all hover:bg-[#2A2520] hover:text-[#E0793C]"
+              className="builder-icon-button flex h-10 w-10 items-center justify-center text-[#6E6558] hover:text-[var(--builder-accent)]"
               aria-label="Open share settings"
             >
               <Settings2 className="h-4 w-4" />
@@ -820,19 +876,19 @@ export default function MobileFirstBuilder() {
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="relative hidden min-h-0 flex-col overflow-hidden rounded-[2rem] bg-[#0c0c0e] p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.7)] lg:flex"
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_40%_at_15%_0%,rgba(224,121,60,0.10),transparent_60%),radial-gradient(50%_30%_at_100%_100%,rgba(138,47,20,0.12),transparent_60%)]" />
+          <div className="builder-profile-ambient pointer-events-none absolute inset-0" />
           <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
           <div className="mb-5 flex items-start justify-between relative">
             <div className="space-y-0.5">
-              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium tracking-[0.16em] text-[#F2A468]">Build your legacy</p>
+              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium tracking-[0.16em] text-[var(--builder-accent-soft)]">Build your legacy</p>
               <h2 className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold tracking-tight text-[#F1F0F4] uppercase">Builder Tools</h2>
             </div>
             <motion.button
               whileHover={{ rotate: 90, scale: 1.05 }}
               whileTap={{ scale: 0.92 }}
               onClick={() => setShowCustomize(true)}
-              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-[#F1F0F4]/10 bg-[#18181c] text-[#9CA0A6] hover:text-[#F2A468] hover:border-[#E0793C]/35 transition-colors"
+              className="builder-profile-icon-button flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border bg-[#18181c] text-[#9CA0A6] transition-colors"
               aria-label="Open settings"
             >
               <SlidersHorizontal size={18} strokeWidth={2.25} />
@@ -856,7 +912,7 @@ export default function MobileFirstBuilder() {
                   onClick={() => setActiveTab(item.id)}
                   className={`relative flex items-center gap-3.5 overflow-hidden rounded-2xl px-4 py-3.5 text-left transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#E0793C] to-[#8A2F14] text-[#F1F0F4] shadow-[0_8px_24px_-6px_rgba(224,121,60,0.45)]'
+                      ? 'builder-profile-active-surface text-[#F1F0F4]'
                       : 'bg-[#18181c] text-[#9CA0A6] hover:bg-[#2A241D] hover:text-[#F1F0F4] border border-[#F1F0F4]/[0.06]'
                   }`}
                 >
@@ -902,14 +958,14 @@ export default function MobileFirstBuilder() {
                   }}
                   className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border px-3 py-2.5 text-left transition-all ${
                     activeFilter === filter.id
-                      ? 'border-[#E0793C]/30 bg-[#18181c] text-[#F1F0F4]'
+                      ? 'builder-profile-active-filter bg-[#18181c] text-[#F1F0F4]'
                       : 'border-transparent text-[#6E6558] hover:border-[#F1F0F4]/10 hover:bg-[#18181c]/60 hover:text-[#9CA0A6]'
                   }`}
                 >
                   {activeFilter === filter.id && (
                     <motion.span
                       layoutId="desktop-filter-active-glow"
-                      className="absolute left-0 top-1 bottom-1 w-0.5 rounded-r-full bg-[#E0793C] shadow-[0_0_12px_rgba(224,121,60,0.6)]"
+                      className="builder-profile-accent-rail absolute left-0 top-1 bottom-1 w-0.5 rounded-r-full"
                     />
                   )}
                    <span className="flex items-center gap-3">
@@ -919,13 +975,13 @@ export default function MobileFirstBuilder() {
                     <span className="flex min-w-0 flex-col">
                       <span className="text-sm font-['Big_Shoulders_Display',sans-serif] font-bold uppercase tracking-[0.06em]">{filter.label}</span>
                       <span className={`font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase tracking-[0.16em] ${
-                        activeFilter === filter.id ? 'text-[#F2A468]' : 'text-[#6E6558]'
+                        activeFilter === filter.id ? 'text-[var(--builder-accent-soft)]' : 'text-[#6E6558]'
                       }`}>
                         {filter.id === 'all' ? 'All' : builderMode === 'workout' ? 'Muscle' : 'Meal'}
                       </span>
                     </span>
                   </span>
-                  {activeFilter === filter.id && <Check size={14} strokeWidth={2.5} className="text-[#E0793C]" />}
+                  {activeFilter === filter.id && <Check size={14} strokeWidth={2.5} className="text-[var(--builder-accent)]" />}
                 </motion.button>
               ))}
             </div>
@@ -955,7 +1011,7 @@ export default function MobileFirstBuilder() {
                      initial={false}
                      animate={{ x: builderMode === 'workout' ? 0 : '100%' }}
                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                     className="absolute bottom-1 left-1 top-1 z-0 w-[calc(50%-4px)] rounded-[1.05rem] bg-gradient-to-b from-[#F2A468] to-[#8A2F14] shadow-[0_16px_26px_-18px_rgba(224,121,60,0.4)]"
+                     className="builder-profile-tab-indicator absolute bottom-1 left-1 top-1 z-0 w-[calc(50%-4px)] rounded-[1.05rem]"
                   />
                   
                   <button 
@@ -1164,14 +1220,14 @@ export default function MobileFirstBuilder() {
                       <FoodIcon category="carbs" name="rice" className="w-4 h-4" />
                     </div>
                     <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Kcal</p>
-                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#F2A468]">{Math.round(totalMacros.calories)}</p>
+                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[var(--builder-accent-soft)]">{Math.round(totalMacros.calories)}</p>
                   </div>
                   <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
                       <FoodIcon category="protein" name="egg" className="w-4 h-4" />
                     </div>
                     <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Prot</p>
-                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#E0793C]">{Math.round(totalMacros.protein)}g</p>
+                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[var(--builder-accent)]">{Math.round(totalMacros.protein)}g</p>
                   </div>
                   <div className="builder-apple-tile p-3 text-center">
                     <div className="mb-1 flex justify-center">
@@ -1185,7 +1241,7 @@ export default function MobileFirstBuilder() {
                       <FoodIcon category="fats" name="avocado" className="w-4 h-4" />
                     </div>
                     <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Fat</p>
-                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#8A2F14]">{Math.round(totalMacros.fats)}g</p>
+                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[var(--builder-accent-deep)]">{Math.round(totalMacros.fats)}g</p>
                   </div>
               </div>
 
@@ -1208,7 +1264,7 @@ export default function MobileFirstBuilder() {
                             <h4 className="font-black italic uppercase text-xs text-[#F1F0F4]">{food.name}</h4>
                           </div>
                           <div className="flex items-center gap-3">
-                             <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#F2A468] uppercase">{Math.round((food.protein * food.quantity) / 100)}g P</span>
+                             <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[var(--builder-accent-soft)] uppercase">{Math.round((food.protein * food.quantity) / 100)}g P</span>
                              <span className="text-[8px] font-medium text-[#6E6558]">•</span>
                              <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase">{Math.round((food.calories * food.quantity) / 100)} Kcal</span>
                           </div>
@@ -1218,7 +1274,7 @@ export default function MobileFirstBuilder() {
                               <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Minus size={16} /></button>
                                <span className="text-lg font-black w-12 text-center leading-none text-[#F1F0F4]">{food.quantity}g</span>
                               <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Plus size={16} /></button>
-                              <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#F1F0F4]/10 text-[#6E6558] transition-colors hover:text-[#E0793C]"><Trash2 size={16} /></button>
+                              <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#F1F0F4]/10 text-[#6E6558] transition-colors hover:text-[var(--builder-accent)]"><Trash2 size={16} /></button>
                            </div>
                            <div className="relative">
                               <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6E6558] opacity-40" />
@@ -1387,7 +1443,7 @@ export default function MobileFirstBuilder() {
                           setCatalogBgId(preset.id);
                           setCatalogBgImage(null);
                         }}
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 transition-all ${catalogBgId === preset.id && !catalogBgImage ? 'border-[#E0793C] scale-110 shadow-md shadow-[#E0793C]/20' : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'}`}
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 transition-all ${catalogBgId === preset.id && !catalogBgImage ? 'builder-profile-selected-preset scale-110 shadow-md' : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'}`}
                         style={preset.style}
                         title={preset.label}
                       >
@@ -1469,146 +1525,102 @@ export default function MobileFirstBuilder() {
         >
           <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
           <motion.div
-            className="pointer-events-none absolute -right-20 top-20 h-44 w-44 rounded-full bg-[#E0793C]/10 blur-3xl"
+            className="builder-profile-soft-glow pointer-events-none absolute -right-20 top-20 h-44 w-44 rounded-full blur-3xl"
             animate={{ opacity: [0.35, 0.7, 0.35], scale: [1, 1.08, 1] }}
             transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden="true"
           />
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-[0.18em] text-[#6E6558]">Live routine</p>
-              <h2 className="mt-1 truncate text-xl font-black tracking-[-0.04em] text-[#F1F0F4]">{routineDisplayName}</h2>
-              <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#6E6558]">{routineItemCount} items ready</p>
-            </div>
-            <motion.button
-              whileHover={{ y: -2, scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => setActiveTab('export')}
-              className="builder-cta-primary shrink-0 px-3 py-2 text-[10px] font-black uppercase tracking-widest"
-            >
-              Share
-            </motion.button>
-          </div>
-
-          <div className="mb-4 grid grid-cols-3 gap-2">
-            {[
-              ['Exercises', currentRoutine.exercises.length],
-              ['Meals', currentRoutine.foods.length],
-              ['Sets', totalSets],
-            ].map(([label, value]) => (
-              <div key={label} className="builder-apple-tile p-3 text-center">
-                <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase tracking-[0.12em] text-[#6E6558]">{label}</p>
-                <p className="mt-1 font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#F1F0F4]">{value}</p>
+          <div className="builder-live-canvas__header shrink-0 pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-[var(--builder-accent)] shadow-[0_0_12px_var(--builder-accent-shadow)]" />
+                  <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--builder-accent-soft)]">Live canvas</p>
+                </div>
+                <input
+                  value={currentRoutine.name}
+                  onChange={(event) => updateRoutineName(event.target.value)}
+                  className="mt-2 w-full truncate border-0 bg-transparent p-0 font-['Big_Shoulders_Display',sans-serif] text-2xl font-black uppercase text-[#F1F0F4] outline-none"
+                  aria-label="Canvas title"
+                />
               </div>
-            ))}
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-            <div className="space-y-2">
-              {currentRoutine.exercises.slice(0, 5).map((exercise) => (
-                <div key={exercise.id} className="builder-apple-card flex items-center gap-3 p-3">
-                  <ExerciseIcon section={exercise.section} className="h-8 w-8 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-xs font-bold uppercase italic text-[#F1F0F4]">{exercise.name}</p>
-                    <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-[0.14em] text-[#6E6558]">{exercise.sets} x {exercise.reps} · {exercise.weight}kg</p>
-                  </div>
-                </div>
-              ))}
-              {currentRoutine.foods.slice(0, 4).map((food) => (
-                <div key={food.id} className="builder-apple-card flex items-center gap-3 p-3">
-                  <FoodIcon category={food.category || 'all'} name={food.name} className="h-6 w-6 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-xs font-bold uppercase italic text-[#F1F0F4]">{food.name}</p>
-                    <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-[0.14em] text-[#6E6558]">{food.quantity}g · {Math.round((food.calories * food.quantity) / 100)} kcal</p>
-                  </div>
-                </div>
-              ))}
-              {!hasRoutineItems && (
-                <div className="flex min-h-[180px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-[#6E6558]/20 bg-[#18181c]/40 p-5 text-center">
-                  <Dumbbell className="h-10 w-10 text-[#6E6558]" />
-                  <p className="mt-3 font-['IBM_Plex_Mono',monospace] text-xs font-medium uppercase tracking-[0.16em] text-[#6E6558]">No items yet</p>
-                  <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium leading-relaxed text-[#9CA0A6]">Add exercises or meals from the catalog.</p>
-                </div>
-              )}
+              <button onClick={() => setActiveTab('export')} className="builder-header-share shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em]" disabled={!hasRoutineItems}>Preview</button>
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                <motion.div className="h-full rounded-full bg-[var(--builder-accent)]" animate={{ width: `${canvasProgress}%` }} transition={{ type: 'spring', stiffness: 240, damping: 28 }} />
+              </div>
+              <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-black text-[#9CA0A6]">{canvasProgress}%</span>
             </div>
           </div>
 
-          <motion.div
-            whileHover={{ y: -3 }}
-            className="mt-4 rounded-[1.5rem] border border-[#F1F0F4]/10 bg-[#0c0c0e]/60 p-3 shadow-[0_18px_44px_-34px_rgba(0,0,0,0.52)]"
-          >
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-[0.18em] text-[#6E6558]">Vista enviada</p>
-                <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium text-[#9CA0A6]">Resumen del link que abre tu cliente.</p>
-              </div>
-              <motion.button
-                whileHover={{ x: 2 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => setActiveTab('export')}
-                className="text-[10px] font-black uppercase tracking-[0.16em] text-[#0071e3]"
-              >
-                Open
-              </motion.button>
-            </div>
-            <div className="builder-apple-card p-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E0793C] text-white shadow-[0_16px_30px_-22px_rgba(224,121,60,0.8)]">
-                  {shareTemplate === 'meal' ? <Apple size={18} /> : shareTemplate === 'mixed' ? <Share2 size={18} /> : <Dumbbell size={18} />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold tracking-[-0.03em] text-[#F1F0F4]">{routineDisplayName}</p>
-                  <p className="mt-0.5 text-[10px] font-bold text-[#9CA0A6]">
-                    {shareTemplate === 'meal' ? 'Plan de comidas' : shareTemplate === 'mixed' ? 'Rutina + comidas' : 'Rutina'} · {routineItemCount} items
-                  </p>
+          <div className="builder-live-canvas min-h-0 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+            {!hasRoutineItems ? (
+              <div className="builder-live-canvas__empty">
+                <div className="builder-profile-solid-icon flex h-12 w-12 items-center justify-center rounded-2xl text-white"><Plus size={20} /></div>
+                <p>Tu plan empieza acá</p>
+                <span>Seleccioná ejercicios o comidas. Cada bloque aparecerá en este lienzo en tiempo real.</span>
+                <div className="mt-5 grid w-full grid-cols-3 gap-2">
+                  {['Selecciona', 'Ajusta', 'Comparte'].map((label, index) => <div key={label}><b>0{index + 1}</b><small>{label}</small></div>)}
                 </div>
               </div>
-            </div>
-            <div className="mb-3 grid grid-cols-3 gap-2">
-              {[
-                ['type', shareTemplate],
-                ['palette', selectedWirPalette],
-                ['items', routineItemCount],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl border border-[#F1F0F4]/8 bg-[#0a0a0c]/60 p-2 backdrop-blur-sm">
-                  <p className="text-[8px] font-black uppercase tracking-[0.14em] text-[#6E6558]">{label}</p>
-                  <p className="mt-1 truncate font-['Big_Shoulders_Display',sans-serif] text-[10px] font-bold uppercase text-[#F1F0F4]">{value}</p>
-                </div>
+            ) : (
+              <div className="space-y-5 pb-3">
+                {currentRoutine.exercises.length > 0 && (
+                  <section>
+                    <div className="builder-live-canvas__section-title"><span>Entrenamiento</span><b>{currentRoutine.exercises.length}</b></div>
+                    <div className="space-y-1.5">
+                      <AnimatePresence initial={false}>
+                        {currentRoutine.exercises.map((exercise, index) => (
+                          <motion.div key={exercise.id} layout initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 18 }} className="builder-canvas-block">
+                            <span className="builder-canvas-block__index">{String(index + 1).padStart(2, '0')}</span>
+                            <ExerciseIcon section={exercise.section} className="h-8 w-8 shrink-0" />
+                            <div className="min-w-0 flex-1"><p>{exercise.name}</p><small>{exercise.sets} sets · {exercise.reps} reps · {exercise.weight} kg</small></div>
+                            <div className="builder-canvas-block__actions">
+                              <button onClick={() => updateExercise(exercise.id, { sets: Math.max(1, exercise.sets - 1) })} aria-label={`Reducir sets de ${exercise.name}`}><Minus size={12} /></button>
+                              <b>{exercise.sets}</b>
+                              <button onClick={() => updateExercise(exercise.id, { sets: exercise.sets + 1 })} aria-label={`Aumentar sets de ${exercise.name}`}><Plus size={12} /></button>
+                              <button onClick={() => removeExercise(exercise.id)} aria-label={`Eliminar ${exercise.name}`}><X size={12} /></button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </section>
+                )}
+                {currentRoutine.foods.length > 0 && (
+                  <section>
+                    <div className="builder-live-canvas__section-title"><span>Nutrición</span><b>{currentRoutine.foods.length}</b></div>
+                    <div className="space-y-1.5">
+                      <AnimatePresence initial={false}>
+                        {currentRoutine.foods.map((food, index) => (
+                          <motion.div key={food.id} layout initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 18 }} className="builder-canvas-block">
+                            <span className="builder-canvas-block__index">{String(index + 1).padStart(2, '0')}</span>
+                            <FoodIcon category={food.category || 'all'} name={food.name} className="h-8 w-8 shrink-0" />
+                            <div className="min-w-0 flex-1"><p>{food.name}</p><small>{food.quantity} g · {Math.round((food.calories * food.quantity) / 100)} kcal</small></div>
+                            <div className="builder-canvas-block__actions">
+                              <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} aria-label={`Reducir cantidad de ${food.name}`}><Minus size={12} /></button>
+                              <b>{food.quantity}</b>
+                              <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} aria-label={`Aumentar cantidad de ${food.name}`}><Plus size={12} /></button>
+                              <button onClick={() => removeFood(food.id)} aria-label={`Eliminar ${food.name}`}><X size={12} /></button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="builder-live-canvas__footer shrink-0 pt-3">
+            <div className="grid grid-cols-4 gap-1.5">
+              {[['Blocks', routineItemCount], ['Sets', totalSets], ['Kcal', Math.round(totalMacros.calories)], ['Volume', Math.round(totalVolume)]].map(([label, value]) => (
+                <div key={label}><small>{label}</small><b>{value}</b></div>
               ))}
             </div>
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowPayloadPreview((current) => !current)}
-              className="flex w-full items-center justify-between rounded-2xl border border-[#F1F0F4]/8 bg-[#0a0a0c]/50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#9CA0A6] backdrop-blur-sm"
-            >
-              <span>{showPayloadPreview ? 'Ocultar JSON' : 'Ver JSON'}</span>
-              <span className="text-[#E0793C]">{showPayloadPreview ? '−' : '+'}</span>
-            </motion.button>
-            <AnimatePresence initial={false}>
-              {showPayloadPreview && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-3 max-h-[230px] overflow-auto rounded-[1.25rem] border border-[#141e30]/10 bg-[#07111f] p-3 shadow-inner custom-scrollbar">
-                    <pre className="whitespace-pre-wrap break-words font-mono text-[10px] font-bold leading-relaxed text-[#d8e7f7]">
-                      {sharePayloadPreview}
-                    </pre>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-          <div className="builder-apple-card p-3">
-            <SocialJoin
-              title="Únete"
-              variant="dark"
-              align="center"
-              className="[&_h4]:mb-3 [&_h4]:text-[9px] [&_div]:gap-2 [&_a]:h-8 [&_a]:w-8"
-            />
+            <button onClick={() => setActiveTab('export')} disabled={!hasRoutineItems} className="builder-cta-primary mt-3 flex w-full items-center justify-center gap-2 py-3 text-[9px] font-black uppercase tracking-[0.16em]"><Share2 size={14} /> Preparar link</button>
           </div>
         </motion.aside>
       </div>
@@ -1640,7 +1652,7 @@ export default function MobileFirstBuilder() {
             <div className="flex items-start justify-between gap-3 border-b border-[#F1F0F4]/10 px-4 pb-4 pt-3 sm:p-5">
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-[#E0793C]" />
+                  <Palette className="h-4 w-4 text-[var(--builder-accent)]" />
                   <h2 className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide text-[#F1F0F4]">Share settings</h2>
                 </div>
                 <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-snug text-[#6E6558] sm:text-xs sm:leading-relaxed">Brand, client view and delivery options.</p>
@@ -1651,6 +1663,42 @@ export default function MobileFirstBuilder() {
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 pb-28 sm:space-y-6 sm:p-5 sm:pb-28">
+              <section className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#9CA0A6]">Theme</p>
+                  <span className="builder-theme-base">Black base</span>
+                </div>
+                <div className="builder-theme-switch" role="group" aria-label="Builder theme">
+                  {BUILDER_PROFILE_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`builder-theme-option ${builderProfile === option.value ? 'is-active' : ''}`}
+                      aria-pressed={builderProfile === option.value}
+                      onClick={() => setBuilderProfile(option.value)}
+                    >
+                      <img src={option.image} alt="" />
+                      <span>
+                        <strong>{option.label}</strong>
+                        <small>{option.theme}</small>
+                      </span>
+                      <i aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="builder-cta-ghost w-full px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em]"
+                  onClick={() => {
+                    setOnboardingStep(0);
+                    setShowCustomize(false);
+                    setShowOnboarding(true);
+                  }}
+                >
+                  Revisar onboarding
+                </button>
+              </section>
+
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#6E6558]">Brand</p>
@@ -1692,7 +1740,7 @@ export default function MobileFirstBuilder() {
                         setCatalogBgId(preset.id);
                         setCatalogBgImage(null);
                       }}
-                      className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${catalogBgId === preset.id && !catalogBgImage ? 'border-[#E0793C]/40 bg-[#E0793C]/10' : ''}`}
+                      className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${catalogBgId === preset.id && !catalogBgImage ? 'builder-profile-selected-option' : ''}`}
                     >
                     <span className="h-9 w-12 shrink-0 rounded-2xl border border-white shadow-inner" style={preset.style} />
                       <span className="min-w-0 flex-1">
@@ -1700,7 +1748,7 @@ export default function MobileFirstBuilder() {
                         <span className="block font-['IBM_Plex_Mono',monospace] text-xs font-medium text-[#6E6558]">Preview palette</span>
                       </span>
                       {catalogBgId === preset.id && !catalogBgImage && (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E0793C] text-white">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--builder-accent)] text-white">
                           <Check className="h-3.5 w-3.5" />
                         </span>
                       )}
@@ -1708,7 +1756,7 @@ export default function MobileFirstBuilder() {
                   ))}
                 </div>
 
-                <label className={`builder-cta-ghost flex cursor-pointer items-center justify-between gap-3 p-3 ${catalogBgImage ? 'border-[#E0793C]/40 bg-[#E0793C]/10 text-[#E0793C]' : ''}`}>
+                <label className={`builder-cta-ghost flex cursor-pointer items-center justify-between gap-3 p-3 ${catalogBgImage ? 'builder-profile-selected-option text-[var(--builder-accent)]' : ''}`}>
                   <span className="flex min-w-0 items-center gap-3">
                     <span className="builder-apple-tile flex h-9 w-12 items-center justify-center">
                       <ImageIcon className="h-4 w-4" />
@@ -1811,14 +1859,12 @@ export default function MobileFirstBuilder() {
               className="fixed bottom-[92px] left-0 right-0 z-[60] px-4"
               aria-label="Primeros pasos del builder"
             >
-            <div className="builder-glass-shell mx-auto max-w-md overflow-hidden rounded-[1.75rem] p-3">
+            <div className="builder-onboarding builder-glass-shell mx-auto max-w-md overflow-hidden rounded-[1.75rem] p-3">
               <div className="mb-3 flex items-center justify-between gap-3 px-1">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#7895b2]">
-                    Primer ingreso
-                  </p>
+                  <p className="builder-onboarding__eyebrow">Primer ingreso · {builderProfile === 'woman' ? 'Rose' : 'Orange'}</p>
                   <h2 className="text-lg font-black italic uppercase tracking-tight text-[#F1F0F4]">
-                    Como funciona
+                    Calibra tu Builder
                   </h2>
                 </div>
                 <button
@@ -1831,71 +1877,63 @@ export default function MobileFirstBuilder() {
               </div>
 
               <div className="relative -mx-3 mb-3 overflow-hidden">
-                <div className="relative h-40">
+                <div className="builder-onboarding__hero relative h-48">
                   <AnimatePresence mode="wait">
                     <motion.img
-                      key={onboardingStep}
-                      src={
-                        [
-                          '/assets_coach_tips/athletic_woman_lunge_pose.webp',
-                          '/assets_coach_tips/athletic_man_protein.webp',
-                          '/assets_coach_tips/confident_coach_standing.webp',
-                          '/assets_coach_tips/victory_jump_illustration.webp',
-                        ][onboardingStep]
-                      }
+                      key={`${builderProfile}-${onboardingStep}`}
+                      src={BUILDER_PROFILE_ASSETS[builderProfile][onboardingStep]}
                       initial={{ opacity: 0, scale: 1.08 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.25 }}
+                      transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
                       className="h-full w-full object-cover"
-                      style={{ objectPosition: `50% ${[28, 16, 12, 32][onboardingStep]}%` }}
+                      style={{ objectPosition: '50% 18%' }}
                       alt=""
                     />
                   </AnimatePresence>
+                  <div className="builder-onboarding__hero-copy">
+                    <span>0{onboardingStep + 1} / 0{ONBOARDING_STEPS.length}</span>
+                    <strong>{ONBOARDING_STEPS[onboardingStep].title}</strong>
+                    <p>{ONBOARDING_STEPS[onboardingStep].body}</p>
+                  </div>
                 </div>
               </div>
-              <div className="grid gap-2">
-                {ONBOARDING_STEPS.map((step, index) => {
-                  const isActive = onboardingStep === index;
-                  return (
-                    <motion.button
-                      key={step.title}
+              {onboardingStep === 0 ? (
+                <div className="builder-profile-grid" aria-label="Perfil visual">
+                  {BUILDER_PROFILE_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
                       type="button"
-                      onClick={() => goToOnboardingStep(index)}
-                      initial={false}
-                      animate={{ opacity: isActive ? 1 : 0.78 }}
-                      className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${
-isActive
-? 'border-[#E0793C]/30 bg-[#E0793C]/10 shadow-sm'
-: 'border-[#F1F0F4]/[0.06] bg-[#18181c]'
-                      }`}
+                      className={`builder-profile-choice ${builderProfile === option.value ? 'is-active' : ''}`}
+                      aria-pressed={builderProfile === option.value}
+                      onClick={() => setBuilderProfile(option.value)}
                     >
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
-                        isActive ? 'bg-[#0071e3] text-white' : 'builder-apple-tile text-[#0071e3]'
-                      }`}>
-                        <OnboardingIcon type={step.icon} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-[#7895b2]">
-                            Paso {index + 1}
-                          </span>
-                          {isActive && (
-                            <motion.span
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="rounded-full bg-[#E0793C] px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white"
-                            >
-                              ahora
-                            </motion.span>
-                          )}
-                        </div>
-<p className="mt-0.5 text-sm font-black text-[#F1F0F4]">{step.title}</p>
-                <p className="mt-0.5 text-[11px] font-bold leading-snug text-[#9CA0A6]">{step.body}</p>
-                      </div>
-                    </motion.button>
-                  );
-                })}
+                      <img src={option.image} alt="" />
+                      <span><strong>{option.label}</strong><small>{option.theme}</small></span>
+                      <i aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="builder-onboarding__active-step">
+                  <span><OnboardingIcon type={ONBOARDING_STEPS[onboardingStep].icon} /></span>
+                  <div>
+                    <strong>{ONBOARDING_STEPS[onboardingStep].title}</strong>
+                    <small>{ONBOARDING_STEPS[onboardingStep].body}</small>
+                  </div>
+                </div>
+              )}
+
+              <div className="builder-onboarding__rail" aria-label={`Paso ${onboardingStep + 1} de ${ONBOARDING_STEPS.length}`}>
+                {ONBOARDING_STEPS.map((step, index) => (
+                  <button
+                    key={step.title}
+                    type="button"
+                    className={onboardingStep === index ? 'is-active' : index < onboardingStep ? 'is-done' : ''}
+                    onClick={() => goToOnboardingStep(index)}
+                    aria-label={`Ir al paso ${index + 1}: ${step.title}`}
+                  />
+                ))}
               </div>
 
               <div className="mt-3 flex items-center justify-between gap-3">
@@ -1905,16 +1943,6 @@ isActive
                 >
                   Saltar
                 </button>
-                <div className="flex items-center gap-1.5" aria-hidden="true">
-                  {ONBOARDING_STEPS.map((step, index) => (
-                    <span
-                      key={step.title}
-                      className={`h-1.5 rounded-full transition-all ${
-                        onboardingStep === index ? 'w-6 bg-[#0071e3]' : 'w-1.5 bg-[#dbe5f0]'
-                      }`}
-                    />
-                  ))}
-                </div>
                 <button
                   onClick={advanceOnboarding}
                   className="builder-cta-primary px-4 py-3 text-[10px] font-black uppercase tracking-widest"
@@ -1928,7 +1956,10 @@ isActive
         )}
       </AnimatePresence>
 
-      <SabiasQueBanner className="fixed bottom-0 left-0 right-0 z-40 px-3 lg:hidden" />
+      <SabiasQueBanner
+        profile={builderProfile}
+        className="fixed bottom-0 left-0 right-0 z-40 px-3 lg:hidden"
+      />
 
       {/* Mobile Footer Nav */}
       <div className="builder-footer-nav-wrapper">
@@ -1969,7 +2000,9 @@ isActive
         </button>
       </div>
 
-      <AiMentorChat open={chatOpen} onOpenChange={setChatOpen} />
+      {!showOnboarding && !showCustomize && (
+        <AiMentorChat open={chatOpen} onOpenChange={setChatOpen} />
+      )}
 
     </div>
   );
@@ -1978,7 +2011,7 @@ isActive
 function ExportPreviewFallback() {
   return (
 <div className="w-full max-w-sm aspect-[9/16] rounded-[1.5rem] border border-[#F1F0F4]/[0.06] bg-[#0a0a0a] flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-[#E0793C] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[var(--builder-accent)] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

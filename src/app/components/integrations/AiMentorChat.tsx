@@ -212,10 +212,7 @@ export const AiMentorChat: React.FC<{ open?: boolean; onOpenChange?: (open: bool
     <>
       {/* Floating Legacito — same as Legacy IA */}
       {!isOpen && (
-        <div
-          className="fixed right-3 z-[99990]"
-          style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
-        >
+        <div className="builder-legacito-anchor fixed z-[99990]">
           <div className="builder-legacito-glitch relative drop-shadow-[0_16px_34px_rgba(74,55,24,0.18)] sm:bottom-0">
             <LegacitoActionButton
               onClick={() => setIsOpen(true)}
