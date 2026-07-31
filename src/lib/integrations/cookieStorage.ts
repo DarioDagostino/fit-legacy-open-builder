@@ -25,8 +25,9 @@ function sharedCookieAttributes(): string {
   const hostname = window.location.hostname.toLowerCase();
   const isFitLegacyDomain = hostname === 'fitlegacy.app' || hostname.endsWith('.fitlegacy.app');
   const domain = isFitLegacyDomain ? '; Domain=.fitlegacy.app' : '';
-  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-  return `${domain}; SameSite=Lax${secure}`;
+  const isProduction = window.location.protocol === 'https:';
+  const sameSite = isProduction ? 'SameSite=None;Secure' : 'SameSite=Lax';
+  return `${domain}; ${sameSite}`;
 }
 
 export const cookieStorage: SupportedStorage = {
