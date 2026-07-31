@@ -22,7 +22,7 @@ import {
   Settings2,
   UserRound,
 } from 'lucide-react';
-import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS } from '@fit-legacy/shared';
+import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS, type LegacitoSkin } from '@fit-legacy/shared';
 import { DynamicLogoIcon } from '../DynamicLogoIcon';
 import { SabiasQueBanner } from './SabiasQueBanner';
 import { StreakGuard } from './StreakGuard';
@@ -31,9 +31,12 @@ import { useWorkoutStore } from '../../lib/store';
 import { createPersistentWirShare } from '../../lib/share';
 import { loadRoutineAnalyticsStats } from '../../lib/routineAnalytics';
 import { toast } from 'sonner';
-import CalendarPanel, { loadCalendarEntries, saveCalendarEntry, type CalendarEntry } from './CalendarPanel';
+import CalendarPanel, { loadCalendarActions, loadCalendarEntries, saveCalendarActions, saveCalendarEntry, type CalendarAction, type CalendarEntry } from './CalendarPanel';
 import mobileFirstBuilderConfig from '../../config/mobileFirstBuilder.json';
-import { AiMentorChat } from '../../app/components/integrations/AiMentorChat';
+import { AiMentorChat, LEGACITO_SKIN_OPTIONS } from '../../app/components/integrations/AiMentorChat';
+import { onUserScopeChanged, scopedRawGet, scopedRawSet } from '../../lib/userScope';
+import { reportCanonicalSyncError, syncCalendarActionsToSupabase, syncCalendarEntryToSupabase, syncRoutineToSupabase } from '../../lib/canonicalData';
+import { copyTextWithFallback, openWhatsAppShare } from './builderSharing';
 
 const WirCanvasPreview = lazy(() =>
   import('../wir/WirCanvasPreview').then((module) => ({ default: module.WirCanvasPreview }))
@@ -66,6 +69,7 @@ type BuilderProfile = 'woman' | 'man';
 const CUSTOMIZE_KEY = 'catalog-customize-config';
 const ONBOARDING_KEY = 'fl-builder-onboarding-v1';
 const BUILDER_PROFILE_KEY = 'fl-builder-profile-v1';
+const LEGACITO_SKIN_KEY = 'fl-builder-legacito-skin-v1';
 
 const BUILDER_PROFILE_ASSETS: Record<BuilderProfile, string[]> = {
   woman: [
@@ -322,13 +326,39 @@ export default function MobileFirstBuilder() {
   const [catalogBgId, setCatalogBgId] = useState<string>('clean');
   const [catalogBgImage, setCatalogBgImage] = useState<string | null>(null);
   const [calendarEntries, setCalendarEntries] = useState<CalendarEntry[]>(() => loadCalendarEntries());
+  const [calendarActions, setCalendarActions] = useState<CalendarAction[]>(() => loadCalendarActions());
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [builderProfile, setBuilderProfile] = useState<BuilderProfile>(() => (
-    localStorage.getItem(BUILDER_PROFILE_KEY) === 'woman' ? 'woman' : 'man'
+    scopedRawGet(BUILDER_PROFILE_KEY) === 'woman' ? 'woman' : 'man'
   ));
+  const [legacitoSkin, setLegacitoSkin] = useState<LegacitoSkin>(() => {
+    const stored = scopedRawGet(LEGACITO_SKIN_KEY) as LegacitoSkin | null;
+    return LEGACITO_SKIN_OPTIONS.some((option) => option.value === stored) ? stored! : 'legacy-ai';
+  });
+
+  useEffect(() => {
+    saveCalendarActions(calendarActions);
+    void syncCalendarActionsToSupabase(calendarActions).catch(reportCanonicalSyncError);
+  }, [calendarActions]);
+
+  useEffect(() => onUserScopeChanged(() => {
+    void useWorkoutStore.persist.rehydrate();
+    setCalendarEntries(loadCalendarEntries());
+    setCalendarActions(loadCalendarActions());
+  }), []);
+
+  useEffect(() => {
+    if (!showCustomize) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowCustomize(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showCustomize]);
   const [navVisible, setNavVisible] = useState(true);
   const [chatOpen, setChatOpen] = useState(searchParams.get('start') === '1');
+  const [rightPanelMode, setRightPanelMode] = useState<'canvas' | 'legacito'>('canvas');
   const lastScrollYRef = useRef(0);
 
   useEffect(() => {
@@ -407,23 +437,27 @@ export default function MobileFirstBuilder() {
   }, []);
 
   useEffect(() => {
-    setShowOnboarding(localStorage.getItem(ONBOARDING_KEY) !== 'done');
+    setShowOnboarding(scopedRawGet(ONBOARDING_KEY) !== 'done');
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(BUILDER_PROFILE_KEY, builderProfile);
+    scopedRawSet(BUILDER_PROFILE_KEY, builderProfile);
     document.documentElement.dataset.builderProfile = builderProfile;
   }, [builderProfile]);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem(CUSTOMIZE_KEY) || '{}');
+    scopedRawSet(LEGACITO_SKIN_KEY, legacitoSkin);
+  }, [legacitoSkin]);
+
+  useEffect(() => {
+    const stored = JSON.parse(scopedRawGet(CUSTOMIZE_KEY) || '{}');
     setCatalogLogo(stored.logo || null);
     setCatalogBgId(stored.bgId || 'clean');
     setCatalogBgImage(stored.bgImage || null);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(CUSTOMIZE_KEY, JSON.stringify({
+    scopedRawSet(CUSTOMIZE_KEY, JSON.stringify({
       logo: catalogLogo,
       bgId: catalogBgId,
       bgImage: catalogBgImage,
@@ -477,7 +511,7 @@ export default function MobileFirstBuilder() {
       const cat = builderMode === 'workout' ? (item as any).section : (item as any).category;
       const normalizedCat = normalizeFilterId(cat);
       const matchesVirtualFoodFilter =
-        builderMode === 'food' && (
+        builderMode === 'nutrition' && (
           (normalizedFilter === 'fruits' && FRUIT_TERMS.some((term) => itemText.includes(term))) ||
           (normalizedFilter === 'vegetables' && VEGETABLE_TERMS.some((term) => itemText.includes(term)))
         );
@@ -599,15 +633,12 @@ export default function MobileFirstBuilder() {
     return trimmed;
   }, [currentRoutine.name, shareTemplate]);
 
-  const screenTitle = activeTab === 'catalog'
-    ? 'Builder'
-    : activeTab === 'food'
-      ? 'Meals'
-      : activeTab === 'build'
-        ? 'Routine'
-        : activeTab === 'calendar'
-          ? 'Calendar'
-          : 'Share';
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void syncRoutineToSupabase(currentRoutine, routineDisplayName).catch(reportCanonicalSyncError);
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [currentRoutine, routineDisplayName]);
 
   const [subtitleTick, setSubtitleTick] = useState(0);
   useEffect(() => {
@@ -663,6 +694,8 @@ export default function MobileFirstBuilder() {
       slug,
     });
     setCalendarEntries(updated);
+    const savedEntry = updated.find((entry) => entry.date === todayKey);
+    if (savedEntry) void syncCalendarEntryToSupabase(savedEntry).catch(reportCanonicalSyncError);
   }, [
     currentRoutine.exercises.length,
     currentRoutine.foods.length,
@@ -716,12 +749,18 @@ export default function MobileFirstBuilder() {
     }
 
     const toastId = toast.loading('Creating share link...');
-    const { link, slug } = await getBestShareTarget();
-    toast.dismiss(toastId);
-
-    const message = sharePreviewText.replace(getShareableLink(selectedWirPalette), link);
-    saveShareToCalendar(slug);
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    try {
+      const { link, slug } = await getBestShareTarget();
+      if (!link) throw new Error('No share link available');
+      const message = sharePreviewText.replace(getShareableLink(selectedWirPalette), link);
+      saveShareToCalendar(slug);
+      if (!openWhatsAppShare(message)) throw new Error('Popup blocked');
+    } catch (error) {
+      console.error('WhatsApp share failed', error);
+      toast.error('No pudimos abrir WhatsApp. Copiá el enlace para compartirlo manualmente.');
+    } finally {
+      toast.dismiss(toastId);
+    }
   };
 
   const handleCopyShareLink = async () => {
@@ -731,21 +770,20 @@ export default function MobileFirstBuilder() {
     }
 
     const toastId = toast.loading('Creating share link...');
-    const wir = getShareableWir(selectedWirPalette);
-    const persisted = wir ? await createPersistentWirShare(wir, routineDisplayName) : null;
-    toast.dismiss(toastId);
-
-    const link = persisted?.url || getShareableLink(selectedWirPalette);
-    if (!link) return;
-    navigator.clipboard.writeText(link);
-    saveShareToCalendar(persisted?.slug);
-    toast.success('Link copied', {
-      style: {
-        background: '#141e30',
-        color: '#fff',
-        border: '1px solid #35577d'
-      }
-    });
+    try {
+      const wir = getShareableWir(selectedWirPalette);
+      const persisted = wir ? await createPersistentWirShare(wir, routineDisplayName) : null;
+      const link = persisted?.url || getShareableLink(selectedWirPalette);
+      if (!link) throw new Error('No share link available');
+      if (!await copyTextWithFallback(link)) throw new Error('Clipboard unavailable');
+      saveShareToCalendar(persisted?.slug);
+      toast.success('Link copied');
+    } catch (error) {
+      console.error('Copy share link failed', error);
+      toast.error('No pudimos copiar el enlace. Intentá nuevamente.');
+    } finally {
+      toast.dismiss(toastId);
+    }
   };
 
   const handleCatalogLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -768,7 +806,7 @@ export default function MobileFirstBuilder() {
   };
 
   const completeOnboarding = useCallback(() => {
-    localStorage.setItem(ONBOARDING_KEY, 'done');
+    scopedRawSet(ONBOARDING_KEY, 'done');
     setShowOnboarding(false);
   }, []);
 
@@ -841,7 +879,8 @@ export default function MobileFirstBuilder() {
             <button
               onClick={() => setShowCustomize(true)}
               className="builder-icon-button flex h-10 w-10 items-center justify-center text-[#6E6558] hover:text-[var(--builder-accent)]"
-              aria-label="Open share settings"
+              aria-label="Abrir ajustes del Builder"
+              aria-expanded={showCustomize}
             >
               <Settings2 className="h-4 w-4" />
             </button>
@@ -884,15 +923,6 @@ export default function MobileFirstBuilder() {
               <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium tracking-[0.16em] text-[var(--builder-accent-soft)]">Build your legacy</p>
               <h2 className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold tracking-tight text-[#F1F0F4] uppercase">Builder Tools</h2>
             </div>
-            <motion.button
-              whileHover={{ rotate: 90, scale: 1.05 }}
-              whileTap={{ scale: 0.92 }}
-              onClick={() => setShowCustomize(true)}
-              className="builder-profile-icon-button flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border bg-[#18181c] text-[#9CA0A6] transition-colors"
-              aria-label="Open settings"
-            >
-              <SlidersHorizontal size={18} strokeWidth={2.25} />
-            </motion.button>
           </div>
 
           <div className="relative flex flex-col gap-3">
@@ -900,7 +930,7 @@ export default function MobileFirstBuilder() {
               { id: 'catalog' as TabType, label: 'Catalog', meta: `${filteredItems.length} options`, icon: Search },
               { id: 'build' as TabType, label: 'Routine', meta: `${currentRoutine.exercises.length} exercises`, icon: Dumbbell },
               { id: 'food' as TabType, label: 'Meals', meta: `${currentRoutine.foods.length} foods`, icon: Apple },
-              { id: 'calendar' as TabType, label: 'Calendar', meta: `${calendarEntries.length} entries`, icon: CalendarDays },
+              { id: 'calendar' as TabType, label: 'Calendar', meta: `${calendarEntries.length + calendarActions.length} items`, icon: CalendarDays },
               { id: 'export' as TabType, label: 'Share', meta: 'Client preview', icon: Share2 },
             ].map((item) => {
               const isActive = activeTab === item.id;
@@ -1006,7 +1036,7 @@ export default function MobileFirstBuilder() {
               className="h-full flex flex-col gap-4 overflow-hidden rounded-[2rem] p-3 pt-3 sm:gap-6 sm:p-6"
             >
                {/* Internal Discovery Toggle */}
-               <div className="builder-glass-shell relative flex h-[52px] items-center overflow-hidden rounded-[1.35rem] p-1 sm:h-14" role="tablist">
+               <div className="builder-glass-shell relative flex h-[52px] items-center overflow-hidden rounded-[1.35rem] p-1 sm:h-14" role="tablist" aria-label="Modo del catálogo">
                   <motion.div 
                      initial={false}
                      animate={{ x: builderMode === 'workout' ? 0 : '100%' }}
@@ -1039,6 +1069,7 @@ export default function MobileFirstBuilder() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6E6558]" aria-hidden="true" />
                   <input 
                     type="text"
+                    aria-label="Buscar ejercicios y comidas"
                     placeholder={`Search ${builderMode === 'workout' ? 'exercises' : 'foods'}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -1407,7 +1438,11 @@ export default function MobileFirstBuilder() {
           )}
 
           {activeTab === 'calendar' && (
-            <CalendarPanel entries={calendarEntries} />
+            <CalendarPanel
+              entries={calendarEntries}
+              actions={calendarActions}
+              onActionsChange={setCalendarActions}
+            />
           )}
 
           {activeTab === 'export' && (
@@ -1521,7 +1556,7 @@ export default function MobileFirstBuilder() {
           initial={{ opacity: 0, x: 18, filter: 'blur(8px)' }}
           animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
           transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-[#F1F0F4]/10 bg-[#18181c]/90 p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:flex lg:flex-col"
+          className={`relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-[#F1F0F4]/10 bg-[#18181c]/90 p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.45)] backdrop-blur-2xl ${rightPanelMode === 'canvas' ? 'lg:flex' : 'lg:hidden'} lg:flex-col`}
         >
           <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
           <motion.div
@@ -1530,6 +1565,28 @@ export default function MobileFirstBuilder() {
             transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden="true"
           />
+          <div className="builder-right-panel-tabs" role="tablist" aria-label="Panel derecho">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={rightPanelMode === 'canvas'}
+              className={`builder-right-panel-tab ${rightPanelMode === 'canvas' ? 'is-active' : ''}`}
+              onClick={() => setRightPanelMode('canvas')}
+            >
+              <SlidersHorizontal size={12} />
+              Canvas
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={rightPanelMode === 'legacito'}
+              className={`builder-right-panel-tab ${rightPanelMode === 'legacito' ? 'is-active' : ''}`}
+              onClick={() => setRightPanelMode('legacito')}
+            >
+              <MessageCircle size={12} />
+              Legacito
+            </button>
+          </div>
           <div className="builder-live-canvas__header shrink-0 pb-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -1623,6 +1680,41 @@ export default function MobileFirstBuilder() {
             <button onClick={() => setActiveTab('export')} disabled={!hasRoutineItems} className="builder-cta-primary mt-3 flex w-full items-center justify-center gap-2 py-3 text-[9px] font-black uppercase tracking-[0.16em]"><Share2 size={14} /> Preparar link</button>
           </div>
         </motion.aside>
+
+        <motion.aside
+          initial={{ opacity: 0, x: 18, filter: 'blur(8px)' }}
+          animate={{ opacity: rightPanelMode === 'legacito' ? 1 : 0, x: rightPanelMode === 'legacito' ? 0 : 18, filter: rightPanelMode === 'legacito' ? 'blur(0px)' : 'blur(8px)' }}
+          transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className={`relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-[#F1F0F4]/10 bg-[#18181c]/90 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.45)] backdrop-blur-2xl ${rightPanelMode === 'legacito' ? 'lg:flex' : 'lg:hidden'} lg:flex-col`}
+          aria-label="Panel de Legacito"
+        >
+          <div className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-[var(--builder-accent)]/80 to-transparent" />
+          <div className="builder-right-panel-tabs relative z-10 mx-4 mt-4" role="tablist" aria-label="Panel derecho">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={rightPanelMode === 'canvas'}
+              className={`builder-right-panel-tab ${rightPanelMode === 'canvas' ? 'is-active' : ''}`}
+              onClick={() => setRightPanelMode('canvas')}
+            >
+              <SlidersHorizontal size={12} />
+              Canvas
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={rightPanelMode === 'legacito'}
+              className={`builder-right-panel-tab ${rightPanelMode === 'legacito' ? 'is-active' : ''}`}
+              onClick={() => setRightPanelMode('legacito')}
+            >
+              <MessageCircle size={12} />
+              Legacito
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 p-2">
+            <AiMentorChat embedded open={true} skinId={legacitoSkin} onSkinChange={setLegacitoSkin} onOpenChange={() => setRightPanelMode('canvas')} />
+          </div>
+        </motion.aside>
       </div>
 
       <AnimatePresence>
@@ -1634,35 +1726,38 @@ export default function MobileFirstBuilder() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowCustomize(false)}
-              className="fixed inset-0 z-40 bg-[#0c0c0e]/60 backdrop-blur-md"
+              className="fixed inset-0 z-40 bg-[#0c0c0e]/60 backdrop-blur-md lg:bg-[#0c0c0e]/38 lg:backdrop-blur-[3px]"
               aria-hidden="true"
             />
             <motion.aside
               key="settings-drawer"
-              initial={{ y: 48, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 48, opacity: 0 }}
+              initial={{ y: 48, x: 0, opacity: 0 }}
+              animate={{ y: 0, x: 0, opacity: 1 }}
+              exit={{ y: 48, x: 0, opacity: 0 }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="builder-glass-shell fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] sm:inset-y-4 sm:right-4 sm:left-auto sm:h-auto sm:max-w-[380px] sm:rounded-[2rem]"
-              aria-label="Share settings"
+              className="builder-glass-shell fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] sm:inset-y-4 sm:right-4 sm:left-auto sm:h-auto sm:max-w-[380px] sm:rounded-[2rem] lg:inset-y-0 lg:right-0 lg:bottom-auto lg:left-auto lg:h-full lg:w-[430px] lg:max-w-[min(430px,100vw)] lg:rounded-none lg:rounded-l-[2rem] lg:border-y-0 lg:border-r-0 lg:border-l lg:shadow-[-28px_0_80px_-38px_rgba(0,0,0,0.9)]"
+              aria-label="Ajustes del Builder"
+              role="dialog"
+              aria-modal="true"
             >
+            <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-px bg-gradient-to-b from-transparent via-[var(--builder-accent)]/70 to-transparent lg:block" aria-hidden="true" />
             <div className="flex justify-center pt-2 sm:hidden" aria-hidden="true">
               <div className="h-1.5 w-12 rounded-full bg-[#6E6558]/30" />
             </div>
-            <div className="flex items-start justify-between gap-3 border-b border-[#F1F0F4]/10 px-4 pb-4 pt-3 sm:p-5">
+            <div className="flex items-start justify-between gap-3 border-b border-[#F1F0F4]/10 px-4 pb-4 pt-3 sm:p-5 lg:px-6 lg:pb-5 lg:pt-6">
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <Palette className="h-4 w-4 text-[var(--builder-accent)]" />
-                  <h2 className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide text-[#F1F0F4]">Share settings</h2>
+                  <h2 className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide text-[#F1F0F4]">Builder settings</h2>
                 </div>
-                <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-snug text-[#6E6558] sm:text-xs sm:leading-relaxed">Brand, client view and delivery options.</p>
+                <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-snug text-[#6E6558] sm:text-xs sm:leading-relaxed">Identidad visual, vista del cliente y compartir.</p>
               </div>
               <button onClick={() => setShowCustomize(false)} className="builder-icon-button flex h-10 w-10 shrink-0 items-center justify-center" aria-label="Close settings">
                 <X className="h-4 w-4 text-[#6E6558]" />
               </button>
             </div>
 
-            <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 pb-28 sm:space-y-6 sm:p-5 sm:pb-28">
+            <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 pb-28 sm:space-y-6 sm:p-5 sm:pb-28 lg:space-y-7 lg:px-6 lg:py-6 lg:pb-10">
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#9CA0A6]">Theme</p>
@@ -1711,7 +1806,7 @@ export default function MobileFirstBuilder() {
                 <div className="builder-apple-card p-3 sm:p-4">
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="builder-header-mark flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden p-1 sm:h-16 sm:w-16">
-                      {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" /> : <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full rounded-lg object-cover" />}
+                      {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" /> : <img src="/cyan.svg" alt="Fit Legacy Builder" className="h-full w-full rounded-lg object-cover" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#F1F0F4]">Catalog logo</p>
@@ -1965,10 +2060,10 @@ export default function MobileFirstBuilder() {
       <div className="builder-footer-nav-wrapper">
         <nav className={`builder-footer-nav${navVisible ? '' : ' builder-footer-nav--hidden'}`} role="navigation">
           {[
-            { id: 'catalog' as TabType, icon: () => <img src="/icons/fit-legacy-mark.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />, badge: null },
+            { id: 'catalog' as TabType, icon: () => <img src="/cyan.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />, badge: null },
             { id: 'food' as TabType, icon: () => <Apple size={18} />, badge: currentRoutine.foods.length > 0 ? currentRoutine.foods.length : null },
             { id: 'build' as TabType, icon: () => <ExerciseIcon section="fullbody" className="h-5 w-5" />, badge: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.length : null },
-            { id: 'calendar' as TabType, icon: () => <CalendarDays size={18} />, badge: calendarEntries.length > 0 ? (calendarEntries.length > 9 ? '9+' : calendarEntries.length) : null },
+            { id: 'calendar' as TabType, icon: () => <CalendarDays size={18} />, badge: calendarEntries.length + calendarActions.length > 0 ? (calendarEntries.length + calendarActions.length > 9 ? '9+' : calendarEntries.length + calendarActions.length) : null },
             { id: 'export' as TabType, icon: () => <img src="/icons/fl-1.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />, badge: null },
           ].map((item) => {
             const isActive = activeTab === item.id;
@@ -2001,7 +2096,12 @@ export default function MobileFirstBuilder() {
       </div>
 
       {!showOnboarding && !showCustomize && (
-        <AiMentorChat open={chatOpen} onOpenChange={setChatOpen} />
+        <AiMentorChat
+          open={chatOpen}
+          skinId={legacitoSkin}
+          onSkinChange={setLegacitoSkin}
+          onOpenChange={setChatOpen}
+        />
       )}
 
     </div>

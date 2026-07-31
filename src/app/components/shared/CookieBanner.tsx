@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { CookieSettingsModal } from './CookieSettingsModal';
-import { COOKIE_STORAGE_KEYS } from '@fit-legacy/auth/legal';
+import { COOKIE_STORAGE_KEYS, notifyCookiePreferencesChanged, DEFAULT_COOKIE_PREFERENCES, ACCEPT_ALL_COOKIE_PREFERENCES } from '@/lib/integrations/legal';
 
 export function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
@@ -23,12 +23,16 @@ export function CookieBanner() {
   }, []);
 
   const handleAccept = () => {
+    localStorage.setItem(COOKIE_STORAGE_KEYS.preferences, JSON.stringify(ACCEPT_ALL_COOKIE_PREFERENCES));
     localStorage.setItem(COOKIE_STORAGE_KEYS.accepted, 'true');
+    notifyCookiePreferencesChanged();
     setIsVisible(false);
   };
 
   const handleDecline = () => {
+    localStorage.setItem(COOKIE_STORAGE_KEYS.preferences, JSON.stringify(DEFAULT_COOKIE_PREFERENCES));
     localStorage.setItem(COOKIE_STORAGE_KEYS.accepted, 'false');
+    notifyCookiePreferencesChanged();
     setIsVisible(false);
   };
 

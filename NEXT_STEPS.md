@@ -14,11 +14,11 @@ The `.wir` format should remain mostly invisible to non-technical users.
 
 ## Engineering Priority
 
-1. Split `WorkoutBuilder.tsx` into smaller components.
-2. Add end-to-end tests for create -> share -> open -> check item.
+1. Split `WorkoutBuilder.tsx` by catalog, canvas, calendar and settings panels.
+2. Add Playwright to CI and cover create -> share -> open -> check item.
 3. Remove or archive obsolete planning documents.
-4. Keep `pnpm build`, `pnpm test -- --run`, and `tsc --noEmit` passing.
-5. Document the WIR contract as a technical implementation detail.
+4. Keep `npm run build`, `npm run test -- --run`, and `tsc --noEmit` passing.
+5. Apply the canonical Supabase migration after reviewing it against the linked project.
 
 ## UX Priority
 

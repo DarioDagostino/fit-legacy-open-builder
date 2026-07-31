@@ -105,21 +105,25 @@ export function AppLoadingScreen({
       <div className="relative flex w-full max-w-sm flex-col items-center text-center">
         <motion.div
           className="pointer-events-none absolute left-1/2 top-1/2 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-3xl"
-          style={{ background: `radial-gradient(circle, ${accent}33, transparent 68%)` }}
+          style={{
+            marginLeft: '-8rem',
+            marginTop: '-8rem',
+            background: `radial-gradient(circle, ${accent}33, transparent 68%)`,
+          }}
           animate={{ scale: [0.9, 1.08, 0.96], opacity: [0.26, 0.48, 0.3] }}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
           aria-hidden="true"
         />
         <motion.span
           className="pointer-events-none absolute left-1/2 top-[70px] size-40 -translate-x-1/2 rounded-[42px] border border-dashed"
-          style={{ borderColor: `${accent}55` }}
+          style={{ marginLeft: '-5rem', borderColor: `${accent}55` }}
           animate={{ rotate: 360 }}
           transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
           aria-hidden="true"
         />
         <motion.span
           className="pointer-events-none absolute left-1/2 top-[60px] size-48 -translate-x-1/2 rounded-full border"
-          style={{ borderColor: `${accent}22` }}
+          style={{ marginLeft: '-6rem', borderColor: `${accent}22` }}
           animate={{ rotate: -360, scale: [0.96, 1.04, 0.96] }}
           transition={{ rotate: { duration: 20, repeat: Infinity, ease: 'linear' }, scale: { duration: 3.2, repeat: Infinity, ease: 'easeInOut' } }}
           aria-hidden="true"

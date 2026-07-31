@@ -11,11 +11,12 @@ create routine -> generate share link -> send through WhatsApp -> recipient open
 ## Key Technical Components
 
 - React/Vite frontend.
-- Zustand routine state.
+- Zustand routine state with a common Supabase user namespace.
 - WIR encode/decode/validate/hydrate module.
 - Shared exercise and food catalog.
 - Recipient routine viewer.
-- Optional Supabase-backed routes.
+- Supabase-backed canonical routine, calendar, action and session persistence with RLS (migration pending remote review).
+- Consent-gated analytics and a route-level ErrorBoundary.
 
 ## Current Product Direction
 

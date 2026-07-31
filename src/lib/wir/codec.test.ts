@@ -47,6 +47,12 @@ const MIXED_ROUTINE: WirDocument = {
   ],
 };
 
+const UNICODE_CUSTOM: WirDocument = {
+  v: 1,
+  n: 'Fuerza y movilidad · día 1',
+  e: [{ i: 'custom_mobility', n: 'Movilidad de cadera ñ', g: 'custom', s: 3, r: 12, w: 0, m: 'Respirá y mantené control.' }],
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ENCODING TESTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -64,6 +70,10 @@ describe('encodeWir', () => {
     const encoded = encodeWir(WITH_FOODS);
     expect(typeof encoded).toBe('string');
     expect(encoded.length).toBeGreaterThan(0);
+  });
+
+  it('should preserve UTF-8 and custom exercise metadata', () => {
+    expect(decodeWir(encodeWir(UNICODE_CUSTOM))).toEqual(UNICODE_CUSTOM);
   });
 
   it('should encode mixed routine', () => {

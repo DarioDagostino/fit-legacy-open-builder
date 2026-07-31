@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Legacito, LegacitoMood } from './legacito';
+import { Legacito, LegacitoMood, LegacitoSkin } from './legacito';
 
 interface LegacitoActionButtonProps {
   onClick?: () => void;
@@ -9,6 +9,7 @@ interface LegacitoActionButtonProps {
   className?: string;
   buttonSizeClass?: string;
   glowColor?: string;
+  skinId?: LegacitoSkin;
 }
 
 export function LegacitoActionButton({
@@ -19,6 +20,7 @@ export function LegacitoActionButton({
   className = '',
   buttonSizeClass = 'size-24',
   glowColor = 'rgba(53,87,125,0.12)',
+  skinId = 'none',
 }: LegacitoActionButtonProps) {
   return (
     <motion.button
@@ -38,7 +40,7 @@ export function LegacitoActionButton({
         className="absolute inset-0 rounded-full blur-2xl animate-pulse pointer-events-none"
         style={{ background: glowColor }}
       />
-      <Legacito mood={mood} size={size} className="relative z-10" />
+      <Legacito mood={mood} size={size} skinId={skinId} className="relative z-10" />
     </motion.button>
   );
 }

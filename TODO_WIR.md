@@ -2,9 +2,10 @@
 
 ## Validation
 
-- Add end-to-end test for create -> encode -> open -> mark complete.
+- [x] Add a create -> encode -> open -> hydrate contract test.
+- [ ] Add browser E2E for create -> open -> mark complete once Playwright is available in CI.
 - Add test cases for long URLs.
-- Add test cases for missing catalog IDs.
+- [x] Add custom exercise payloads and missing-catalog fallback validation.
 - Add compatibility tests for WhatsApp in-app browser.
 
 ## Product
@@ -16,7 +17,8 @@
 
 ## Technical
 
-- Keep v1 schema stable.
+- [x] Keep v1 schema stable and document the UTF-8 Base64URL transport.
+- [x] Keep legacy `navy` palette payloads readable.
 - Avoid renaming catalog IDs.
 - Add migration notes if v2 is introduced.
 - Document size limits in one canonical place.

@@ -1,16 +1,16 @@
 {
-  "name": "Fit Legacy",
-  "short_name": "Fit Legacy",
+  "name": "Fit Legacy Builder",
+  "short_name": "Builder",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117",
-  "description": "Domina tu Camino. Entrenamiento táctico y mentalidad.",
+  "background_color": "#0c0c0e",
+  "theme_color": "#0c0c0e",
+  "description": "Crea, personaliza y comparte rutinas y planes de comidas con asistencia de IA.",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/fit-legacy-mark.svg",
+      "src": "/cyan.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

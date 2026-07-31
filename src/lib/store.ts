@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { Exercise } from '@fit-legacy/shared';
 import { encodeWir, validateWir, hydrateWir, type WirDocument } from './wir';
+import { createScopedStorage } from './userScope';
 
 export interface FoodItem {
   id: string;
@@ -249,6 +250,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           c: currentRoutine.coverImageUrl || undefined,
           e: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.map(ex => ({
             i: ex.id,
+            ...(ex.id.startsWith('custom_') || ex.section === 'custom' ? { n: ex.name, g: ex.section } : {}),
             s: ex.sets,
             r: ex.reps,
             w: ex.weight,
@@ -284,6 +286,7 @@ export const useWorkoutStore = create<WorkoutState>()(
     }),
     {
       name: 'fit-legacy-workout-builder',
+      storage: createJSONStorage(() => createScopedStorage('fit-legacy-workout-builder')),
       merge: (persistedState, currentState) => {
         const state = persistedState as Partial<WorkoutState> | undefined;
 

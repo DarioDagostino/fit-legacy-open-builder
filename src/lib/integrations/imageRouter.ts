@@ -8,7 +8,7 @@ export interface ImageAsset {
 }
 
 const ASSET_BASE_PATH = '/assets/images/oversize-premium-generated';
-const BRAND_PLACEHOLDER = '/icons/fit-legacy-mark.svg';
+const BRAND_PLACEHOLDER = '/cyan.svg';
 
 const ASSET_NAMES = [
   'oversize-hoodie-1.webp',

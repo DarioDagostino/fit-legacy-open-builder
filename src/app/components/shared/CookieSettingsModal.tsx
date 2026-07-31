@@ -6,7 +6,8 @@ import {
   COOKIE_STORAGE_KEYS,
   DEFAULT_COOKIE_PREFERENCES,
   type CookiePreferences,
-} from '@fit-legacy/auth/legal';
+  notifyCookiePreferencesChanged,
+} from '@/lib/integrations/legal';
 
 interface CookieSettingsModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
   const handleSave = () => {
     localStorage.setItem(COOKIE_STORAGE_KEYS.preferences, JSON.stringify(preferences));
     localStorage.setItem(COOKIE_STORAGE_KEYS.accepted, 'true');
+    notifyCookiePreferencesChanged();
     onClose();
   };
 
@@ -39,6 +41,7 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
     setPreferences(allOn);
     localStorage.setItem(COOKIE_STORAGE_KEYS.preferences, JSON.stringify(allOn));
     localStorage.setItem(COOKIE_STORAGE_KEYS.accepted, 'true');
+    notifyCookiePreferencesChanged();
     onClose();
   };
 
@@ -72,7 +75,7 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
             initial={{ opacity: 0, scale: 0.98, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 10 }}
-            className="fixed left-1/2 top-1/2 z-[301] w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 px-4 h-[600px]"
+            className="fixed left-1/2 top-1/2 z-[301] w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 px-4 h-[min(600px,calc(100dvh-4rem))]"
           >
             <div className="flex h-full overflow-hidden rounded-[32px] bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] border border-gray-100">
               

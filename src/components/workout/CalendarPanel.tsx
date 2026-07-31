@@ -7,11 +7,15 @@ import {
   Dumbbell,
   Apple,
   TrendingUp,
-  Clock,
   Award,
   Target,
+  Bell,
+  Check,
+  CirclePlus,
+  Trash2,
 } from 'lucide-react';
 import CalendarAnalyticsDashboard from './CalendarAnalyticsDashboard';
+import { scopedLocalStorageGet, scopedLocalStorageSet } from '../../lib/userScope';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,9 +34,24 @@ export interface CalendarEntry {
   avgTimeSpent?: number;
 }
 
+export type CalendarActionType = 'workout' | 'meal' | 'reminder';
+
+export interface CalendarAction {
+  id: string;
+  date: string;
+  title: string;
+  type: CalendarActionType;
+  time?: string;
+  notes?: string;
+  completed: boolean;
+}
+
 interface CalendarPanelProps {
   /** All saved routine entries. Each is timestamped by date. */
   entries: CalendarEntry[];
+  /** User-created actions and reminders, separate from shared routine analytics. */
+  actions?: CalendarAction[];
+  onActionsChange?: (actions: CalendarAction[]) => void;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -69,7 +88,7 @@ const panelVariants = {
     scale: 1,
     transition: {
       duration: 0.3,
-      ease: [0.22, 1, 0.36, 1],
+      ease: [0.22, 1, 0.36, 1] as const,
       when: 'beforeChildren',
       staggerChildren: 0.055,
     },
@@ -87,7 +106,7 @@ const sectionVariants = {
   animate: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const },
   },
   exit: {
     opacity: 0,
@@ -105,13 +124,10 @@ const quietPanelVariants = {
 // ── Storage ──────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'fl-builder-calendar';
+const ACTIONS_STORAGE_KEY = 'fl-builder-calendar-actions';
 
 export function loadCalendarEntries(): CalendarEntry[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch {
-    return [];
-  }
+  return scopedLocalStorageGet<CalendarEntry[]>(STORAGE_KEY, []);
 }
 
 export function saveCalendarEntry(entry: CalendarEntry) {
@@ -130,24 +146,41 @@ export function saveCalendarEntry(entry: CalendarEntry) {
   } else {
     existing.push(entry);
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+  scopedLocalStorageSet(STORAGE_KEY, existing);
   return existing;
+}
+
+export function loadCalendarActions(): CalendarAction[] {
+  const parsed = scopedLocalStorageGet<CalendarAction[]>(ACTIONS_STORAGE_KEY, []);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+export function saveCalendarActions(actions: CalendarAction[]) {
+  scopedLocalStorageSet(ACTIONS_STORAGE_KEY, actions);
+  return actions;
 }
 
 // ── Components ───────────────────────────────────────────────────────────────
 
-export default function CalendarPanel({ entries }: CalendarPanelProps) {
+export default function CalendarPanel({ entries, actions = [], onActionsChange }: CalendarPanelProps) {
   const shouldReduceMotion = useReducedMotion();
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(isoDate(today));
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [actionTitle, setActionTitle] = useState('');
+  const [actionType, setActionType] = useState<CalendarActionType>('reminder');
+  const [actionTime, setActionTime] = useState('');
+  const [actionNotes, setActionNotes] = useState('');
 
   const entryMap = useMemo(() => {
     const map = new Map<string, CalendarEntry>();
     entries.forEach((e) => map.set(e.date, e));
     return map;
   }, [entries]);
+
+  const actionDateSet = useMemo(() => new Set(actions.map((action) => action.date)), [actions]);
 
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstDay = getFirstDayOfMonth(viewYear, viewMonth);
@@ -157,9 +190,14 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
   const monthStats = useMemo(() => {
     const prefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
     const monthEntries = entries.filter((e) => e.date.startsWith(prefix));
+    const monthActions = actions.filter((action) => action.date.startsWith(prefix));
+    const activeDates = new Set([
+      ...monthEntries.map((entry) => entry.date),
+      ...monthActions.map((action) => action.date),
+    ]);
     return {
       entries: monthEntries,
-      totalDays: monthEntries.length,
+      totalDays: activeDates.size,
       totalExercises: monthEntries.reduce((s, e) => s + e.exercises, 0),
       totalFoods: monthEntries.reduce((s, e) => s + e.foods, 0),
       totalVolume: monthEntries.reduce((s, e) => s + e.totalVolume, 0),
@@ -173,8 +211,11 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
       workoutEntries: monthEntries.filter((e) => e.type === 'workout').length,
       nutritionEntries: monthEntries.filter((e) => e.type === 'nutrition').length,
       mixedEntries: monthEntries.filter((e) => e.type === 'mixed').length,
+      totalActions: monthActions.length,
+      completedActions: monthActions.filter((action) => action.completed).length,
+      pendingActions: monthActions.filter((action) => !action.completed).length,
     };
-  }, [entries, viewYear, viewMonth]);
+  }, [actions, entries, viewYear, viewMonth]);
 
   const liveAnalytics = useMemo(() => {
     const activeDayPercent = (monthStats.totalDays / daysInMonth) * 100;
@@ -203,7 +244,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
     let count = 0;
     const d = new Date(today);
     while (true) {
-      if (entryMap.has(isoDate(d))) {
+      if (entryMap.has(isoDate(d)) || actionDateSet.has(isoDate(d))) {
         count++;
         d.setDate(d.getDate() - 1);
       } else {
@@ -211,9 +252,55 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
       }
     }
     return count;
-  }, [entryMap, today]);
+  }, [actionDateSet, entryMap, today]);
 
   const selectedEntry = selectedDate ? entryMap.get(selectedDate) : null;
+  const selectedActions = useMemo(
+    () => (selectedDate ? actions.filter((action) => action.date === selectedDate) : []),
+    [actions, selectedDate],
+  );
+
+  const applyActions = (next: CalendarAction[]) => {
+    onActionsChange?.(next);
+  };
+
+  const resetComposer = () => {
+    setActionTitle('');
+    setActionType('reminder');
+    setActionTime('');
+    setActionNotes('');
+    setIsComposerOpen(false);
+  };
+
+  const addAction = () => {
+    if (!selectedDate || !actionTitle.trim()) return;
+    const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `action-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    applyActions([
+      ...actions,
+      {
+        id,
+        date: selectedDate,
+        title: actionTitle.trim(),
+        type: actionType,
+        time: actionTime || undefined,
+        notes: actionNotes.trim() || undefined,
+        completed: false,
+      },
+    ]);
+    resetComposer();
+  };
+
+  const toggleAction = (id: string) => {
+    applyActions(actions.map((action) => (
+      action.id === id ? { ...action, completed: !action.completed } : action
+    )));
+  };
+
+  const removeAction = (id: string) => {
+    applyActions(actions.filter((action) => action.id !== id));
+  };
 
   const navigateMonth = (dir: -1 | 1) => {
     let m = viewMonth + dir;
@@ -232,7 +319,7 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="h-full flex flex-col p-4 space-y-4 overflow-y-auto pb-28 sm:p-6 sm:space-y-5"
+      className="h-full min-h-0 flex flex-col p-4 space-y-4 overflow-y-auto pb-28 sm:p-6 sm:space-y-5"
     >
       {/* Analytics Dashboard */}
       <CalendarAnalyticsDashboard
@@ -256,15 +343,20 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
             mixed: monthStats.mixedEntries,
           },
           output: { percent: liveAnalytics.outputPercent, signal: liveAnalytics.lastEntryLabel },
+          actions: monthStats.totalActions,
+          pendingActions: monthStats.pendingActions,
+          completedActions: monthStats.completedActions,
         }}
         month={MONTH_NAMES[viewMonth]}
       />
 
       {/* Calendar Grid */}
-      <motion.section variants={sectionVariants} className="builder-apple-card p-4 space-y-3">
+      <motion.section variants={sectionVariants} className="builder-apple-card shrink-0 p-4 space-y-3">
         {/* Month navigation */}
         <div className="flex items-center justify-between">
           <motion.button
+            type="button"
+            aria-label="Mes anterior"
             onClick={() => navigateMonth(-1)}
             whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
             className="builder-icon-button flex h-8 w-8 items-center justify-center"
@@ -275,6 +367,8 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
             {MONTH_NAMES[viewMonth]} {viewYear}
           </p>
           <motion.button
+            type="button"
+            aria-label="Mes siguiente"
             onClick={() => navigateMonth(1)}
             whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
             className="builder-icon-button flex h-8 w-8 items-center justify-center"
@@ -306,9 +400,13 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
             const isToday = isSameDay(dateKey, todayKey);
             const isSelected = selectedDate === dateKey;
             const hasEntry = !!entry;
+            const dayActions = actions.filter((action) => action.date === dateKey);
+            const hasActivity = hasEntry || dayActions.length > 0;
 
             return (
               <motion.button
+                type="button"
+                aria-label={`${day} de ${MONTH_NAMES[viewMonth]} de ${viewYear}${hasActivity ? ', tiene actividad' : ''}`}
                 key={dateKey}
                 onClick={() => setSelectedDate(isSelected ? null : dateKey)}
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
@@ -320,17 +418,18 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                     ? 'bg-[#E0793C] text-white scale-110 shadow-lg shadow-[#E0793C]/30 z-10'
                     : isToday
                       ? 'bg-[#E0793C]/10 text-[#F1F0F4] ring-2 ring-[#E0793C]/30'
-                      : hasEntry
+                      : hasActivity
                         ? 'bg-[#F2A468]/10 text-[#F2A468] hover:bg-[#F2A468]/15'
                         : 'text-[#6E6558] hover:bg-[#F1F0F4]/5'
                   }
                 `}
               >
                 <span className="text-[11px]">{day}</span>
-                {hasEntry && !isSelected && (
+                {hasActivity && !isSelected && (
                   <div className="absolute bottom-1 flex gap-0.5">
-                    {entry.exercises > 0 && <div className="w-1 h-1 rounded-full bg-[#E0793C]" />}
-                    {entry.foods > 0 && <div className="w-1 h-1 rounded-full bg-[#F2A468]" />}
+                    {(entry?.exercises ?? 0) > 0 && <div className="w-1 h-1 rounded-full bg-[#E0793C]" />}
+                    {(entry?.foods ?? 0) > 0 && <div className="w-1 h-1 rounded-full bg-[#F2A468]" />}
+                    {dayActions.length > 0 && <div className="w-1 h-1 rounded-full bg-[#C66BDE]" />}
                   </div>
                 )}
               </motion.button>
@@ -413,17 +512,87 @@ export default function CalendarPanel({ entries }: CalendarPanelProps) {
                   )}
                 </div>
               </>
-            ) : (
-              <div className="builder-apple-card p-8 text-center space-y-3">
-                <Clock className="mx-auto h-10 w-10 text-[#6E6558]" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#6E6558]">
-                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
-                <p className="text-xs font-bold text-[#6E6558]">
-                  No routine shared on this day
-                </p>
+            ) : null}
+
+            <div className="builder-apple-card p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#6E6558]">Agenda del día</p>
+                  <p className="mt-1 text-xs font-bold text-[#F1F0F4]">
+                    {selectedActions.length > 0
+                      ? `${selectedActions.filter((action) => action.completed).length}/${selectedActions.length} acciones completadas`
+                      : 'Organizá tu próximo paso'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsComposerOpen((open) => !open)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#E0793C] px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white transition hover:bg-[#F08B4A]"
+                >
+                  <CirclePlus size={14} />
+                  Agregar
+                </button>
               </div>
-            )}
+
+              {selectedActions.length > 0 && (
+                <div className="space-y-2">
+                  {selectedActions.map((action) => (
+                    <div key={action.id} className={`flex items-start gap-3 rounded-2xl border px-3 py-3 transition ${action.completed ? 'border-[#8DAE93]/30 bg-[#8DAE93]/5' : 'border-[#F1F0F4]/10 bg-[#F1F0F4]/[0.03]'}`}>
+                      <button
+                        type="button"
+                        onClick={() => toggleAction(action.id)}
+                        aria-label={action.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${action.completed ? 'border-[#8DAE93] bg-[#8DAE93] text-[#101012]' : 'border-[#6E6558] text-transparent hover:border-[#E0793C]'}`}
+                      >
+                        <Check size={13} strokeWidth={3} />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className={`truncate text-xs font-black ${action.completed ? 'text-[#8DAE93] line-through' : 'text-[#F1F0F4]'}`}>{action.title}</p>
+                          <span className="rounded-md bg-[#C66BDE]/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#C66BDE]">
+                            {action.type === 'workout' ? 'Workout' : action.type === 'meal' ? 'Meal' : 'Reminder'}
+                          </span>
+                        </div>
+                        {(action.time || action.notes) && (
+                          <p className="mt-1 text-[10px] font-medium text-[#6E6558]">
+                            {action.time ? `${action.time}${action.notes ? ' · ' : ''}` : ''}{action.notes || ''}
+                          </p>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => removeAction(action.id)} aria-label="Eliminar acción" className="rounded-lg p-1 text-[#6E6558] transition hover:bg-[#E0793C]/10 hover:text-[#E0793C]"><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedActions.length === 0 && !isComposerOpen && (
+                <div className="rounded-2xl border border-dashed border-[#F1F0F4]/10 px-4 py-5 text-center">
+                  <Bell className="mx-auto h-6 w-6 text-[#6E6558]" />
+                  <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#6E6558]">Sin acciones programadas</p>
+                  <p className="mt-1 text-[10px] font-medium text-[#6E6558]">Agregá un recordatorio, entrenamiento o comida.</p>
+                </div>
+              )}
+
+              {isComposerOpen && (
+                <div className="space-y-3 rounded-2xl border border-[#E0793C]/25 bg-[#E0793C]/[0.04] p-3">
+                  <input value={actionTitle} onChange={(event) => setActionTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addAction(); }} autoFocus placeholder="Ej. Preparar rutina de piernas" className="builder-apple-input w-full px-3 py-2 text-xs font-bold focus:outline-none" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <select value={actionType} onChange={(event) => setActionType(event.target.value as CalendarActionType)} className="builder-select w-full px-3 py-2 text-[10px] font-black uppercase tracking-widest focus:outline-none">
+                      <option value="reminder">Recordatorio</option>
+                      <option value="workout">Entrenamiento</option>
+                      <option value="meal">Comida</option>
+                    </select>
+                    <input type="time" value={actionTime} onChange={(event) => setActionTime(event.target.value)} className="builder-apple-input w-full px-3 py-2 text-xs font-bold focus:outline-none" />
+                  </div>
+                  <textarea value={actionNotes} onChange={(event) => setActionNotes(event.target.value)} placeholder="Nota opcional" rows={2} className="builder-apple-input w-full resize-none px-3 py-2 text-xs font-bold focus:outline-none" />
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={resetComposer} className="rounded-xl px-3 py-2 text-[9px] font-black uppercase tracking-widest text-[#6E6558] hover:bg-[#F1F0F4]/5">Cancelar</button>
+                    <button type="button" disabled={!actionTitle.trim()} onClick={addAction} className="rounded-xl bg-[#E0793C] px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white disabled:cursor-not-allowed disabled:opacity-40">Guardar acción</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </motion.div>
         )}
       </AnimatePresence>

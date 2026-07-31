@@ -11,6 +11,9 @@ import { z } from 'zod';
 
 export const WirExerciseSchema = z.object({
   i: z.string().min(1).max(50).describe('Exercise ID'),
+  // Custom exercises carry their display metadata so a shared link remains self-contained.
+  n: z.string().min(1).max(100).optional().describe('Custom exercise name'),
+  g: z.string().min(1).max(40).optional().describe('Custom exercise section'),
   s: z.number().int().min(1).max(10).describe('Sets (1-10)'),
   r: z.number().int().min(1).max(100).describe('Reps (1-100)'),
   w: z.number().min(0).max(500).describe('Weight in kg (0 = bodyweight)'),
@@ -34,7 +37,8 @@ export type WirFoodItem = z.infer<typeof WirFoodSchema>;
 export const WirTemplateSchema = z.enum(['routine', 'meal', 'mixed']);
 export type WirTemplate = z.infer<typeof WirTemplateSchema>;
 
-export const WirPaletteSchema = z.enum(['ember', 'onyx', 'midnight', 'bloom']);
+// `navy` was emitted by early Builder versions; keep it as a backwards-compatible alias.
+export const WirPaletteSchema = z.enum(['ember', 'onyx', 'midnight', 'bloom', 'navy']);
 export type WirPalette = z.infer<typeof WirPaletteSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────

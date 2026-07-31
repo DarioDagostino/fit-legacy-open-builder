@@ -100,7 +100,7 @@ function validateCatalog(doc: WirDocument): string[] {
   // Check exercises exist in catalog
   if (doc.e && doc.e.length > 0) {
     for (const exercise of doc.e) {
-      if (!hasExercise(exercise.i)) {
+      if (!hasExercise(exercise.i) && !exercise.n) {
         errors.push(`Unknown exercise ID: "${exercise.i}"`);
       }
     }

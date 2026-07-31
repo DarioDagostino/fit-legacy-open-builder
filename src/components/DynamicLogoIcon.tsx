@@ -7,7 +7,8 @@ import roseLogo from '@/assets/legacy-logo/rose.svg';
 
 type LogoVariant = 'gold' | 'golden' | 'cyan' | 'rose';
 
-const VARIANTS: LogoVariant[] = ['golden', 'cyan', 'rose', 'gold'];
+// Builder leads with cyan, then keeps the shared Legacy logo cycle.
+const VARIANTS: LogoVariant[] = ['cyan', 'golden', 'rose', 'gold'];
 
 const LOGO_MAP: Record<LogoVariant, string> = {
   gold: goldLogo,

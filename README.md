@@ -26,10 +26,12 @@ Fit Legacy Builder is not intended to compete as a full fitness tracking platfor
 - Mobile-first routine builder.
 - Workout, nutrition, and mixed routine support.
 - Shareable `.wir` links.
-- Local persistence for draft routines.
+- User-scoped local persistence for draft routines, with canonical Supabase sync for authenticated users.
 - Recipient view with checkable items.
 - Catalog-based exercise and food lookup.
-- Supabase integration for optional shared content flows.
+- Supabase Auth context, owner-only RLS migration, calendar/session/Bio-Ledger sync and optional shared content flows.
+- Custom exercises preserved inside the shared payload.
+- Consent-gated Google Analytics, Statsig and Vercel telemetry.
 - Vercel-compatible frontend build.
 
 ## Tech Stack
@@ -45,8 +47,8 @@ Fit Legacy Builder is not intended to compete as a full fitness tracking platfor
 ## Getting Started
 
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 The development server runs on:
@@ -58,18 +60,22 @@ http://localhost:5178
 ## Build
 
 ```bash
-pnpm build
+npm run build
 ```
 
 ## Tests
 
 ```bash
-pnpm test -- --run
+npm run test -- --run
+
+# Supabase schema (review before applying to the linked project)
+supabase migration list
+supabase db push
 ```
 
 ## WIR Format
 
-`.wir` stands for Workout Interactive Resource. It is a compact JSON document encoded as Base64 URL-safe text and passed through a `data` query parameter.
+`.wir` stands for Workout Interactive Resource. It is a compact JSON document encoded as UTF-8 Base64 URL-safe text and passed through a `data` query parameter. Catalog exercises use stable IDs; custom exercises include their name and section in the payload.
 
 Example document:
 

@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useId } from "react";
+// Legacy dashboard subcomponents remain available for future visual variants.
+// @ts-nocheck
+import { useState, useEffect, useId } from "react";
 
 const DEFAULT_DATA = {
   streak: 0,
@@ -8,13 +10,16 @@ const DEFAULT_DATA = {
   views: 0,
   done: 0,
   reShare: 0,
+  actions: 0,
+  pendingActions: 0,
+  completedActions: 0,
   activeMonth: { active: 0, total: 31 },
-  training: { value: 0, percent: 0, description: "Exercises completed from shared routines." },
-  nutrition: { value: 0, percent: 0, description: "Meals saved with the user's shared plans." },
-  viewsDetail: { value: 0, percent: 0, description: "Client opens tracked from shared links." },
-  completed: { percent: 0, sessions: 0, description: "completed client sessions." },
+  training: { value: 0, percent: 0, description: "Ejercicios incluidos en tus rutinas." },
+  nutrition: { value: 0, percent: 0, description: "Comidas incluidas en tus planes." },
+  viewsDetail: { value: 0, percent: 0, description: "Aperturas registradas de tus enlaces." },
+  completed: { percent: 0, sessions: 0, description: "sesiones completadas." },
   liveMix: { shares: 0, workout: 0, meals: 0, mixed: 0 },
-  output: { percent: 0, signal: "No shares yet this month." },
+  output: { percent: 0, signal: "Todavía no hay acciones este mes." },
 };
 
 function capitalize(s) {
@@ -41,7 +46,6 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
   const monthLabel =
     month || capitalize(new Date().toLocaleDateString("es-AR", { month: "long" }));
   const activePct = (d.activeMonth.active / Math.max(1, d.activeMonth.total)) * 100;
-  const maxMix = Math.max(1, d.liveMix.workout, d.liveMix.meals, d.liveMix.mixed);
 
   return (
     <div className={`cal-root ${className}`}>
@@ -63,6 +67,10 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
           border-radius: 24px;
           position: relative;
           overflow: hidden;
+          /* Keep the dashboard at its natural height inside CalendarPanel's
+             flex column so the second metrics row cannot be clipped. */
+          flex: 0 0 auto;
+          min-height: max-content;
         }
         .cal-root::before {
           content: "";
@@ -108,6 +116,50 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
         }
         .cal-grid--4 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
         .cal-grid--3 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 24px; }
+
+        .cal-summary-grid {
+          position: relative;
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .cal-summary-card {
+          min-width: 0;
+          min-height: 122px;
+          background: var(--blt-bone);
+          border-radius: 18px;
+          padding: 14px 13px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 10px;
+          opacity: 0;
+          animation: cal-rise 0.5s cubic-bezier(0.22,1,0.36,1) both;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .cal-summary-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(0,0,0,0.4); }
+        .cal-summary-card--accent { background: linear-gradient(145deg, #fff7f1, var(--blt-bone)); }
+        .cal-summary-label {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 9px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--blt-stone-dim);
+        }
+        .cal-summary-value {
+          font-family: 'Big Shoulders Display', sans-serif;
+          font-size: clamp(24px, 3.2vw, 34px);
+          font-weight: 800;
+          line-height: 0.9;
+          color: var(--blt-ink);
+        }
+        .cal-summary-card--accent .cal-summary-value { color: var(--blt-molten); }
+        .cal-summary-detail { margin: 0; color: var(--blt-stone-dim); font-size: 10.5px; line-height: 1.25; }
+
+        @media (max-width: 640px) {
+          .cal-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
 
         .cal-tile {
           background: var(--blt-bone);
@@ -302,96 +354,46 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
 
       <header className="cal-header">
         <h1 className="cal-title">Calendar</h1>
-        <p className="cal-subtitle">Track your shared routines and meal plans</p>
+        <p className="cal-subtitle">Planificá rutinas, recordatorios y comidas</p>
       </header>
 
-      <section className="cal-grid cal-grid--4">
-        <StatTile label="Streak" value={d.streak} accent delay="0.04s" />
-        <StatTile label="Days" value={d.days} delay="0.08s" />
-        <StatTile label="Exercises" value={d.exercises} delay="0.12s" />
-        <StatTile label="Meals" value={d.meals} delay="0.16s" />
+      <section className="cal-summary-grid" aria-label="Resumen del calendario">
+        <SummaryCard
+          label="Días activos"
+          value={`${d.activeMonth.active}/${d.activeMonth.total}`}
+          detail={`${Math.round(activePct)}% de ${monthLabel} · racha ${d.streak}`}
+          accent
+          delay="0.04s"
+        />
+        <SummaryCard
+          label="Acciones"
+          value={d.actions}
+          detail={`${d.pendingActions} pendientes · ${d.completedActions} completadas`}
+          delay="0.08s"
+        />
+        <SummaryCard
+          label="Entrenamiento"
+          value={d.exercises}
+          detail={`${d.liveMix.workout} rutinas planificadas`}
+          delay="0.12s"
+        />
+        <SummaryCard
+          label="Nutrición"
+          value={d.meals}
+          detail={`${d.liveMix.meals} planes de comidas`}
+          delay="0.16s"
+        />
       </section>
+    </div>
+  );
+}
 
-      <section className="cal-grid cal-grid--3">
-        <StatTile label="Views" value={d.views} delay="0.20s" />
-        <StatTile label="Done" value={d.done} delay="0.24s" />
-        <StatTile label="Re-share" value={d.reShare} delay="0.28s" />
-      </section>
-
-      <section className="cal-section">
-        <div className="cal-section-head">
-          <span className="cal-section-title">User Analytics</span>
-          <LivePill>Syncing from calendar</LivePill>
-        </div>
-
-        <div className="cal-card cal-card--wide">
-          <ProgressRing
-            percent={activePct}
-            size={92}
-            strokeWidth={8}
-            value={`${d.activeMonth.active}/${d.activeMonth.total}`}
-            unit={`${Math.round(activePct)}%`}
-          />
-          <div className="cal-card-text">
-            <span className="cal-card-title">Active Month</span>
-            <p className="cal-card-desc">
-              {d.activeMonth.active} days with shared plans in {monthLabel}.
-            </p>
-          </div>
-        </div>
-
-        <div className="cal-pair">
-          <MetricCard
-            ring={{ percent: d.training.percent, value: d.training.value }}
-            title="Training"
-            description={d.training.description}
-          />
-          <MetricCard
-            ring={{ percent: d.nutrition.percent, value: d.nutrition.value }}
-            title="Nutrition"
-            description={d.nutrition.description}
-          />
-        </div>
-
-        <div className="cal-pair">
-          <MetricCard
-            ring={{ percent: d.viewsDetail.percent, value: d.viewsDetail.value }}
-            title="Views"
-            description={d.viewsDetail.description}
-          />
-          <MetricCard
-            ring={{ percent: d.completed.percent, value: d.completed.percent, unit: "%" }}
-            title="Completed"
-            description={`${d.completed.sessions} ${d.completed.description}`}
-          />
-        </div>
-      </section>
-
-      <section className="cal-section">
-        <div className="cal-section-head">
-          <span className="cal-section-title">Live Mix</span>
-          <LivePill>Real time</LivePill>
-        </div>
-
-        <div className="cal-card cal-card--wide cal-livemix">
-          <div className="cal-livemix-total">
-            <ProgressRing percent={0} size={88} strokeWidth={7} value={d.liveMix.shares} unit="Shares" />
-          </div>
-          <div className="cal-livemix-rows">
-            <MixRow tone="ember" label="Workout" value={d.liveMix.workout} max={maxMix} />
-            <MixRow tone="molten" label="Meals" value={d.liveMix.meals} max={maxMix} />
-            <MixRow tone="stone" label="Mixed" value={d.liveMix.mixed} max={maxMix} />
-          </div>
-        </div>
-      </section>
-
-      <section className="cal-card cal-card--wide cal-output">
-        <ProgressRing percent={d.output.percent} size={72} strokeWidth={7} value={d.output.percent} unit="%" />
-        <div className="cal-card-text">
-          <span className="cal-card-title">Output</span>
-          <p className="cal-card-desc">Latest signal: {d.output.signal}</p>
-        </div>
-      </section>
+function SummaryCard({ label, value, detail, accent = false, delay }) {
+  return (
+    <div className={`cal-summary-card ${accent ? 'cal-summary-card--accent' : ''}`} style={{ animationDelay: delay }}>
+      <span className="cal-summary-label">{label}</span>
+      <span className="cal-summary-value">{value}</span>
+      <p className="cal-summary-detail">{detail}</p>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const FIT_LEGACY_SOCIAL_LINKS = [
   { name: 'Instagram', href: 'https://www.instagram.com/fitlegacy.company', icon: InstagramIcon },
   { name: 'TikTok', href: 'https://www.tiktok.com/@fitlegacy.company', icon: TikTokIcon },
@@ -12,13 +10,15 @@ interface SocialJoinProps {
   title?: string;
   variant?: 'light' | 'dark';
   align?: 'left' | 'center';
+  compact?: boolean;
 }
 
 export function SocialJoin({
   className = '',
-  title = 'Únete',
+  title = 'Ãšnete',
   variant = 'light',
   align = 'left',
+  compact = false,
 }: SocialJoinProps) {
   const isDark = variant === 'dark';
 
@@ -26,7 +26,7 @@ export function SocialJoin({
     <div className={className}>
       <h4
         className={[
-          'mb-5 text-xs font-bold uppercase tracking-[0.15em] font-sans',
+          `${compact ? 'mb-2' : 'mb-5'} text-xs font-bold uppercase tracking-[0.15em] font-sans`,
           align === 'center' ? 'text-center' : '',
           isDark ? 'text-white/45' : 'text-neutral-400',
         ].filter(Boolean).join(' ')}
@@ -41,7 +41,7 @@ export function SocialJoin({
             target="_blank"
             rel="noopener noreferrer"
             className={[
-              'flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200',
+              `${compact ? 'h-8 w-8' : 'h-9 w-9'} flex items-center justify-center rounded-xl transition-all duration-200`,
               isDark
                 ? 'border border-white/10 bg-white/[0.055] text-white/45 shadow-[0_10px_28px_rgba(0,0,0,0.18)] hover:border-white/20 hover:bg-white/[0.09] hover:text-white'
                 : 'border border-black/[0.08] bg-white text-neutral-400 shadow-sm hover:border-black/20 hover:text-[#0A0A0A]',

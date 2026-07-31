@@ -3,6 +3,7 @@ import { cookieStorage } from '@/lib/integrations/cookieStorage';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ Supabase credentials missing in .env. Authentication and database features will be disabled. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');

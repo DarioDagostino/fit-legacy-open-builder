@@ -9,7 +9,7 @@ The format is designed for low-friction sharing. A sender creates a routine in t
 - Keep routine links portable.
 - Avoid requiring app installation for recipients.
 - Support workout-only, nutrition-only, and mixed routines.
-- Use stable catalog IDs instead of duplicating full exercise or food data.
+- Use stable catalog IDs while allowing custom exercises to travel self-contained.
 - Keep the encoded URL small enough for common messaging apps.
 
 ## Non-Goals
@@ -33,7 +33,7 @@ https://builder.fitlegacy.app/r/wir?data=<encoded-payload>
 {
   "v": 1,
   "t": "mixed",
-  "p": "clean",
+  "p": "ember",
   "n": "Routine name",
   "c": "https://example.com/cover.jpg",
   "e": [
@@ -51,7 +51,7 @@ https://builder.fitlegacy.app/r/wir?data=<encoded-payload>
 |---|---|---:|---|
 | `v` | number | yes | Format version. Current value: `1`. |
 | `t` | string | no | Render template: `routine`, `meal`, or `mixed`. |
-| `p` | string | no | Palette ID: `clean`, `mist`, `navy`, `forest`, or `ember`. |
+| `p` | string | no | Palette ID: `ember`, `onyx`, `midnight`, `bloom`; `navy` is accepted as a legacy alias. |
 | `n` | string | yes | Routine name. |
 | `c` | string/null | no | Optional cover image URL. |
 | `e` | array | no | Exercise entries. |
@@ -64,6 +64,8 @@ At least one exercise or food entry must be present.
 | Field | Type | Required | Description |
 |---|---|---:|---|
 | `i` | string | yes | Exercise ID from the shared catalog. |
+| `n` | string | no | Display name for a custom exercise. Required when `i` is not in the catalog. |
+| `g` | string | no | Section/group for a custom exercise (defaults to `custom`). |
 | `s` | number | yes | Sets. |
 | `r` | number | yes | Reps. |
 | `w` | number | yes | Weight in kilograms. `0` means bodyweight or not applicable. |
@@ -81,7 +83,8 @@ At least one exercise or food entry must be present.
 
 ```ts
 const json = JSON.stringify(document);
-const base64 = btoa(json);
+const bytes = new TextEncoder().encode(json);
+const base64 = btoa(String.fromCharCode(...bytes));
 const encoded = base64
   .replace(/\+/g, '-')
   .replace(/\//g, '_')
@@ -97,7 +100,8 @@ const base64 = encoded
 
 const remainder = base64.length % 4;
 const padded = base64 + '='.repeat(remainder === 0 ? 0 : 4 - remainder);
-const document = JSON.parse(atob(padded));
+const bytes = Uint8Array.from(atob(padded), char => char.charCodeAt(0));
+const document = JSON.parse(new TextDecoder().decode(bytes));
 ```
 
 ## Validation
@@ -121,7 +125,7 @@ Validation checks:
 - Version compatibility.
 - Required fields.
 - Numeric limits.
-- Catalog ID existence.
+- Catalog ID existence, unless a custom exercise includes `n`.
 - Estimated URL length.
 
 ## Catalog IDs

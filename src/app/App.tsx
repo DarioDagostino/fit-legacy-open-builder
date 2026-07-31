@@ -8,6 +8,10 @@ import WorkoutBuilder from '../components/workout/WorkoutBuilder';
 import { StartPage } from '../components/StartPage';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { initGoogleAnalytics } from '@/lib/analytics/google';
+import { UserProvider } from './providers/UserProvider';
+import { AppErrorBoundary } from './components/shared/AppErrorBoundary';
+import { CookieBanner } from './components/shared/CookieBanner';
+import { getCookiePreferences } from '@/lib/integrations/legal';
 
 const SharedPostPage = lazy(() =>
   import('./community/SharedPostPage').then((module) => ({ default: module.SharedPostPage }))
@@ -24,27 +28,39 @@ function shouldShowBootSplash(pathname: string) {
 }
 
 export default function App() {
-  const enableTelemetry = !import.meta.env.DEV;
+  const [analyticsConsent, setAnalyticsConsent] = useState(() => getCookiePreferences().analytics);
+  const enableTelemetry = !import.meta.env.DEV && analyticsConsent;
 
   useEffect(() => {
     if (enableTelemetry) {
       initGoogleAnalytics();
     }
 
-    import('@/lib/integrations/statsig')
-      .then(({ initStatsig }) => initStatsig())
-      .catch((error) => {
-        console.warn('Statsig init failed:', error);
-      });
+    if (enableTelemetry) {
+      import('@/lib/integrations/statsig')
+        .then(({ initStatsig }) => initStatsig())
+        .catch((error) => console.warn('Statsig init failed:', error));
+    }
   }, [enableTelemetry]);
 
+  useEffect(() => {
+    const update = () => setAnalyticsConsent(getCookiePreferences().analytics);
+    window.addEventListener('cookie-preferences-changed', update);
+    return () => window.removeEventListener('cookie-preferences-changed', update);
+  }, []);
+
   return (
-    <BrowserRouter>
-      {enableTelemetry ? <Analytics /> : null}
-      {enableTelemetry ? <SpeedInsights /> : null}
-      <Toaster position="top-center" richColors theme="dark" />
-      <AppRoutes />
-    </BrowserRouter>
+    <UserProvider>
+      <BrowserRouter>
+        {enableTelemetry ? <Analytics /> : null}
+        {enableTelemetry ? <SpeedInsights /> : null}
+        <Toaster position="top-center" richColors theme="dark" />
+        <CookieBanner />
+        <AppErrorBoundary>
+          <AppRoutes />
+        </AppErrorBoundary>
+      </BrowserRouter>
+    </UserProvider>
   );
 }
 
@@ -153,8 +169,9 @@ function LegacySharedRoutineRedirect() {
 
 function RouteLoadingFallback() {
   return (
-    <div className="min-h-screen bg-[#0C0C0E] flex items-center justify-center text-[#F0EEF8]">
+    <div className="min-h-screen bg-[#0C0C0E] flex items-center justify-center text-[#F0EEF8]" role="status" aria-live="polite">
       <div className="w-8 h-8 border-4 border-[#E8873A] border-t-transparent rounded-full animate-spin" />
+      <span className="sr-only">Cargando vista</span>
     </div>
   );
 }

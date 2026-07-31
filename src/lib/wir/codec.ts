@@ -26,8 +26,8 @@ export function encodeWir(doc: WirDocument): string {
   // Serialize to JSON
   const json = JSON.stringify(doc);
 
-  // Encode to Base64
-  const base64 = btoa(json);
+  // Encode UTF-8 bytes to Base64. `btoa(json)` corrupts accented Spanish text.
+  const base64 = utf8ToBase64(json);
 
   // Convert to URL-safe format
   const urlSafe = base64
@@ -82,10 +82,10 @@ export function decodeWir(encoded: string): WirDocument {
   const remainder = base64.length % 4;
   const padded = base64 + '='.repeat(remainder === 0 ? 0 : 4 - remainder);
 
-  // Decode from Base64
+  // Decode from Base64 as UTF-8
   let json: string;
   try {
-    json = atob(padded);
+    json = base64ToUtf8(padded);
   } catch (error) {
     throw new Error(`Invalid Base64 encoding: ${error}`);
   }
@@ -143,7 +143,7 @@ export function getPayloadSize(doc: WirDocument): {
   estimated: number;
 } {
   const json = JSON.stringify(doc);
-  const base64 = btoa(json);
+  const base64 = utf8ToBase64(json);
   const urlSafe = encodeWir(doc);
 
   // Estimate full URL length
@@ -156,6 +156,22 @@ export function getPayloadSize(doc: WirDocument): {
     urlSafe: urlSafe.length,
     estimated,
   };
+}
+
+function utf8ToBase64(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function base64ToUtf8(value: string): string {
+  const binary = atob(value);
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
 }
 
 /**

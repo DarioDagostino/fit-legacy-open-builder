@@ -209,7 +209,7 @@ export function WirCanvasPreview({
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl" style={{ background: theme.background }}>
-              <img src="/icons/fit-legacy-mark.svg" alt="Fit Legacy" className="h-full w-full object-cover opacity-80" />
+              <img src="/cyan.svg" alt="Fit Legacy Builder" className="h-full w-full object-cover opacity-80" />
             </div>
             <div className="min-w-0">
               <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide" style={{ color: theme.onSurface }}>Fit Legacy</p>
@@ -458,7 +458,12 @@ function ListSection({ title, items, type, checkedItems, onToggle, variants, the
               initial="hidden"
               animate="visible"
               onClick={() => onToggle(itemId)}
-              onKeyDown={(e) => e.key === 'Enter' && onToggle(itemId)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onToggle(itemId);
+                }
+              }}
               tabIndex={0}
               role="checkbox"
               aria-checked={isDone}

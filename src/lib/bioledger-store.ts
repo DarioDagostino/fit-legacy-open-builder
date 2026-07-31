@@ -4,7 +4,10 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { createScopedStorage } from './userScope';
+import { deriveBioLedgerStats } from './bioledger-streak';
+import { recordSessionToSupabase, reportCanonicalSyncError } from './canonicalData';
 
 export interface WorkoutSession {
   id: string;
@@ -62,44 +65,21 @@ export const useBioLedgerStore = create<BioLedgerState>()(
       lastSessionDate: null,
 
       addSession: (session) => {
+        const newSession: WorkoutSession = {
+          ...session,
+          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `session_${Date.now()}`,
+        };
         set((state) => {
-          const newSession: WorkoutSession = {
-            ...session,
-            id: `session_${Date.now()}`,
-          };
-
-          // Calculate XP for this session (rough estimate)
-          const sessionXp = (session.exerciseCount * 10) + (session.foodItems * 5);
-
-          // Update streak if session is today or yesterday
-          const today = new Date().toISOString().split('T')[0];
-          const isToday = session.date === today;
-
-          let updatedStats = { ...state.stats };
-
-          if (isToday && (!state.lastSessionDate || state.lastSessionDate !== today)) {
-            updatedStats.currentStreak += 1;
-            updatedStats.longestStreak = Math.max(
-              updatedStats.longestStreak,
-              updatedStats.currentStreak
-            );
-          }
-
-          updatedStats.totalXp += sessionXp;
-          updatedStats.level = Math.floor(updatedStats.totalXp / 1000) + 1;
-          updatedStats.coincitos += Math.floor(sessionXp / 50);
-          updatedStats.totalSessions += 1;
-          updatedStats.totalExercises += session.exerciseCount;
-          updatedStats.averageSessionValue = Math.round(
-            updatedStats.totalXp / updatedStats.totalSessions
-          );
+          const sessions = [...state.sessions, newSession];
+          const derived = deriveBioLedgerStats(sessions);
 
           return {
-            sessions: [...state.sessions, newSession],
-            stats: updatedStats,
-            lastSessionDate: isToday ? today : state.lastSessionDate,
+            sessions,
+            stats: derived.stats,
+            lastSessionDate: derived.lastSessionDate,
           };
         });
+        void recordSessionToSupabase(newSession).catch(reportCanonicalSyncError);
       },
 
       removeSession: (id: string) => {
@@ -107,17 +87,13 @@ export const useBioLedgerStore = create<BioLedgerState>()(
           const session = state.sessions.find(s => s.id === id);
           if (!session) return state;
 
-          // Recalculate stats without this session
-          const sessionXp = (session.exerciseCount * 10) + (session.foodItems * 5);
+          const sessions = state.sessions.filter(s => s.id !== id);
+          const derived = deriveBioLedgerStats(sessions);
 
           return {
-            sessions: state.sessions.filter(s => s.id !== id),
-            stats: {
-              ...state.stats,
-              totalXp: Math.max(0, state.stats.totalXp - sessionXp),
-              totalSessions: Math.max(0, state.stats.totalSessions - 1),
-              totalExercises: Math.max(0, state.stats.totalExercises - session.exerciseCount),
-            },
+            sessions,
+            stats: derived.stats,
+            lastSessionDate: derived.lastSessionDate,
           };
         });
       },
@@ -196,6 +172,7 @@ export const useBioLedgerStore = create<BioLedgerState>()(
     }),
     {
       name: 'fit-legacy-bioledger',
+      storage: createJSONStorage(() => createScopedStorage('fit-legacy-bioledger')),
     }
   )
 );

@@ -58,7 +58,7 @@ export const MODE_META: Record<LegacitoMode, { label: string; greeting: string; 
 };
 
 export const MentorService = {
-  async getMentorResponse(messages: ChatMessage[], mode: LegacitoMode = 'tecnico', athleteContext?: string): Promise<string> {
+  async getMentorResponse(messages: ChatMessage[], mode: LegacitoMode = 'tecnico', athleteContext?: string, signal?: AbortSignal): Promise<string> {
     const { data: { session } } = await supabase.auth.getSession();
     const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -68,6 +68,7 @@ export const MentorService = {
 
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/philosopher-engine/chat`, {
       method: "POST",
+      signal,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session?.access_token || anonKey}`,
@@ -81,11 +82,19 @@ export const MentorService = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Error al conectar con Legacito");
+      let message = "Error al conectar con Legacito";
+      try {
+        const error = await response.json();
+        message = error.message || message;
+      } catch {
+        // Keep a stable user-facing error when the edge function returns non-JSON.
+      }
+      throw new Error(message);
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) throw new Error('Legacito devolvió una respuesta vacía');
+    return content;
   }
 };

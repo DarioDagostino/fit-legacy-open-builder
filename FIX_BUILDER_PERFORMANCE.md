@@ -15,12 +15,12 @@ Keep the builder responsive on mobile devices and inside in-app browsers.
 
 - Vite chunk splitting.
 - Lazy loading for recipient and preview components.
-- Local state for drafts.
+- User-scoped local state for drafts, synced with a debounced canonical store when authenticated.
 - Catalog filtering through memoized derived lists.
 
 ## Future Work
 
-- Split `WorkoutBuilder.tsx` into smaller components.
+- Split `WorkoutBuilder.tsx` into catalog, canvas, calendar and settings modules (sharing helpers are already extracted).
 - Add lightweight performance checks for mobile viewport.
-- Add Playwright coverage for the primary builder flow.
+- Add Playwright coverage for the primary builder flow once the CI dependency is approved.
 - Review bundle size after adding new integrations.

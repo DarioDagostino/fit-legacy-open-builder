@@ -2,13 +2,14 @@ import React from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 
 export type LegacitoMood = 'neutral' | 'happy' | 'celebrating' | 'thinking' | 'worried' | 'vision';
+export type LegacitoSkin = 'none' | 'legacy-ai' | 'rose' | 'gold' | 'aurora' | 'crown' | 'band' | 'glasses';
 
 interface LegacitoProps {
   mood?: LegacitoMood;
   size?: number;
   className?: string;
   isSpeaking?: boolean;
-  skinId?: 'none' | 'crown' | 'band' | 'glasses';
+  skinId?: LegacitoSkin;
 }
 
 export const Legacito: React.FC<LegacitoProps> = ({ 
@@ -22,8 +23,8 @@ export const Legacito: React.FC<LegacitoProps> = ({
   // Paleta de colores base
   const colors = {
     panel: '#080808',
-    chassisLight: '#FFFFFF',
-    chassisDark: '#F0F0F0',
+    chassisLight: ['legacy-ai', 'rose', 'gold'].includes(skinId) ? '#25282A' : '#FFFFFF',
+    chassisDark: ['legacy-ai', 'rose', 'gold'].includes(skinId) ? '#090B0C' : '#F0F0F0',
     border: '#76E8FF',
   };
 
@@ -102,12 +103,21 @@ export const Legacito: React.FC<LegacitoProps> = ({
   const headYOffset = useTransform(smoothMouseY, [0, 1], [-1, 1]);
 
   const effectiveMood = isGlitching ? 'vision' : mood;
-  const moodColor = getMoodColor(effectiveMood);
+  // Color skins pin the mascot to a deliberate brand family. `none` and
+  // `aurora` preserve the original mood-driven palette.
+  const skinColor = skinId === 'legacy-ai'
+    ? '#76E8FF'
+    : skinId === 'rose'
+      ? '#FF9FBD'
+      : skinId === 'gold'
+        ? '#F5C45E'
+        : undefined;
+  const moodColor = skinColor || getMoodColor(effectiveMood);
   
   // â”€â”€â”€ AURORA DYNAMIC COLORS (LIVING AI) â”€â”€â”€
   // We use an array of our brand colors for the idle state
   const auroraColors = ['#76E8FF', '#FFF1B8', '#FF9FBD', '#7DF4FF', '#F5C45E'];
-  const isNeutral = effectiveMood === 'neutral';
+  const isNeutral = effectiveMood === 'neutral' && (skinId === 'none' || skinId === 'aurora');
 
   // â”€â”€â”€ REACTIVE SPRING ANIMATION â”€â”€â”€
   const [scaleReact, setScaleReact] = React.useState(1);

@@ -8,7 +8,7 @@ import { getExerciseById, getFoodById } from '@fit-legacy/shared';
 
 export interface HydratedRoutine {
   template: 'routine' | 'meal' | 'mixed';
-  palette?: 'ember' | 'onyx' | 'midnight' | 'bloom';
+  palette?: 'ember' | 'onyx' | 'midnight' | 'bloom' | 'navy';
   name: string;
   coverImageUrl: string | null;
   exercises: Array<{
@@ -41,14 +41,14 @@ export function hydrateWir(doc: WirDocument): HydratedRoutine {
   // Hydrate exercises
   const exercises = (doc.e || []).map(e => {
     const exerciseData = getExerciseById(e.i);
-    if (!exerciseData) {
+    if (!exerciseData && !e.n) {
       throw new Error(`Exercise not found: ${e.i}`);
     }
 
     return {
       id: e.i,
-      name: exerciseData.name,
-      section: exerciseData.section,
+      name: exerciseData?.name || e.n!,
+      section: exerciseData?.section || e.g || 'custom',
       sets: e.s,
       reps: e.r,
       weight: e.w,

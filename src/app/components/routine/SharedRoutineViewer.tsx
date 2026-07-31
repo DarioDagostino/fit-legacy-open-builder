@@ -26,7 +26,7 @@ type Food = {
 
 type RoutineData = {
   template: 'routine' | 'meal' | 'mixed';
-  palette?: 'ember' | 'onyx' | 'midnight' | 'bloom';
+  palette?: 'ember' | 'onyx' | 'midnight' | 'bloom' | 'navy';
   title: string;
   duration: number;
   exercises: Exercise[];
@@ -216,7 +216,7 @@ export function SharedRoutineViewer() {
       <div className="w-full max-w-sm">
         <WirCanvasPreview
           template={routine.template}
-          palette={routine.palette}
+          palette={routine.palette === 'navy' ? 'midnight' : routine.palette}
           title={routine.title}
           exercises={routine.exercises.map((ex) => ({
             name: ex.name,
