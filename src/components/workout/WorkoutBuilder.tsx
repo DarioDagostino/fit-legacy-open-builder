@@ -34,6 +34,7 @@ import { OneRmCalculator } from './OneRmCalculator';
 import { RestTimer } from './RestTimer';
 import { SportsChronograph } from './SportsChronograph';
 import { WeeklyCoachSummaryPanel } from './WeeklyCoachSummaryPanel';
+import { CompositionDraftPanel } from './CompositionDraftPanel';
 import { builderPathForTab, resolveBuilderRoute, type BuilderRouteTab } from '../../lib/builderRoutes';
 
 const APP_URLS = resolveFitLegacyAppUrls(import.meta.env);
@@ -788,6 +789,42 @@ export default function MobileFirstBuilder() {
     setActiveTab('food');
   };
 
+  const updateWorkoutDraftExercise = (id: string, patch: Partial<Pick<SelectedExercise, 'sets' | 'reps' | 'weight' | 'notes'>>) => {
+    setWorkoutDraftItems((current) => current.map((exercise) => (
+      exercise.id === id ? { ...exercise, ...patch } : exercise
+    )));
+  };
+
+  const removeWorkoutDraftExercise = (id: string) => {
+    setWorkoutDraftItems((current) => current.filter((exercise) => exercise.id !== id));
+  };
+
+  const updateMealDraftFood = (id: string, patch: Partial<Pick<FoodItem, 'quantity' | 'notes'>>) => {
+    setMealDraftItems((current) => current.map((food) => (
+      food.id === id ? { ...food, ...patch } : food
+    )));
+  };
+
+  const removeMealDraftFood = (id: string) => {
+    setMealDraftItems((current) => current.filter((food) => food.id !== id));
+  };
+
+  const discardCatalogDraft = () => {
+    if (builderMode === 'workout') {
+      setWorkoutDraftItems([]);
+    } else {
+      setMealDraftItems([]);
+      setMealDraftId(`meal-${Date.now()}`);
+    }
+    toast.info('Borrador descartado. Tu plan confirmado no cambió.');
+  };
+
+  const continueAddingDraft = () => {
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>('input[aria-label="Buscar ejercicios y comidas"]')?.focus();
+    });
+  };
+
   const activeDraftItems = builderMode === 'workout' ? workoutDraftItems : mealDraftItems;
 
   const addSampleRoutine = () => {
@@ -1411,40 +1448,40 @@ export default function MobileFirstBuilder() {
                      {activeDraftItems.length > 0 ? `${activeDraftItems.length} seleccionados` : 'Borrador sin confirmar'}
                    </p>
                    <p className="mt-1 truncate text-[10px] text-[#9CA0A6]">
-                     {builderMode === 'workout' ? 'Nada cambia hasta guardar el día.' : 'Armá la comida y definí slot, fecha y hora.'}
+                     {builderMode === 'workout' ? 'Revisá el día antes de guardarlo.' : 'Revisá la comida antes de guardarla.'}
                    </p>
                  </div>
-                 <button
-                   type="button"
-                   onClick={confirmCatalogDraft}
-                   disabled={activeDraftItems.length === 0}
-                   className="builder-cta-primary shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-widest disabled:cursor-not-allowed disabled:opacity-35"
-                 >
-                   Confirmar
-                 </button>
                </div>
 
-               {builderMode === 'workout' && activeDraftItems.length > 0 && (
-                 <div className="grid grid-cols-[1fr_auto] gap-2">
-                   <label className="builder-apple-input flex items-center gap-2 px-3 py-2">
-                     <span className="sr-only">Nombre del día</span>
-                     <input value={workoutDraftDayLabel} onChange={(event) => setWorkoutDraftDayLabel(event.target.value)} className="min-w-0 flex-1 bg-transparent text-xs font-bold text-[#F1F0F4] outline-none" aria-label="Nombre del día" />
-                   </label>
-                   <select value={workoutDraftDayId} onChange={(event) => { setWorkoutDraftDayId(event.target.value); setWorkoutDraftDayLabel(`Día ${event.target.value.split('-').pop()}`); }} className="builder-apple-input px-2 text-[10px] font-black uppercase text-[#F1F0F4] outline-none" aria-label="Día de entrenamiento">
-                     {Array.from({ length: 7 }, (_, index) => <option key={index} value={`day-${index + 1}`}>Día {index + 1}</option>)}
-                   </select>
-                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Fecha de entrenamiento</span><input type="date" value={workoutDraftDate} onChange={(event) => setWorkoutDraftDate(event.target.value)} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Fecha de entrenamiento" /></label>
-                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Hora de entrenamiento</span><input type="time" value={workoutDraftTime} onChange={(event) => setWorkoutDraftTime(event.target.value)} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Hora de entrenamiento" /></label>
-                 </div>
-               )}
-
-               {builderMode === 'nutrition' && activeDraftItems.length > 0 && (
-                 <div className="grid grid-cols-3 gap-2">
-                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Slot de comida</span><select value={mealDraftSlot} onChange={(event) => setMealDraftSlot(Number(event.target.value))} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Slot de comida">{Array.from({ length: 6 }, (_, index) => <option key={index} value={index + 1}>Comida {index + 1}</option>)}</select></label>
-                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Fecha de comida</span><input type="date" value={mealDraftDate} onChange={(event) => setMealDraftDate(event.target.value)} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Fecha de comida" /></label>
-                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Hora de comida</span><input type="time" value={mealDraftTime} onChange={(event) => setMealDraftTime(event.target.value)} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Hora de comida" /></label>
-                   <label className="builder-apple-input col-span-3 px-3 py-2"><span className="sr-only">Nombre de la comida</span><input value={mealDraftName} onChange={(event) => setMealDraftName(event.target.value)} className="w-full bg-transparent text-xs font-bold text-[#F1F0F4] outline-none" aria-label="Nombre de la comida" /></label>
-                 </div>
+               {activeDraftItems.length > 0 && (
+                 <CompositionDraftPanel
+                   mode={builderMode}
+                   exercises={workoutDraftItems}
+                   foods={mealDraftItems}
+                   dayId={workoutDraftDayId}
+                   dayLabel={workoutDraftDayLabel}
+                   dayDate={workoutDraftDate}
+                   dayTime={workoutDraftTime}
+                   mealSlot={mealDraftSlot}
+                   mealName={mealDraftName}
+                   mealDate={mealDraftDate}
+                   mealTime={mealDraftTime}
+                   onDayIdChange={(value) => { setWorkoutDraftDayId(value); setWorkoutDraftDayLabel(`Día ${value.split('-').pop()}`); }}
+                   onDayLabelChange={setWorkoutDraftDayLabel}
+                   onDayDateChange={setWorkoutDraftDate}
+                   onDayTimeChange={setWorkoutDraftTime}
+                   onMealSlotChange={setMealDraftSlot}
+                   onMealNameChange={setMealDraftName}
+                   onMealDateChange={setMealDraftDate}
+                   onMealTimeChange={setMealDraftTime}
+                   onUpdateExercise={updateWorkoutDraftExercise}
+                   onRemoveExercise={removeWorkoutDraftExercise}
+                   onUpdateFood={updateMealDraftFood}
+                   onRemoveFood={removeMealDraftFood}
+                   onConfirm={confirmCatalogDraft}
+                   onDiscard={discardCatalogDraft}
+                   onContinueAdding={continueAddingDraft}
+                 />
                )}
 
                <div className="space-y-3">

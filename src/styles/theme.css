@@ -2698,3 +2698,211 @@ body:has(.builder-profile-root) #root {
   .builder-dynamic-logo__aura,
   .builder-dynamic-logo__scan { animation: none; }
 }
+
+/* Composition review: drafts stay local until the final confirmation. */
+.builder-composition-draft {
+  display: grid;
+  gap: 12px;
+  max-height: min(54vh, 520px);
+  overflow-y: auto;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--builder-accent-soft) 32%, transparent);
+  border-radius: 18px;
+  background: #080808;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.builder-composition-draft__header,
+.builder-composition-draft__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.builder-composition-draft__header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.builder-composition-draft__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--builder-accent-soft) 38%, transparent);
+  border-radius: 10px;
+  color: var(--builder-accent-soft);
+  background: rgba(255,255,255,.03);
+}
+
+.builder-composition-draft__status {
+  color: var(--builder-accent-soft);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.builder-composition-draft h3 {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: #f1f0f4;
+  font-size: 15px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.builder-composition-draft__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.builder-draft-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: #8f8b86;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.builder-draft-field input,
+.builder-draft-field select {
+  min-width: 0;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px;
+  color: #f1f0f4;
+  background: #111111;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  outline: none;
+}
+
+.builder-draft-field input:focus,
+.builder-draft-field select:focus {
+  border-color: var(--builder-accent-soft);
+}
+
+.builder-composition-draft__list {
+  display: grid;
+  gap: 8px;
+}
+
+.builder-draft-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: #101010;
+}
+
+.builder-draft-item__index {
+  padding-top: 2px;
+  color: var(--builder-accent-soft);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.builder-draft-item strong,
+.builder-draft-item small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.builder-draft-item strong {
+  color: #f1f0f4;
+  font-size: 12px;
+}
+
+.builder-draft-item small {
+  margin-top: 2px;
+  color: #77736e;
+  font-size: 9px;
+}
+
+.builder-draft-item__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.builder-draft-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 25px;
+  padding: 2px 4px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 7px;
+  color: #d2a94d;
+  background: #161616;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.builder-draft-stepper button,
+.builder-draft-item__remove {
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: #9e9a95;
+  background: transparent;
+  cursor: pointer;
+}
+
+.builder-draft-stepper button {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.builder-draft-stepper button:hover,
+.builder-draft-item__remove:hover {
+  color: var(--builder-accent-soft);
+  background: rgba(255,255,255,.08);
+}
+
+.builder-draft-item__remove {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+}
+
+@media (max-width: 420px) {
+  .builder-composition-draft__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-composition-draft__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .builder-composition-draft__footer > div {
+    justify-content: stretch;
+  }
+
+  .builder-composition-draft__footer button {
+    flex: 1;
+  }
+}
