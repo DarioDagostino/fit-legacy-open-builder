@@ -4,18 +4,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Flame,
-  Dumbbell,
-  Apple,
-  TrendingUp,
-  Award,
-  Target,
-  Bell,
-  Check,
   CirclePlus,
-  Trash2,
 } from 'lucide-react';
 import CalendarAnalyticsDashboard from './CalendarAnalyticsDashboard';
 import { scopedLocalStorageGet, scopedLocalStorageSet } from '../../lib/userScope';
+import { UiIcon } from '../UiIcon';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -97,7 +90,7 @@ const panelVariants = {
     opacity: 0,
     y: 12,
     scale: 0.992,
-    transition: { duration: 0.18, ease: 'easeInOut' },
+    transition: { duration: 0.18, ease: 'easeInOut' as const },
   },
 };
 
@@ -111,7 +104,7 @@ const sectionVariants = {
   exit: {
     opacity: 0,
     y: 8,
-    transition: { duration: 0.16, ease: 'easeInOut' },
+    transition: { duration: 0.16, ease: 'easeInOut' as const },
   },
 };
 
@@ -134,20 +127,34 @@ export function saveCalendarEntry(entry: CalendarEntry) {
   const existing = loadCalendarEntries();
   const idx = existing.findIndex((e) => e.date === entry.date);
   if (idx >= 0) {
+    const previous = existing[idx];
+    const sameActivity = previous.name === entry.name && previous.type === entry.type;
+    const mergedType = previous.type === entry.type ? previous.type : 'mixed';
     existing[idx] = {
-      ...existing[idx],
+      ...previous,
       ...entry,
-      slug: entry.slug || existing[idx].slug,
-      views: existing[idx].views,
-      completions: existing[idx].completions,
-      reshares: existing[idx].reshares,
-      avgTimeSpent: existing[idx].avgTimeSpent,
+      type: sameActivity ? entry.type : mergedType,
+      name: sameActivity ? entry.name : `${previous.name} · ${entry.name}`.slice(0, 120),
+      exercises: sameActivity ? entry.exercises : previous.exercises + entry.exercises,
+      foods: sameActivity ? entry.foods : previous.foods + entry.foods,
+      totalVolume: sameActivity ? entry.totalVolume : previous.totalVolume + entry.totalVolume,
+      totalCalories: sameActivity ? entry.totalCalories : previous.totalCalories + entry.totalCalories,
+      slug: entry.slug || previous.slug,
+      views: previous.views,
+      completions: previous.completions,
+      reshares: previous.reshares,
+      avgTimeSpent: previous.avgTimeSpent,
     };
   } else {
     existing.push(entry);
   }
   scopedLocalStorageSet(STORAGE_KEY, existing);
   return existing;
+}
+
+export function saveCalendarEntries(entries: CalendarEntry[]) {
+  scopedLocalStorageSet(STORAGE_KEY, entries);
+  return entries;
 }
 
 export function loadCalendarActions(): CalendarAction[] {
@@ -473,17 +480,17 @@ export default function CalendarPanel({ entries, actions = [], onActionsChange }
 
                     <div className="grid grid-cols-4 gap-2">
                     <div className="builder-apple-tile p-2.5 text-center">
-                      <Dumbbell className="mx-auto mb-1 h-3.5 w-3.5 text-[#E0793C]" />
+                      <UiIcon name="dumbbell" className="mx-auto mb-1 h-3.5 w-3.5 text-[#E0793C]" />
                       <p className="text-[7px] font-black text-[#6E6558] uppercase">Exercises</p>
                       <p className="text-xs font-black text-[#F1F0F4]">{selectedEntry.exercises}</p>
                     </div>
                     <div className="builder-apple-tile p-2.5 text-center">
-                      <Apple className="mx-auto mb-1 h-3.5 w-3.5 text-[#F2A468]" />
+                      <UiIcon name="fuel_protein" variant="green" className="mx-auto mb-1 h-4 w-4" />
                       <p className="text-[7px] font-black text-[#6E6558] uppercase">Foods</p>
                       <p className="text-xs font-black text-[#F1F0F4]">{selectedEntry.foods}</p>
                     </div>
                     <div className="builder-apple-tile p-2.5 text-center">
-                      <TrendingUp className="mx-auto mb-1 h-3.5 w-3.5 text-[#8A2F14]" />
+                      <UiIcon name="graph-bar" variant="duo" className="mx-auto mb-1 h-4 w-4" />
                       <p className="text-[7px] font-black text-[#6E6558] uppercase">Volume</p>
                       <p className="text-xs font-black text-[#F1F0F4]">{Math.round(selectedEntry.totalVolume)}</p>
                     </div>
@@ -542,9 +549,9 @@ export default function CalendarPanel({ entries, actions = [], onActionsChange }
                         type="button"
                         onClick={() => toggleAction(action.id)}
                         aria-label={action.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
-                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${action.completed ? 'border-[#8DAE93] bg-[#8DAE93] text-[#101012]' : 'border-[#6E6558] text-transparent hover:border-[#E0793C]'}`}
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${action.completed ? 'border-[#8DAE93] bg-[#8DAE93] text-[#080808]' : 'border-[#6E6558] text-transparent hover:border-[#E0793C]'}`}
                       >
-                        <Check size={13} strokeWidth={3} />
+                        <UiIcon name="validation-1" size={15} active={action.completed} />
                       </button>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -559,7 +566,7 @@ export default function CalendarPanel({ entries, actions = [], onActionsChange }
                           </p>
                         )}
                       </div>
-                      <button type="button" onClick={() => removeAction(action.id)} aria-label="Eliminar acción" className="rounded-lg p-1 text-[#6E6558] transition hover:bg-[#E0793C]/10 hover:text-[#E0793C]"><Trash2 size={14} /></button>
+                      <button type="button" onClick={() => removeAction(action.id)} aria-label="Eliminar acción" className="rounded-lg p-1 text-[#6E6558] transition hover:bg-[#E0793C]/10 hover:text-[#E0793C]"><UiIcon name="cancel-2" size={14} variant="duo" /></button>
                     </div>
                   ))}
                 </div>
@@ -567,7 +574,7 @@ export default function CalendarPanel({ entries, actions = [], onActionsChange }
 
               {selectedActions.length === 0 && !isComposerOpen && (
                 <div className="rounded-2xl border border-dashed border-[#F1F0F4]/10 px-4 py-5 text-center">
-                  <Bell className="mx-auto h-6 w-6 text-[#6E6558]" />
+                  <UiIcon name="alert" className="mx-auto h-6 w-6 text-[#6E6558]" />
                   <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#6E6558]">Sin acciones programadas</p>
                   <p className="mt-1 text-[10px] font-medium text-[#6E6558]">Agregá un recordatorio, entrenamiento o comida.</p>
                 </div>
@@ -601,7 +608,7 @@ export default function CalendarPanel({ entries, actions = [], onActionsChange }
       {monthStats.totalDays > 0 && (
         <motion.section variants={sectionVariants} className="builder-apple-card p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-[#E0793C]" />
+            <UiIcon name="reward" className="h-4 w-4 text-[#E0793C]" active />
             <p className="text-[10px] font-black uppercase tracking-widest text-[#6E6558]">
               Monthly summary
             </p>
@@ -663,7 +670,7 @@ export default function CalendarPanel({ entries, actions = [], onActionsChange }
           className="builder-apple-card flex items-center gap-3 p-4"
         >
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E0793C]/10">
-            <Award className="h-6 w-6 text-[#E0793C]" />
+            <UiIcon name="reward" className="h-7 w-7" variant="duo" />
           </div>
           <div>
             <p className="text-xs font-black uppercase tracking-wide text-[#E0793C]">

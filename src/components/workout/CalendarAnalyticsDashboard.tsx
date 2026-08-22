@@ -1,4 +1,5 @@
 // Legacy dashboard subcomponents remain available for future visual variants.
+// Canonical source; synced to the monorepo mirror by sync-builder.mjs.
 // @ts-nocheck
 import { useState, useEffect, useId } from "react";
 
@@ -51,7 +52,7 @@ export default function CalendarAnalyticsDashboard({ data, month, className = ""
     <div className={`cal-root ${className}`}>
       <style>{`
         .cal-root {
-          --blt-obsidian: #0c0c0e;
+          --blt-obsidian: #080808;
           --blt-obsidian-soft: #18181c;
           --blt-bone: #F1F0F4;
           --blt-ink: #0a0a0c;

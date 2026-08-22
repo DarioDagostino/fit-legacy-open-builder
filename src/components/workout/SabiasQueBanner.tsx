@@ -1,35 +1,58 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lightbulb } from 'lucide-react';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { localAssetUrl as assetUrl } from '../../lib/cdn';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { UiIcon } from '../UiIcon';
 
 type Tip = {
-  text: string;
+  title: string;
+  badge: string;
+  body: string;
+  detail: string;
   focusY: number;
 };
 
 const SABIAS_TIPS: Tip[] = [
   {
-    text: 'Podés combinar ejercicios y comidas en un mismo plan para tener una visión completa de tu entrenamiento.',
+    title: 'Entrenamiento y nutrición, en un solo plan',
+    badge: 'Plan integrado',
+    body: 'Podés combinar ejercicios y comidas para construir una estrategia completa desde un mismo lugar.',
+    detail: 'Alterná entre Exercises y Meals sin perder el contexto del plan que estás editando.',
     focusY: 16,
   },
   {
-    text: 'Tus rutinas se guardan automáticamente en el calendario con analytics en tiempo real.',
+    title: 'Tu calendario se actualiza solo',
+    badge: 'Planificación',
+    body: 'Las rutinas guardadas quedan disponibles en el calendario junto con sus métricas principales.',
+    detail: 'Así podés revisar la semana sin volver a cargar cada sesión manualmente.',
     focusY: 14,
   },
   {
-    text: 'Compartí tu rutina como un link .wir — quien lo abre puede verla completa sin descargar nada.',
+    title: 'Compartí una rutina sin instalar nada',
+    badge: 'Formato WIR',
+    body: 'Cada plan puede convertirse en un enlace .wir para compartirlo con atletas o entrenadores.',
+    detail: 'Quien recibe el enlace puede revisar la rutina completa directamente en el navegador.',
     focusY: 25,
   },
   {
-    text: 'El coach Legacito analiza tu plan y te da recomendaciones personalizadas al instante.',
+    title: 'Legacito revisa la estructura del plan',
+    badge: 'Coach IA',
+    body: 'El coach analiza la distribución del entrenamiento y señala oportunidades de mejora.',
+    detail: 'Usá sus observaciones como apoyo antes de publicar o asignar la rutina.',
     focusY: 12,
   },
   {
-    text: 'Podés personalizar el fondo del catálogo entre 5 presets visuales distintos.',
+    title: 'El catálogo se adapta a tu forma de trabajar',
+    badge: 'Personalización',
+    body: 'Podés cambiar el fondo y el foco visual del catálogo sin alterar el contenido del plan.',
+    detail: 'La configuración permanece disponible cuando volvés a Builder.',
     focusY: 18,
   },
   {
-    text: 'Cada ejercicio acepta notas personalizadas para recordar técnica, peso o series.',
+    title: 'Las notas conservan tus claves técnicas',
+    badge: 'Ejecución',
+    body: 'Cada ejercicio acepta indicaciones sobre técnica, carga, tempo o intención de la serie.',
+    detail: 'Es una forma directa de mantener el criterio del entrenador dentro de la sesión.',
     focusY: 20,
   },
 ];
@@ -38,108 +61,175 @@ type BuilderProfile = 'woman' | 'man';
 
 const PROFILE_TIP_IMAGES: Record<BuilderProfile, string[]> = {
   woman: [
-    '/assets_coach_tips/women_orange_energetico/athletic_woman_protein.webp',
-    '/assets_coach_tips/women_orange_energetico/athletic_woman_confident_pose.webp',
-    '/assets_coach_tips/women_orange_energetico/victory_jump_illustration.webp',
-    '/assets_coach_tips/women_orange_energetico/confident_coach_standing.webp',
-    '/assets_coach_tips/women_orange_energetico/athletic_woman_lunge_pose.webp',
-    '/assets_coach_tips/women_orange_energetico/athletic_woman_squat.webp',
+    assetUrl('/assets_coach_tips/women_orange_energetico/athletic_woman_protein.webp'),
+    assetUrl('/assets_coach_tips/women_orange_energetico/athletic_woman_confident_pose.webp'),
+    assetUrl('/assets_coach_tips/women_orange_energetico/victory_jump_illustration.webp'),
+    assetUrl('/assets_coach_tips/women_orange_energetico/confident_coach_standing.webp'),
+    assetUrl('/assets_coach_tips/women_orange_energetico/athletic_woman_lunge_pose.webp'),
+    assetUrl('/assets_coach_tips/women_orange_energetico/athletic_woman_squat.webp'),
   ],
   man: [
-    '/assets_coach_tips/man_orange_energetico/athletic_man_protein.webp',
-    '/assets_coach_tips/man_orange_energetico/confident_athlete_standing.webp',
-    '/assets_coach_tips/man_orange_energetico/dynamic_protein_celebration.webp',
-    '/assets_coach_tips/man_orange_energetico/751897927_1376542741270294_1485225782041362540_n.webp',
-    '/assets_coach_tips/man_orange_energetico/752514664_1665291831230549_680017816444529485_n.webp',
-    '/assets_coach_tips/man_orange_energetico/759756342_1063792812889272_5857949442508654311_n.webp',
+    assetUrl('/assets_coach_tips/man_orange_energetico/athletic_man_protein.webp'),
+    assetUrl('/assets_coach_tips/man_orange_energetico/confident_athlete_standing.webp'),
+    assetUrl('/assets_coach_tips/man_orange_energetico/dynamic_protein_celebration.webp'),
+    assetUrl('/assets_coach_tips/man_orange_energetico/751897927_1376542741270294_1485225782041362540_n.webp'),
+    assetUrl('/assets_coach_tips/man_orange_energetico/752514664_1665291831230549_680017816444529485_n.webp'),
+    assetUrl('/assets_coach_tips/man_orange_energetico/759756342_1063792812889272_5857949442508654311_n.webp'),
   ],
 };
 
-const DISMISSED_KEY = 'fl-sabias-que-dismissed-v2';
-const INTERVAL_MS = 18000;
-
-export function SabiasQueBanner({ className, profile }: { className?: string; profile: BuilderProfile }) {
-  const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem(DISMISSED_KEY) === 'true'; } catch { return false; }
-  });
+export function SabiasQueBanner({ profile }: { profile: BuilderProfile }) {
+  const [dismissed, setDismissed] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [index, setIndex] = useState(0);
 
-  const nextTip = useCallback(() => {
-    setIndex((prev) => (prev + 1) % SABIAS_TIPS.length);
-  }, []);
-
   useEffect(() => {
-    if (dismissed) return;
-    const timer = setInterval(nextTip, INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [dismissed, nextTip]);
+    document.body.classList.toggle('builder-tip-open', !dismissed);
+    return () => document.body.classList.remove('builder-tip-open');
+  }, [dismissed]);
 
-  const handleDismiss = () => {
-    setDismissed(true);
-    try { localStorage.setItem(DISMISSED_KEY, 'true'); } catch {}
-  };
+  const nextTip = () => setIndex((current) => (current + 1) % SABIAS_TIPS.length);
+  const previousTip = () => setIndex((current) => (current - 1 + SABIAS_TIPS.length) % SABIAS_TIPS.length);
 
-  if (dismissed) return null;
+  if (dismissed) {
+    return (
+      <motion.button
+        type="button"
+        className="builder-sq-restore"
+        onClick={() => setDismissed(false)}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        aria-label="Ver tips de Builder"
+        title="Ver tips de Builder"
+      >
+        <UiIcon name="tips" size={16} active={false} />
+        <span>Tips</span>
+      </motion.button>
+    );
+  }
 
   const tip = SABIAS_TIPS[index];
   const tipImage = PROFILE_TIP_IMAGES[profile][index];
+  const accent = profile === 'woman' ? '#ef7aa6' : '#d7a532';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 12 }}
-      className={className}
+    <motion.aside
+      className="builder-sq-banner"
+      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 14, scale: 0.97 }}
+      transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+      aria-label="Guía de Builder"
+      style={{ '--builder-sq-accent': accent } as CSSProperties}
     >
-      <div className="builder-apple-card overflow-hidden">
-        <div className="relative h-[120px] overflow-hidden sm:h-[140px]">
-          <AnimatePresence mode="popLayout">
-            <motion.img
-              key={`${profile}-${index}`}
-              src={tipImage}
-              alt=""
-              initial={{ opacity: 0, scale: 1.08 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.04 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="h-full w-full object-cover"
-              style={{ objectPosition: `50% ${tip.focusY}%` }}
-            />
-          </AnimatePresence>
-        </div>
-        <div className="flex items-start gap-3 p-3 sm:p-4">
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-            style={{ background: 'color-mix(in srgb, var(--builder-accent) 12%, transparent)' }}
-          >
-            <Lightbulb className="h-3.5 w-3.5 text-[var(--builder-accent-soft)]" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--builder-accent-soft)]">
-              ¿Sabías que?
-            </span>
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={index}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.25 }}
-                className="mt-0.5 text-[12px] font-semibold leading-snug text-[#9CA0A6]"
-              >
-                {tip.text}
-              </motion.p>
-            </AnimatePresence>
-          </div>
+      <div className="builder-sq-hero">
+        <AnimatePresence mode="popLayout">
+          <motion.img
+            key={`${profile}-${index}`}
+            src={tipImage}
+            alt=""
+            className="builder-sq-hero-image"
+            style={{ objectPosition: `50% ${tip.focusY}%` }}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            aria-hidden="true"
+          />
+        </AnimatePresence>
+        <div className="builder-sq-hero-overlay" />
+        <div className="builder-sq-actions">
+          <span className="builder-sq-counter">{index + 1}/{SABIAS_TIPS.length}</span>
           <button
-            onClick={handleDismiss}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#6E6558] hover:bg-[#2A2520] hover:text-[#F1F0F4]"
+            type="button"
+            className="builder-sq-icon-button"
+            onClick={() => setExpanded((current) => !current)}
+            aria-label={expanded ? 'Minimizar tip' : 'Expandir tip'}
+          >
+            {expanded ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+          </button>
+          <button
+            type="button"
+            className="builder-sq-icon-button builder-sq-close"
+            onClick={() => setDismissed(true)}
             aria-label="Cerrar tip"
           >
-            <X className="h-3 w-3" />
+            <UiIcon name="cancel-2" size={15} variant="duo" />
           </button>
         </div>
       </div>
-    </motion.div>
+
+      <div className="builder-sq-content">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tip.title}
+            className="builder-sq-header"
+            initial={{ opacity: 0, x: 6 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -6 }}
+            transition={{ duration: 0.22 }}
+          >
+            <div className="builder-sq-lightbulb" aria-hidden="true">
+              <UiIcon name="tips" size={18} active={expanded} />
+            </div>
+            <div className="builder-sq-header-text">
+              <div className="builder-sq-meta">
+                <span className="builder-sq-eyebrow">¿Sabías que?</span>
+                <span className="builder-sq-badge">{tip.badge}</span>
+              </div>
+              <h4 className="builder-sq-title">{tip.title}</h4>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        <AnimatePresence initial={false}>
+          {expanded && (
+            <motion.div
+              className="builder-sq-body"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={tip.body}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  aria-live="polite"
+                >
+                  <div className="builder-sq-accent-line" />
+                  <p className="builder-sq-body-main">{tip.body}</p>
+                  <p className="builder-sq-body-detail">{tip.detail}</p>
+                </motion.div>
+              </AnimatePresence>
+
+              <div className="builder-sq-nav" aria-label="Navegar tips">
+                <button type="button" className="builder-sq-nav-button" onClick={previousTip} aria-label="Tip anterior">
+                  <ChevronLeft size={13} />
+                </button>
+                <div className="builder-sq-dots" aria-label="Seleccionar tip">
+                  {SABIAS_TIPS.map((_item, dotIndex) => (
+                    <button
+                      key={dotIndex}
+                      type="button"
+                      className={`builder-sq-dot${dotIndex === index ? ' is-active' : ''}`}
+                      onClick={() => setIndex(dotIndex)}
+                      aria-label={`Tip ${dotIndex + 1}`}
+                      aria-current={dotIndex === index ? 'true' : undefined}
+                    />
+                  ))}
+                </div>
+                <button type="button" className="builder-sq-nav-button" onClick={nextTip} aria-label="Tip siguiente">
+                  <ChevronRight size={13} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.aside>
   );
 }

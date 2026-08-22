@@ -1,18 +1,15 @@
 import { useMemo, useEffect } from 'react';
+import { ASSET_BASE_URL } from '../../lib/cdn';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Dumbbell,
-  Apple,
-  ShieldCheck,
-  Crown,
   ArrowRight,
-  Trophy,
   Ghost,
   MessageCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { FoodIconRenderer as FoodIcon } from './FoodIconRenderer';
+import { UiIcon } from '../UiIcon';
 
 const ICON_MAP: Record<string, string> = {
   pecho: 'icono_pecho.svg',
@@ -34,7 +31,7 @@ const ExerciseIcon = ({ section, className = "w-4 h-4" }: { section: string, cla
   const iconFile = ICON_MAP[section.toLowerCase()] || 'icono_personalizado.svg';
   return (
     <img
-      src={`/assets/icons/workouts/${iconFile}`}
+      src={`${ASSET_BASE_URL}/assets/icons/workouts/${iconFile}`}
       className={`${className} object-contain`}
       alt={section}
     />
@@ -141,7 +138,7 @@ export default function SovereignShared() {
           className="relative z-10 space-y-8 max-w-5xl"
         >
           <div className="inline-flex items-center gap-3 px-6 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-xl">
-            <Crown className="w-4 h-4 text-amber-400" aria-label="Sello de Verificación" />
+            <UiIcon name="reward" className="w-4 h-4" variant="duo" />
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400">Verified Sovereign Neural Link</span>
           </div>
 
@@ -178,7 +175,7 @@ export default function SovereignShared() {
             <section className="space-y-12" aria-labelledby="training-title">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center">
-                  <Dumbbell className="w-8 h-8 text-purple-500" aria-hidden="true" />
+                  <UiIcon name="dumbbell" className="w-8 h-8" />
                 </div>
                 <h2 id="training-title" className="text-4xl font-black italic uppercase tracking-tight">Kinetic Manifest</h2>
               </div>
@@ -229,7 +226,7 @@ export default function SovereignShared() {
             <section className="space-y-12" aria-labelledby="nutrition-title">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center">
-                  <Apple className="w-8 h-8 text-emerald-500" aria-hidden="true" />
+                  <UiIcon name="fuel_protein" className="h-9 w-9" variant="green" />
                 </div>
                 <h2 id="nutrition-title" className="text-4xl font-black italic uppercase tracking-tight">Biological Supply</h2>
               </div>
@@ -293,7 +290,7 @@ export default function SovereignShared() {
                   aria-label="Compartir rutina por WhatsApp"
                   className="w-full h-16 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-black text-sm italic uppercase rounded-2xl flex items-center justify-center gap-3 hover:bg-[#25D366]/20 hover:border-[#25D366]/60 transition-all active:scale-[0.98]"
                  >
-                   <MessageCircle className="w-5 h-5" aria-hidden="true" />
+                   <UiIcon name="send" size={20} variant="duo" />
                    COMPARTIR POR WHATSAPP
                  </button>
                  <button
@@ -307,7 +304,7 @@ export default function SovereignShared() {
 
               <div className="p-8 bg-black rounded-[2rem] border border-white/5 space-y-6">
                  <div className="flex items-center gap-4">
-                   <Trophy className="w-5 h-5 text-amber-500" aria-hidden="true" />
+                   <UiIcon name="reward" className="h-6 w-6" variant="duo" />
                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Sovereign Performance</p>
                  </div>
                  <p className="text-sm text-zinc-500 leading-relaxed italic">
@@ -316,7 +313,7 @@ export default function SovereignShared() {
               </div>
 
               <div className="flex flex-col items-center gap-4 opacity-40">
-                 <ShieldCheck className="w-8 h-8 text-zinc-500" aria-hidden="true" />
+                 <UiIcon name="validation-1" className="h-9 w-9" variant="duo" />
                  <p className="text-[8px] font-black uppercase tracking-[0.4em] text-zinc-500">Encrypted Distribution</p>
               </div>
            </div>

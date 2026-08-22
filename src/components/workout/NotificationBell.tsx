@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, BellRing, Flame, AlertTriangle, Trophy, X } from 'lucide-react';
+import { Flame } from 'lucide-react';
+import { UiIcon } from '../UiIcon';
 import { useNotificationStore, type AppNotification } from '@/lib/notification-store';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  streak_risk: <AlertTriangle className="h-3.5 w-3.5 text-[#F2A468]" />,
+  streak_risk: <UiIcon name="alert" className="h-3.5 w-3.5" active />,
   streak_lost: <Flame className="h-3.5 w-3.5 text-[#8A2F14]" />,
-  milestone: <Trophy className="h-3.5 w-3.5 text-[#E0793C]" />,
+  milestone: <UiIcon name="reward" className="h-4 w-4" variant="duo" />,
 };
 
 export function NotificationBell() {
@@ -35,7 +36,7 @@ export function NotificationBell() {
         }`}
         aria-label="Notificaciones"
       >
-        {unread > 0 ? <BellRing className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+        <UiIcon name="alert" className="h-5 w-5" active={unread > 0 || open} />
         {unread > 0 && (
           <>
             <motion.span
@@ -65,7 +66,7 @@ export function NotificationBell() {
 
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <Bell className="mx-auto mb-2 h-6 w-6 text-[#3A3228]" />
+                <UiIcon name="alert" className="mx-auto mb-2 h-6 w-6" />
                 <p className="text-xs font-medium text-[#6E6558]">Sin notificaciones</p>
               </div>
             ) : (
@@ -85,7 +86,7 @@ export function NotificationBell() {
 function NotificationItem({ notification, onDismiss }: { notification: AppNotification; onDismiss: (id: string) => void }) {
   return (
     <div className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[#2A2520]/50 ${notification.read ? 'opacity-60' : ''}`}>
-      <div className="mt-0.5 shrink-0">{ICON_MAP[notification.type] || <Bell className="h-3.5 w-3.5 text-[#6E6558]" />}</div>
+      <div className="mt-0.5 shrink-0">{ICON_MAP[notification.type] || <UiIcon name="alert" className="h-4 w-4" active={!notification.read} />}</div>
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-bold text-[#F1F0F4] leading-tight">{notification.title}</p>
         <p className="mt-0.5 text-[10px] font-medium text-[#9CA0A6] leading-relaxed">{notification.body}</p>
@@ -102,7 +103,7 @@ function NotificationItem({ notification, onDismiss }: { notification: AppNotifi
         onClick={() => onDismiss(notification.id)}
         className="shrink-0 rounded-full p-1 text-[#6E6558] hover:text-[#F1F0F4] hover:bg-[#2A2520] transition-colors"
       >
-        <X className="h-3 w-3" />
+        <UiIcon name="cancel-2" className="h-3.5 w-3.5" variant="duo" />
       </button>
     </div>
   );

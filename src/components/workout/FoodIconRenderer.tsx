@@ -1,3 +1,4 @@
+import { assetUrl, localAssetUrl } from '../../lib/cdn';
 type FoodIconProps = {
   category?: string;
   name?: string;
@@ -38,34 +39,34 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
   }
 
   if (lowercaseName.includes('jamon') || lowercaseName.includes('ham') || lowercaseName.includes('cerdo') || lowercaseName.includes('pork')) {
-    return <img src="/meat/Ham.webp" className={`${className} object-contain drop-shadow-sm`} alt="Ham" />;
+    return <img src={assetUrl('/meat/Ham.webp')} className={`${className} object-contain drop-shadow-sm`} alt="Ham" />;
   }
   if (lowercaseName.includes('cordero') || lowercaseName.includes('lamb')) {
-    return <img src="/meat/Rack of Lamb.webp" className={`${className} object-contain drop-shadow-sm`} alt="Lamb" />;
+    return <img src={localAssetUrl('/meat/Rack of Lamb.webp')} className={`${className} object-contain drop-shadow-sm`} alt="Lamb" />;
   }
   if (lowercaseName.includes('steak') || lowercaseName.includes('bife') || lowercaseName.includes('entrecote')) {
     return pickVariant('/meat', ['Steak.webp', 'Steak-1.webp']);
   }
   if (lowercaseName.includes('vaca') || lowercaseName.includes('beef') || lowercaseName.includes('lomo')) {
-    return <img src="/meat/Beef.webp" className={`${className} object-contain drop-shadow-sm`} alt="Beef" />;
+    return <img src={assetUrl('/meat/Beef.webp')} className={`${className} object-contain drop-shadow-sm`} alt="Beef" />;
   }
   if (lowercaseName.includes('carne') || lowercaseName.includes('meat')) {
-    return <img src="/meat/Meat.webp" className={`${className} object-contain drop-shadow-sm`} alt="Meat" />;
+    return <img src={assetUrl('/meat/Meat.webp')} className={`${className} object-contain drop-shadow-sm`} alt="Meat" />;
   }
   if (lowercaseName.includes('docena') || lowercaseName.includes('dozen')) {
-    return <img src="/chicken_eggs/Dozen Eggs.webp" className={`${className} object-contain drop-shadow-sm`} alt="Dozen Eggs" />;
+    return <img src={assetUrl('/chicken_eggs/Dozen Eggs.webp')} className={`${className} object-contain drop-shadow-sm`} alt="Dozen Eggs" />;
   }
   if (lowercaseName.includes('huevo') || lowercaseName.includes('egg')) {
     if (lowercaseName.includes('frito') || lowercaseName.includes('sunny')) {
-      return <img src="/chicken_eggs/Sunny Side Up Eggs.webp" className={`${className} object-contain drop-shadow-sm`} alt="Fried Eggs" />;
+      return <img src={assetUrl('/chicken_eggs/Sunny Side Up Eggs.webp')} className={`${className} object-contain drop-shadow-sm`} alt="Fried Eggs" />;
     }
-    return <img src="/chicken_eggs/Eggs.webp" className={`${className} object-contain drop-shadow-sm`} alt="Eggs" />;
+    return <img src={assetUrl('/chicken_eggs/Eggs.webp')} className={`${className} object-contain drop-shadow-sm`} alt="Eggs" />;
   }
   if (lowercaseName.includes('pollo') || lowercaseName.includes('chicken') || lowercaseName.includes('ave')) {
     return pickVariant('/chicken_eggs', ['Poultry Leg.webp', 'Poultry Leg-1.webp']);
   }
   if (lowercaseName.includes('pavo') || lowercaseName.includes('turkey')) {
-    return <img src="/chicken_eggs/Thanksgiving.webp" className={`${className} object-contain drop-shadow-sm`} alt="Turkey" />;
+    return <img src={assetUrl('/chicken_eggs/Thanksgiving.webp')} className={`${className} object-contain drop-shadow-sm`} alt="Turkey" />;
   }
   if (lowercaseName.includes('filete') || lowercaseName.includes('fillet')) {
     return pickVariant('/fish', ['Fish Fillet.webp', 'Fish Fillet-1.webp', 'Fish Fillet-2.webp']);
@@ -266,7 +267,7 @@ export function FoodIconRenderer({ category, name = '', className = 'w-6 h-6' }:
     return <img src={`${SUPP_PATH}/proteinas/Protein.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt={name || 'Supplement'} />;
   }
 
-  if (lowercaseCategory === 'protein' || lowercaseCategory === 'proteins') return <img src="/meat/Meat.webp" className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Protein" />;
+  if (lowercaseCategory === 'protein' || lowercaseCategory === 'proteins') return <img src={assetUrl('/meat/Meat.webp')} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Protein" />;
   if (lowercaseCategory === 'fruit' || lowercaseCategory === 'fruits') return <img src={`${path}/Apples  Plate.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Fruit" />;
   if (lowercaseCategory === 'vegetable' || lowercaseCategory === 'vegetables') return <img src={`${path}/Cabbage.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Vegetable" />;
   if (lowercaseCategory === 'carbs') return <img src={`${path}/Sandwich.webp`} className={`${className} object-contain drop-shadow-sm opacity-80`} alt="Carbs" />;

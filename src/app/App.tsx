@@ -104,6 +104,21 @@ function AppRoutes() {
             <Route path="/" element={<WorkoutBuilder />} />
             <Route path="/build" element={<WorkoutBuilder />} />
             <Route path="/arsenal" element={<WorkoutBuilder />} />
+            {/* Named Builder routes keep deep links and browser history inside the app. */}
+            <Route path="/dashboard" element={<WorkoutBuilder />} />
+            <Route path="/ejercicios" element={<WorkoutBuilder />} />
+            <Route path="/ejercicios/catalogo" element={<WorkoutBuilder />} />
+            <Route path="/entrenar" element={<WorkoutBuilder />} />
+            <Route path="/1rm" element={<WorkoutBuilder />} />
+            <Route path="/timer" element={<WorkoutBuilder />} />
+            <Route path="/comidas" element={<WorkoutBuilder />} />
+            <Route path="/comidas/catalogo" element={<WorkoutBuilder />} />
+            <Route path="/perfil" element={<WorkoutBuilder />} />
+            <Route path="/calendario" element={<WorkoutBuilder />} />
+            <Route path="/compartir" element={<WorkoutBuilder />} />
+            {/* These routes are retained as handoff points to Analytics, the owner of the views. */}
+            <Route path="/progreso" element={<WorkoutBuilder />} />
+            <Route path="/legacito" element={<WorkoutBuilder />} />
             <Route path="/start" element={<StartPage />} />
             <Route path="/shared-routine" element={<LegacySharedRoutineRedirect />} />
 

@@ -1,0 +1,320 @@
+/* Builder tools: 1RM and Timer share the same matte phone canvas as the app. */
+.builder-tool-page {
+  min-height: 100%;
+  overflow: auto;
+  background: #000;
+  color: #f1f0f4;
+}
+
+.builder-tool-page > .vanguard-tool--phone,
+.builder-tool-page > .rest-tool--phone {
+  min-height: 100%;
+  margin: 0;
+  padding: 0 0 24px;
+  border: 0;
+  border-radius: 0;
+  background: #080808;
+  box-shadow: none;
+}
+
+.builder-tool-page .one-rm-phone,
+.builder-tool-page .rest-phone {
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  filter: none;
+}
+
+.builder-tool-page .one-rm-phone__bezel,
+.builder-tool-page .rest-phone__bezel {
+  min-height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #080808;
+  box-shadow: none;
+}
+
+.builder-tool-page .one-rm-phone__speaker,
+.builder-tool-page .rest-phone__speaker {
+  display: none;
+}
+
+.builder-tool-page .one-rm-phone__screen,
+.builder-tool-page .rest-phone__screen {
+  min-height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #080808;
+  box-shadow: none;
+}
+
+.one-rm-phone__hscroll {
+  display: flex;
+  width: 100%;
+  min-height: 680px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.one-rm-phone__hscroll::-webkit-scrollbar { display: none; }
+.one-rm-phone-page {
+  flex: 0 0 100%;
+  min-height: 680px;
+  padding: 22px 18px 28px;
+  scroll-snap-align: start;
+  overflow-y: auto;
+}
+.one-rm-phone__topbar,
+.rest-phone__topbar,
+.sports-chrono__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.vanguard-tool__eyebrow,
+.rest-tool__eyebrow,
+.sports-chrono__eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #d6a24a;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.vanguard-tool h2,
+.rest-phone__topbar h2,
+.sports-chrono__header h3 {
+  margin: 0;
+  color: #f1f0f4;
+  font-family: 'Big Shoulders Display', sans-serif;
+  font-size: clamp(38px, 11vw, 56px);
+  font-weight: 800;
+  letter-spacing: -.035em;
+  line-height: .88;
+}
+.vanguard-tool__actions,
+.rest-tool__sound {
+  display: flex;
+  gap: 7px;
+}
+.vanguard-tool__actions button,
+.rest-tool__sound button,
+.sports-chrono__header button {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  place-items: center;
+  border: 1px solid rgba(241,240,244,.14);
+  border-radius: 10px;
+  background: #111;
+  color: #d6a24a;
+  cursor: pointer;
+}
+.vanguard-tool__section-label,
+.rest-tool__label {
+  display: block;
+  color: #9ca0a6;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.vanguard-tool__result {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 284px;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(214,162,74,.18);
+  border-radius: 18px;
+  background: #101010;
+  box-shadow: inset 0 1px rgba(255,255,255,.04);
+}
+.vanguard-tool__result::before {
+  content: '1RM';
+  position: absolute;
+  z-index: -1;
+  top: -10px;
+  right: -4px;
+  color: rgba(214,162,74,.08);
+  font-family: 'Big Shoulders Display', sans-serif;
+  font-size: 120px;
+  font-weight: 800;
+  line-height: 1;
+}
+.vanguard-tool__result-value {
+  display: block;
+  margin: 9px 0 3px;
+  color: #f1f0f4;
+  font-family: 'Big Shoulders Display', sans-serif;
+  font-size: clamp(60px, 16vw, 86px);
+  font-weight: 800;
+  letter-spacing: -.05em;
+  line-height: .74;
+}
+.vanguard-tool__result-value em { color: #d6a24a; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-style: normal; letter-spacing: 0; }
+.vanguard-tool__result-data p,
+.vanguard-tool__result-message,
+.vanguard-tool__result-note { margin: 8px 0 0; color: #9ca0a6; font-family: 'IBM Plex Mono', monospace; font-size: 9px; line-height: 1.45; }
+.vanguard-tool__result-message { color: #c4c3c7; font-family: inherit; font-size: 12px; }
+.vanguard-tool__result-insight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  color: #d6a24a;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.vanguard-tool__result-insight-mark { color: #ef6aa2; }
+.vanguard-tool__result-chart { display: flex; gap: 8px; margin-top: 13px; }
+.vanguard-tool__result-axis { display: flex; flex-direction: column; justify-content: space-between; color: #67636b; font: 8px 'IBM Plex Mono', monospace; }
+.vanguard-tool__result-plot { flex: 1; min-width: 0; }
+.vanguard-tool__result-chart-labels { display: flex; justify-content: space-between; margin-top: 4px; color: #67636b; font: 7px 'IBM Plex Mono', monospace; }
+.vanguard-tool__result-note { padding-top: 8px; border-top: 1px solid rgba(241,240,244,.08); }
+.vanguard-tool__inputs { margin-top: 14px; padding: 15px; border: 1px solid rgba(241,240,244,.1); border-radius: 15px; background: #0e0e0e; }
+.vanguard-tool__input-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 9px 0 16px; }
+.vanguard-tool__input-grid label > span { display: block; margin-bottom: 5px; color: #6e6558; font: 8px 'IBM Plex Mono', monospace; text-transform: uppercase; }
+.vanguard-tool__number-input { display: flex; align-items: center; gap: 5px; padding: 0 9px; border: 1px solid rgba(241,240,244,.12); border-radius: 10px; background: #161616; }
+.vanguard-tool__number-input input { width: 100%; min-width: 0; border: 0; background: transparent; color: #f1f0f4; font: 25px 'Big Shoulders Display', sans-serif; outline: none; }
+.vanguard-tool__number-input strong { color: #6e6558; font: 8px 'IBM Plex Mono', monospace; }
+.vanguard-tool__formula-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-top: 9px; }
+.vanguard-tool__formula-list button,
+.vanguard-tool__load-grid button {
+  min-height: 58px;
+  padding: 9px;
+  border: 1px solid rgba(241,240,244,.1);
+  border-radius: 11px;
+  background: #151515;
+  color: #9ca0a6;
+  cursor: pointer;
+  text-align: left;
+}
+.vanguard-tool__formula-list button.is-selected,
+.vanguard-tool__load-grid button:hover { border-color: #d6a24a; background: rgba(214,162,74,.12); color: #f1f0f4; }
+.vanguard-tool__formula-header { display: flex; justify-content: space-between; gap: 5px; }
+.vanguard-tool__formula-list strong,
+.vanguard-tool__formula-list span,
+.vanguard-tool__load-grid strong,
+.vanguard-tool__load-grid small { display: block; }
+.vanguard-tool__formula-list strong { color: #f1f0f4; font: 10px 'IBM Plex Mono', monospace; }
+.vanguard-tool__formula-val { color: #d6a24a; font: 9px 'IBM Plex Mono', monospace; }
+.vanguard-tool__formula-list button > span:last-child { margin-top: 4px; font-size: 9px; line-height: 1.2; }
+.one-rm-phone-page-title { margin: 12px 0 4px; color: #f1f0f4; font: 800 34px/.9 'Big Shoulders Display', sans-serif; }
+.one-rm-phone-page-sub { margin: 0 0 16px; color: #9ca0a6; font-size: 12px; line-height: 1.35; }
+.vanguard-tool__methods { display: grid; gap: 8px; }
+.vanguard-tool__methods > div,
+.vanguard-tool__warmup > div { display: grid; grid-template-columns: 50px 1fr 70px; align-items: center; gap: 7px; padding: 12px; border: 1px solid rgba(241,240,244,.1); border-radius: 12px; background: #111; }
+.vanguard-tool__methods > div.is-selected { border-color: #d6a24a; background: rgba(214,162,74,.1); }
+.vanguard-tool__methods span,
+.vanguard-tool__warmup span { color: #d6a24a; font: 10px 'IBM Plex Mono', monospace; }
+.vanguard-tool__methods strong,
+.vanguard-tool__warmup strong { color: #f1f0f4; font: 800 22px 'Big Shoulders Display', sans-serif; }
+.vanguard-tool__methods small,
+.vanguard-tool__warmup small { grid-column: 1 / -1; color: #6e6558; font: 9px 'IBM Plex Mono', monospace; }
+.vanguard-tool__loads-heading { margin-bottom: 15px; }
+.one-rm-load-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.one-rm-load-tabs button { flex: 1; padding: 9px; border: 1px solid rgba(241,240,244,.12); border-radius: 9px; background: #111; color: #9ca0a6; font: 10px 'IBM Plex Mono', monospace; text-transform: uppercase; }
+.one-rm-load-tabs button.is-active { border-color: #d6a24a; color: #d6a24a; }
+.vanguard-tool__load-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.vanguard-tool__load-grid button { text-align: left; }
+.vanguard-tool__load-grid button > span { color: #d6a24a; font: 9px 'IBM Plex Mono', monospace; }
+.vanguard-tool__load-grid strong { margin-top: 4px; color: #f1f0f4; font: 800 24px 'Big Shoulders Display', sans-serif; }
+.vanguard-tool__load-grid em { color: #9ca0a6; font: 9px 'IBM Plex Mono', monospace; font-style: normal; }
+.vanguard-tool__load-grid small { margin-top: 4px; color: #6e6558; font: 8px 'IBM Plex Mono', monospace; line-height: 1.2; }
+.vanguard-tool__warmup { display: grid; gap: 8px; }
+.vanguard-tool__warmup > div { grid-template-columns: 46px 1fr 70px; }
+.one-rm-phone-dots { display: flex; justify-content: center; gap: 7px; padding: 4px 0 12px; }
+.one-rm-phone-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: #464646; }
+.one-rm-phone-dots button.is-active { width: 22px; border-radius: 99px; background: #d6a24a; }
+.one-rm-presets { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin: 0 18px 18px; padding: 12px; border: 1px solid rgba(241,240,244,.1); border-radius: 14px; background: #0e0e0e; }
+.one-rm-presets__label { display: block; margin-bottom: 6px; color: #6e6558; font: 8px 'IBM Plex Mono', monospace; text-transform: uppercase; }
+.one-rm-presets__row { display: flex; flex-wrap: wrap; gap: 5px; }
+.one-rm-presets__row button { padding: 5px 8px; border: 1px solid rgba(241,240,244,.12); border-radius: 7px; background: #151515; color: #9ca0a6; font: 11px 'IBM Plex Mono', monospace; }
+.one-rm-presets__row button.is-selected { border-color: #d6a24a; color: #d6a24a; }
+.one-rm-presets__row small { margin-left: 2px; font-size: 7px; }
+
+.rest-phone__topbar { padding: 20px 18px 0; }
+.rest-phone__screen { overflow: hidden; }
+.rest-tool__protocol { display: flex; gap: 6px; overflow-x: auto; padding: 16px 18px 0; scrollbar-width: none; }
+.rest-tool__protocol::-webkit-scrollbar { display: none; }
+.rest-tool__protocol button { flex: 0 0 auto; padding: 9px 11px; border: 1px solid rgba(241,240,244,.12); border-radius: 9px; background: #121212; color: #9ca0a6; font: 9px 'IBM Plex Mono', monospace; }
+.rest-tool__protocol button.is-selected { border-color: #d6a24a; background: rgba(214,162,74,.12); color: #d6a24a; }
+.rest-tool__workspace { display: grid; gap: 14px; padding: 16px 18px; }
+.rest-tool__core { display: grid; place-items: center; min-height: 260px; padding: 14px; border: 1px solid rgba(241,240,244,.1); border-radius: 18px; background: #101010; }
+.rest-tool__ring { position: relative; width: min(260px, 76vw); aspect-ratio: 1; }
+.rest-tool__ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.rest-tool__ring-track { fill: none; stroke: rgba(241,240,244,.08); stroke-width: 8; }
+.rest-tool__ring-progress { fill: none; stroke: #d6a24a; stroke-linecap: round; stroke-width: 8; filter: drop-shadow(0 0 7px rgba(214,162,74,.3)); }
+.rest-tool__ring-inner-track { fill: none; stroke: rgba(239,106,162,.12); stroke-width: 4; }
+.rest-tool__ring-inner-progress { fill: none; stroke: #ef6aa2; stroke-linecap: round; stroke-width: 4; }
+.rest-tool__readout { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.rest-tool__readout strong { display: block; color: #f1f0f4; font: 800 clamp(48px,14vw,74px)/.8 'Big Shoulders Display', sans-serif; letter-spacing: -.04em; }
+.rest-tool__readout span { margin-top: 10px; color: #9ca0a6; font: 9px 'IBM Plex Mono', monospace; text-transform: uppercase; }
+.rest-tool__progress { width: 100%; margin-top: 15px; }
+.rest-tool__progress > span { color: #9ca0a6; font-size: 10px; }
+.rest-tool__progress > strong { float: right; color: #d6a24a; font: 10px 'IBM Plex Mono', monospace; }
+.rest-tool__progress i { display: block; height: 5px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: #252525; }
+.rest-tool__progress i b { display: block; height: 100%; border-radius: inherit; background: #d6a24a; }
+.rest-tool__controls { padding: 15px; border: 1px solid rgba(241,240,244,.1); border-radius: 14px; background: #101010; }
+.rest-tool__actions { display: grid; grid-template-columns: 1fr 42px 60px; gap: 7px; }
+.rest-tool__actions button { min-height: 42px; border-radius: 9px; }
+.rest-tool__start { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.rest-tool__duration-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; margin-top: 8px; }
+.rest-tool__duration-grid button,
+.rest-tool__fine-tune button { padding: 8px 4px; border: 1px solid rgba(241,240,244,.12); border-radius: 7px; background: #151515; color: #9ca0a6; font: 9px 'IBM Plex Mono', monospace; }
+.rest-tool__duration-grid button.is-selected { border-color: #d6a24a; color: #d6a24a; }
+.rest-tool__fine-tune { display: flex; align-items: center; justify-content: space-between; gap: 7px; margin-top: 8px; }
+.rest-tool__fine-tune span { color: #6e6558; font: 8px 'IBM Plex Mono', monospace; text-transform: uppercase; }
+.rest-tool__hint { margin: 12px 0 0; color: #9ca0a6; font-size: 11px; line-height: 1.4; }
+.rest-tool__award { display: flex; align-items: center; gap: 8px; margin: 0 18px 12px; padding: 10px 12px; border: 1px solid rgba(214,162,74,.32); border-radius: 10px; background: rgba(214,162,74,.1); color: #d6a24a; font: 9px 'IBM Plex Mono', monospace; }
+.rest-tool__history { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; margin: 0 18px 20px; padding: 12px; border: 1px solid rgba(241,240,244,.1); border-radius: 11px; background: #111; }
+.rest-tool__history .rest-tool__label { grid-column: 1 / -1; }
+.rest-tool__history strong { color: #f1f0f4; font-size: 12px; }
+.rest-tool__history time { color: #6e6558; font: 9px 'IBM Plex Mono', monospace; }
+
+.sports-chrono { margin: 0 18px 20px; padding: 16px; border: 1px solid rgba(241,240,244,.1); border-radius: 16px; background: #0e0e0e; }
+.sports-chrono__display { display: flex; align-items: baseline; justify-content: center; gap: 5px; margin: 24px 0 17px; color: #f1f0f4; font: 800 clamp(48px,14vw,72px)/.8 'Big Shoulders Display', sans-serif; letter-spacing: -.03em; }
+.sports-chrono__display small,
+.sports-chrono__fraction span { color: #6e6558; font: 9px 'IBM Plex Mono', monospace; }
+.sports-chrono__fraction { display: grid; gap: 4px; align-items: end; }
+.sports-chrono__fraction strong { color: #ef6aa2; font: 800 28px 'Big Shoulders Display', sans-serif; }
+.sports-chrono__actions { display: grid; grid-template-columns: 42px 1fr 42px; gap: 7px; }
+.sports-chrono__actions button { min-height: 42px; border-radius: 9px; }
+.sports-chrono__run-cue { display: inline-block; margin-top: 8px; color: #ef6aa2; font: 9px 'IBM Plex Mono', monospace; text-transform: uppercase; }
+.sports-chrono__last { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(241,240,244,.1); color: #9ca0a6; font-size: 11px; }
+
+.tool-pink-candles { position: relative; display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 3px; overflow: hidden; padding: 7px 5px 0; }
+.tool-pink-candles::before { content: ''; position: absolute; top: 50%; right: 0; left: 0; height: 1px; background: rgba(241,240,244,.13); }
+.tool-pink-candles__split-candle { position: relative; display: flex; flex: 1; height: 100%; align-items: center; justify-content: center; }
+.tool-pink-candles__split-candle::before { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; background: #ef6aa2; opacity: .45; }
+.tool-pink-candles__upper,
+.tool-pink-candles__lower { position: absolute; z-index: 1; width: 5px; border-radius: 4px; background: #ef6aa2; box-shadow: 0 0 8px rgba(239,106,162,.35); }
+.tool-pink-candles__upper { bottom: 50%; }
+.tool-pink-candles__lower { top: 50%; opacity: .48; }
+.tool-pink-candles__split-candle.is-live .tool-pink-candles__upper,
+.tool-pink-candles__split-candle.is-live .tool-pink-candles__lower { background: #f1f0f4; box-shadow: 0 0 12px rgba(241,240,244,.65); }
+
+@media (max-width: 460px) {
+  .one-rm-phone-page { padding: 18px 14px 24px; }
+  .rest-phone__topbar { padding-inline: 14px; }
+  .rest-tool__protocol,
+  .rest-tool__workspace { padding-inline: 14px; }
+  .sports-chrono { margin-inline: 14px; }
+  .one-rm-presets { margin-inline: 14px; }
+}

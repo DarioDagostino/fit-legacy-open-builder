@@ -2,3 +2,100 @@
 @import './tailwind.css';
 @import './theme.css';
 @import './builder-boot.css';
+@import './tools.css';
+@import './tools-recovered.css';
+/* The source stylesheet is mirrored into the monorepo; keep the entry point
+   intentionally minimal so both Builder runtimes share the same contract. */
+/* Fit Legacy illustration icon system */
+.ui-icon {
+  display: block;
+  flex: 0 0 auto;
+  max-width: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.builder-personal-select {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(241, 240, 244, 0.08);
+  border-radius: 14px;
+  background: #111111;
+  color: #f1f0f4;
+  padding: 0 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  outline: none;
+}
+
+.builder-personal-select:focus-visible {
+  border-color: var(--builder-accent-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--builder-accent) 18%, transparent);
+}
+
+/* iOS Safari auto-zooms focused controls below 16px — keep mobile readable. */
+@media (max-width: 640px) {
+  .builder-personal-select {
+    font-size: 16px;
+    letter-spacing: 0.04em;
+  }
+}
+
+.builder-personal-frequency {
+  min-height: 48px;
+  border: 1px solid rgba(241, 240, 244, 0.08);
+  border-radius: 14px;
+  background: #111111;
+  color: #6e6558;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 900;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.builder-personal-frequency:hover,
+.builder-personal-frequency:focus-visible {
+  border-color: rgba(241, 240, 244, 0.18);
+  color: #f1f0f4;
+}
+
+.builder-personal-frequency.is-active {
+  border-color: color-mix(in srgb, var(--builder-accent) 46%, transparent);
+  background: color-mix(in srgb, var(--builder-accent) 14%, #111111);
+  color: var(--builder-accent-soft);
+  transform: translateY(-1px);
+}
+
+.builder-training-set {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(241, 240, 244, 0.1);
+  border-radius: 13px;
+  background: #111111;
+  color: #9ca0a6;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 900;
+  transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.builder-training-set:hover,
+.builder-training-set:focus-visible {
+  border-color: rgba(241, 240, 244, 0.22);
+  color: #f1f0f4;
+  transform: translateY(-1px);
+}
+
+.builder-training-set.is-complete {
+  border-color: color-mix(in srgb, var(--builder-accent) 54%, transparent);
+  background: var(--builder-accent);
+  color: #080808;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--builder-accent) 20%, transparent);
+}

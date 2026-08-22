@@ -1,6 +1,9 @@
 import { AppLoadingScreen } from './AppLoadingScreen';
 import cyanLogo from '@/assets/legacy-logo/cyan.svg';
 
+// Use the bundled cyan mark so the boot screen is independent of the
+// optional public /logo folder.
+
 interface LoadingScreenProps {
   onFinished: () => void;
 }

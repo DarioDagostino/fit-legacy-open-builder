@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { assetUrl, localAssetUrl, ASSET_BASE_URL } from '../../lib/cdn';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FoodIconRenderer as FoodIcon } from '../workout/FoodIconRenderer';
+import { UiIcon } from '../UiIcon';
 
 export interface CanvasExercise {
   name: string;
@@ -36,14 +38,14 @@ const ICON_MAP: Record<string, string> = {
   calisthenics: 'icono_calistenia.svg',
 };
 
-const ExerciseIcon = ({ section, className = 'h-4 w-4' }: { section?: string; className?: string }) => {
+const ExerciseIcon = ({ section, className = 'h-5 w-5' }: { section?: string; className?: string }) => {
   const normalizedSection = (section || '').toLowerCase().trim();
   const iconFile = ICON_MAP[normalizedSection] || 'icono_personalizado.svg';
 
   return (
     <img
-      src={`/assets/icons/workouts/${iconFile}`}
-      className={`${className} object-contain`}
+      src={`${ASSET_BASE_URL}/assets/icons/workouts/${iconFile}`}
+      className={`${className} object-contain shrink-0`}
       alt={section || 'exercise'}
     />
   );
@@ -79,68 +81,68 @@ type CanvasTheme = {
 
 const THEMES: Record<string, CanvasTheme> = {
   ember: {
-    background: '#0c0c0e',
-    surface: '#F1F0F4',
+    background: '#080808',
+    surface: '#111114',
     mutedSurface: '#18181c',
-    border: 'rgba(245,235,255,0.10)',
-    text: '#0a0a0c',
+    border: 'rgba(255,255,255,0.07)',
+    text: '#F1F0F4',
     onSurface: '#F1F0F4',
-    mutedText: '#6E6558',
+    mutedText: '#7E7A75',
     subtle: '#9CA0A6',
-    accent: '#C85A1C',
-    accentSoft: 'rgba(200,90,28,0.15)',
-    noteBg: 'rgba(10,10,12,0.06)',
-    trackBg: 'rgba(245,235,255,0.06)',
-    glowFrom: 'rgba(200,90,28,0.08)',
-    glowTo: 'rgba(138,47,20,0.12)',
+    accent: '#E0793C',
+    accentSoft: 'rgba(224,121,60,0.12)',
+    noteBg: 'rgba(255,255,255,0.03)',
+    trackBg: 'rgba(255,255,255,0.06)',
+    glowFrom: 'rgba(224,121,60,0.09)',
+    glowTo: 'rgba(244,114,182,0.09)',
   },
   onyx: {
-    background: '#0A0A0A',
-    surface: '#1A1A1A',
-    mutedSurface: '#222222',
+    background: '#09090b',
+    surface: '#141417',
+    mutedSurface: '#1e1e24',
     border: 'rgba(255,255,255,0.08)',
-    text: '#F0F0F0',
-    onSurface: '#F0F0F0',
+    text: '#F1F0F4',
+    onSurface: '#F1F0F4',
     mutedText: '#888888',
-    subtle: '#6E6E6E',
-    accent: '#7DF4FF',
-    accentSoft: 'rgba(125,244,255,0.10)',
-    noteBg: 'rgba(255,255,255,0.05)',
+    subtle: '#9CA0A6',
+    accent: '#F472B6',
+    accentSoft: 'rgba(244,114,182,0.12)',
+    noteBg: 'rgba(255,255,255,0.04)',
     trackBg: 'rgba(255,255,255,0.06)',
-    glowFrom: 'rgba(125,244,255,0.05)',
-    glowTo: 'rgba(0,180,200,0.08)',
+    glowFrom: 'rgba(244,114,182,0.08)',
+    glowTo: 'rgba(224,121,60,0.08)',
   },
   midnight: {
-    background: '#0C1425',
-    surface: '#1A2744',
-    mutedSurface: '#243152',
+    background: '#0a0d14',
+    surface: '#121824',
+    mutedSurface: '#192234',
     border: 'rgba(255,255,255,0.06)',
     text: '#DEE6F0',
     onSurface: '#DEE6F0',
-    mutedText: '#8899B4',
-    subtle: '#6A7A95',
-    accent: '#D4AF37',
-    accentSoft: 'rgba(212,175,55,0.12)',
+    mutedText: '#7A8B9E',
+    subtle: '#95A5B8',
+    accent: '#F5C45E',
+    accentSoft: 'rgba(245,196,94,0.12)',
     noteBg: 'rgba(255,255,255,0.04)',
     trackBg: 'rgba(255,255,255,0.06)',
-    glowFrom: 'rgba(212,175,55,0.06)',
-    glowTo: 'rgba(100,80,20,0.10)',
+    glowFrom: 'rgba(245,196,94,0.07)',
+    glowTo: 'rgba(224,121,60,0.09)',
   },
   bloom: {
-    background: '#FDFBF7',
-    surface: '#FFFFFF',
-    mutedSurface: '#F5EDE0',
-    border: 'rgba(10,10,12,0.12)',
-    text: '#2A2520',
-    onSurface: '#2A2520',
-    mutedText: '#7A7163',
-    subtle: '#A69A8A',
-    accent: '#D65A4E',
-    accentSoft: 'rgba(214,90,78,0.08)',
-    noteBg: 'rgba(10,10,12,0.04)',
-    trackBg: 'rgba(10,10,12,0.08)',
-    glowFrom: 'rgba(214,90,78,0.04)',
-    glowTo: 'rgba(180,70,60,0.06)',
+    background: '#0e0b0e',
+    surface: '#181218',
+    mutedSurface: '#241a24',
+    border: 'rgba(255,255,255,0.07)',
+    text: '#F5EDF5',
+    onSurface: '#F5EDF5',
+    mutedText: '#9A829A',
+    subtle: '#B8A4B8',
+    accent: '#FB7185',
+    accentSoft: 'rgba(251,113,133,0.14)',
+    noteBg: 'rgba(255,255,255,0.04)',
+    trackBg: 'rgba(255,255,255,0.06)',
+    glowFrom: 'rgba(251,113,133,0.08)',
+    glowTo: 'rgba(224,121,60,0.08)',
   },
 };
 
@@ -150,12 +152,33 @@ function getTheme(palette?: string): CanvasTheme {
 
 const formatDisplayTitle = (value: string) => {
   const trimmed = value.trim();
-  if (!trimmed) return 'Untitled routine';
+  if (!trimmed) return 'Rutina Interactiva';
   if (trimmed === trimmed.toUpperCase()) {
     return trimmed.toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
   return trimmed;
 };
+
+// Subtle Web Audio synthesizer for tactile haptic feedback
+function playHapticTick(freq = 600, duration = 0.04) {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch {
+    // Ignore audio errors
+  }
+}
 
 export function WirCanvasPreview({
   template,
@@ -163,11 +186,78 @@ export function WirCanvasPreview({
   title,
   exercises,
   foods,
-  checkedItems = new Set(),
-  onToggleItem = () => {},
+  checkedItems: externalCheckedItems,
+  onToggleItem: externalOnToggleItem,
   isPreview = false,
 }: WirCanvasPreviewProps) {
   const theme = getTheme(palette);
+
+  // Internal state for interactive preview
+  const [internalChecked, setInternalChecked] = useState<Set<string>>(new Set());
+  const [completedSetsMap, setCompletedSetsMap] = useState<Record<string, number>>({});
+  const [filterMode, setFilterMode] = useState<'all' | 'pending' | 'done'>('all');
+
+  // Rest Timer State
+  const [restSeconds, setRestSeconds] = useState<number | null>(null);
+  const [restRunning, setRestRunning] = useState(false);
+
+  const checkedItems = externalCheckedItems || internalChecked;
+
+  const handleToggle = useCallback((id: string) => {
+    playHapticTick(750, 0.05);
+    if (externalOnToggleItem) {
+      externalOnToggleItem(id);
+    }
+    setInternalChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, [externalOnToggleItem]);
+
+  const handleSetToggle = useCallback((exIdx: number, targetSets: number) => {
+    playHapticTick(820, 0.04);
+    const key = `ex_${exIdx}`;
+    setCompletedSetsMap((prev) => {
+      const current = prev[key] || 0;
+      const nextCount = current >= targetSets ? 0 : current + 1;
+      const updated = { ...prev, [key]: nextCount };
+
+      if (nextCount >= targetSets) {
+        handleToggle(key);
+      } else if (checkedItems.has(key)) {
+        handleToggle(key);
+      }
+      return updated;
+    });
+  }, [handleToggle, checkedItems]);
+
+  // Rest Timer Tick
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (restRunning && restSeconds !== null && restSeconds > 0) {
+      interval = setInterval(() => {
+        setRestSeconds((s) => (s && s > 1 ? s - 1 : 0));
+      }, 1000);
+    } else if (restSeconds === 0 && restRunning) {
+      setRestRunning(false);
+      playHapticTick(900, 0.2);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [restRunning, restSeconds]);
+
+  const startRestTimer = (seconds: number) => {
+    setRestSeconds(seconds);
+    setRestRunning(true);
+    playHapticTick(650, 0.08);
+  };
+
   const totalMacros = useMemo(() => {
     return foods.reduce((acc, food) => ({
       calories: acc.calories + (Number(food.calories) || 0),
@@ -175,96 +265,150 @@ export function WirCanvasPreview({
     }), { calories: 0, protein: 0 });
   }, [foods]);
 
+  const totalVolume = useMemo(() => {
+    return exercises.reduce((acc, ex) => {
+      const sets = Number(ex.sets) || 0;
+      const reps = Number(ex.reps) || 0;
+      const weight = Number(ex.weight) || 1;
+      return acc + sets * reps * weight;
+    }, 0);
+  }, [exercises]);
+
   const totalItems = exercises.length + foods.length;
   const progress = totalItems === 0 ? 0 : Math.round((checkedItems.size / totalItems) * 100);
   const totalSets = exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 0), 0);
 
   const checkedExercises = exercises.filter((_, i) => checkedItems.has(`ex_${i}`)).length;
   const checkedFoods = foods.filter((_, i) => checkedItems.has(`food_${i}`)).length;
-  const exProgress = exercises.length === 0 ? 0 : Math.round((checkedExercises / exercises.length) * 100);
-  const foodProgress = foods.length === 0 ? 0 : Math.round((checkedFoods / foods.length) * 100);
   const displayTitle = formatDisplayTitle(title);
   const templateLabel = template === 'meal' ? 'Comida' : template === 'mixed' ? 'Mixto' : 'Rutina';
   const hasExercises = exercises.length > 0;
   const hasFoods = foods.length > 0;
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 6 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: { delay: 0.04 + i * 0.03, duration: 0.18 },
-    }),
-  };
+  const isAllComplete = totalItems > 0 && checkedItems.size === totalItems;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="w-full overflow-hidden rounded-[2rem] border shadow-[0_26px_70px_-46px_rgba(0,0,0,0.7)]"
+      className="w-full overflow-hidden rounded-[2rem] border shadow-[0_26px_70px_-46px_rgba(0,0,0,0.8)]"
       style={{ background: theme.background, borderColor: theme.border }}
     >
-      <div className="border-b px-5 py-4" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
+      {/* ─── Header ─── */}
+      <div className="border-b px-5 py-3.5" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl" style={{ background: theme.background }}>
-              <img src="/cyan.svg" alt="Fit Legacy Builder" className="h-full w-full object-cover opacity-80" />
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg" style={{ background: theme.background }}>
+              <img src={localAssetUrl('/cyan.svg')} alt="Fit Legacy" className="h-full w-full object-cover opacity-90" />
             </div>
             <div className="min-w-0">
               <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide" style={{ color: theme.onSurface }}>Fit Legacy</p>
               <div className="flex items-center gap-1.5">
-                <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: `${theme.accent}` }}
+                <motion.span className="h-1.5 w-1.5 rounded-full" style={{ background: theme.accent }}
                   animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} />
-                <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium" style={{ color: theme.subtle }}>Routine link</span>
+                <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-bold uppercase tracking-wider" style={{ color: theme.accent }}>Checklist Interactivo</span>
               </div>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-wider" style={{ background: theme.accentSoft, color: theme.accent, fontFamily: "'IBM Plex Mono', monospace" }}>
-            {templateLabel}
+          <div className="flex items-center gap-2">
+            <span className="flex shrink-0 items-center rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wider" style={{ background: theme.accentSoft, color: theme.accent, fontFamily: "'IBM Plex Mono', monospace" }}>
+              {templateLabel}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="relative px-5 py-6" style={{ background: theme.background }}>
+      {/* ─── Main Content ─── */}
+      <div className="relative px-5 py-5" style={{ background: theme.background }}>
         <div className="absolute inset-0 pointer-events-none"
           style={{
             background: `radial-gradient(55% 30% at 85% 0%, ${theme.glowFrom}, transparent 60%), radial-gradient(40% 25% at 15% 100%, ${theme.glowTo}, transparent 60%)`
           }}
         />
 
-        <div className="relative space-y-6">
-          <div className="space-y-2">
-            <h1 className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-extrabold italic uppercase leading-tight tracking-tight" style={{ color: theme.onSurface }}>
+        <div className="relative space-y-5">
+          {/* Title & Live Status */}
+          <div className="space-y-1">
+            <h1 className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black uppercase leading-tight tracking-tight" style={{ color: theme.onSurface }}>
               {displayTitle}
             </h1>
-            <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-relaxed" style={{ color: theme.subtle }}>
-              Checklist para completar desde el navegador, sin instalar otra app.
+            <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium leading-relaxed" style={{ color: theme.subtle }}>
+              Tocá cada ejercicio o serie para marcar tu progreso en vivo.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {template === 'meal' ? (
-              <>
-                <StatCard label="Calorias" value={Math.round(totalMacros.calories)} unit="kcal" theme={theme} />
-                <StatCard label="Proteina" value={Math.round(totalMacros.protein)} unit="g" theme={theme} />
-              </>
-            ) : template === 'mixed' ? (
-              <>
-                <StatCard label="Ejercicios" value={exercises.length} unit="items" theme={theme} />
-                <StatCard label="Comidas" value={foods.length} unit="items" theme={theme} />
-              </>
-            ) : (
-              <>
-                <StatCard label="Ejercicios" value={exercises.length} unit="items" theme={theme} />
-                <StatCard label="Series" value={totalSets} unit="total" theme={theme} />
-              </>
-            )}
+          {/* ─── Interactive Rest Timer Bar ─── */}
+          <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-2 px-3">
+            <div className="flex items-center gap-2">
+              <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-bold uppercase tracking-wider text-[#7E7A75]">
+                ⏱️ DESCANSO:
+              </span>
+              <span className="font-['Big_Shoulders_Display',sans-serif] text-lg font-black tabular-nums text-white">
+                {restSeconds !== null ? `${Math.floor(restSeconds / 60)}:${String(restSeconds % 60).padStart(2, '0')}` : '00:00'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => startRestTimer(60)}
+                className="fl-cut-sm px-2.5 py-1 text-[9px] font-bold uppercase hover:text-white"
+              >
+                60s
+              </button>
+              <button
+                type="button"
+                onClick={() => startRestTimer(90)}
+                className="fl-cut-sm px-2.5 py-1 text-[9px] font-bold uppercase hover:text-white"
+              >
+                90s
+              </button>
+              {restRunning && (
+                <button
+                  type="button"
+                  onClick={() => { setRestRunning(false); setRestSeconds(null); }}
+                  className="fl-cut-sm px-2 py-1 text-[9px] text-rose-400"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
+          {/* ─── Interactive KPIs Row ─── */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="rounded-xl border p-2.5" style={{ background: theme.surface, borderColor: theme.border }}>
+              <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase text-[#7E7A75]">Ejercicios</span>
+              <div className="mt-0.5 flex items-baseline gap-1 font-['Big_Shoulders_Display',sans-serif] text-2xl font-black text-white">
+                {checkedExercises}<span className="text-xs text-white/40">/{exercises.length}</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border p-2.5" style={{ background: theme.surface, borderColor: theme.border }}>
+              <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase text-[#7E7A75]">Volumen</span>
+              <div className="mt-0.5 flex items-baseline gap-1 font-['Big_Shoulders_Display',sans-serif] text-2xl font-black text-white">
+                {totalVolume > 0 ? totalVolume.toLocaleString() : '—'}<span className="text-xs text-white/40">kg</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border p-2.5" style={{ background: theme.surface, borderColor: theme.border }}>
+              <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase text-[#7E7A75]">Comidas</span>
+              <div className="mt-0.5 flex items-baseline gap-1 font-['Big_Shoulders_Display',sans-serif] text-2xl font-black text-white">
+                {checkedFoods}<span className="text-xs text-white/40">/{foods.length}</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border p-2.5" style={{ background: theme.surface, borderColor: theme.border }}>
+              <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase text-[#7E7A75]">Proteína</span>
+              <div className="mt-0.5 flex items-baseline gap-1 font-['Big_Shoulders_Display',sans-serif] text-2xl font-black text-[#FB7185]">
+                {Math.round(totalMacros.protein)}<span className="text-xs text-white/40">g</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Interactive Dynamic Progress Ring & Filter Pills ─── */}
           {totalItems > 0 && (
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-3 pt-1">
               <ProgressRing
                 progress={progress}
                 total={totalItems}
@@ -272,272 +416,279 @@ export function WirCanvasPreview({
                 accent={theme.accent}
                 theme={theme}
               />
-              {(hasExercises && hasFoods) && (
-                <div className="flex items-center gap-4">
-                  {hasExercises && (
-                    <MiniRing progress={exProgress} done={checkedExercises} total={exercises.length} label="Eje" accent={theme.accent} theme={theme} />
-                  )}
-                  {hasFoods && (
-                    <MiniRing progress={foodProgress} done={checkedFoods} total={foods.length} label="Com" accent={theme.accent} theme={theme} />
-                  )}
-                </div>
-              )}
+
+              {/* Completion Banner */}
+              <AnimatePresence>
+                {isAllComplete && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-4 py-1.5 text-xs font-black uppercase text-emerald-400 font-mono"
+                  >
+                    <span>✓ ¡RUTINA COMPLETADA AL 100%!</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setFilterMode('all')}
+                  className={`fl-cut-sm px-3 py-1 text-[9px] ${filterMode === 'all' ? 'fl-cut-sm--active !border-[#E0793C]' : ''}`}
+                >
+                  TODOS ({totalItems})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterMode('pending')}
+                  className={`fl-cut-sm px-3 py-1 text-[9px] ${filterMode === 'pending' ? 'fl-cut-sm--active !border-[#E0793C]' : ''}`}
+                >
+                  PENDIENTES ({totalItems - checkedItems.size})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterMode('done')}
+                  className={`fl-cut-sm px-3 py-1 text-[9px] ${filterMode === 'done' ? 'fl-cut-sm--active !border-[#10B981] !text-emerald-400' : ''}`}
+                >
+                  COMPLETADOS ({checkedItems.size})
+                </button>
+              </div>
             </div>
           )}
 
-          <div className="space-y-5">
-            {template === 'mixed' ? (
-              <>
-                {hasExercises && (
-                  <ListSection title="Entrenamiento" items={exercises} type="ex" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} theme={theme} />
-                )}
-                {hasFoods && (
-                  <ListSection title="Comidas" items={foods} type="food" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} theme={theme} />
-                )}
-              </>
-            ) : (
-              <>
-                {hasExercises && (
-                  <ListSection title="Ejercicios" items={exercises} type="ex" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} theme={theme} />
-                )}
-                {hasFoods && (
-                  <ListSection title="Comidas" items={foods} type="food" checkedItems={checkedItems} onToggle={onToggleItem} variants={itemVariants} theme={theme} />
-                )}
-              </>
+          {/* ─── Interactive Items List ─── */}
+          <div className="space-y-4 pt-1">
+            {hasExercises && (
+              <InteractiveSection
+                title="Entrenamiento & Series"
+                items={exercises}
+                type="ex"
+                checkedItems={checkedItems}
+                completedSetsMap={completedSetsMap}
+                filterMode={filterMode}
+                onToggle={handleToggle}
+                onSetToggle={handleSetToggle}
+                theme={theme}
+              />
+            )}
+
+            {hasFoods && (
+              <InteractiveSection
+                title="Comidas & Nutrición"
+                items={foods}
+                type="food"
+                checkedItems={checkedItems}
+                completedSetsMap={completedSetsMap}
+                filterMode={filterMode}
+                onToggle={handleToggle}
+                onSetToggle={handleSetToggle}
+                theme={theme}
+              />
             )}
           </div>
         </div>
       </div>
 
-      {!isPreview && (
-        <div className="border-t px-5 py-4 text-center" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
-          <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium" style={{ color: theme.subtle }}>
-            Marca cada item como hecho y volve al link cuando lo necesites.
-          </p>
-        </div>
-      )}
+      {/* ─── Footer Action ─── */}
+      <div className="border-t px-5 py-3 text-center" style={{ borderColor: theme.border, background: theme.mutedSurface }}>
+        <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-bold text-[#7E7A75]">
+          Tu progreso se guarda automáticamente en el navegador.
+        </p>
+      </div>
     </motion.div>
   );
 }
 
-function StatCard({ label, value, unit, theme }: { label: string; value: string | number; unit: string; theme: CanvasTheme }) {
-  return (
-    <div className="rounded-[1.35rem] p-3" style={{ background: theme.surface, border: `1px solid ${theme.border}` }}>
-      <div className="mb-1">
-        <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-wide" style={{ color: theme.mutedText }}>{label}</span>
-      </div>
-      <div className="flex items-baseline gap-1">
-        <span className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-bold leading-none" style={{ color: theme.text }}>{value}</span>
-        <span className="font-['IBM_Plex_Mono',monospace] text-xs font-medium" style={{ color: theme.mutedText }}>{unit}</span>
-      </div>
-    </div>
-  );
-}
-
 function ProgressRing({ progress, total, done, accent, theme }: { progress: number; total: number; done: number; accent: string; theme: CanvasTheme }) {
-  const radius = 44;
+  const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress / 100);
   const isComplete = progress >= 100;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.85 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col items-center gap-3"
-    >
-      <div className="relative">
-        <svg width="120" height="120" className="-rotate-90">
-          <circle cx="60" cy="60" r={radius} fill="none" stroke={theme.trackBg} strokeWidth="6" />
-          <motion.circle
-            cx="60" cy="60" r={radius}
-            fill="none"
-            stroke={accent}
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            style={{ filter: `drop-shadow(0 0 8px ${accent}55)` }}
-          />
-          {isComplete && (
-            <motion.circle
-              cx="60" cy="60" r={radius + 5}
-              fill="none"
-              stroke={accent}
-              strokeWidth="2"
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: [0, 0.4, 0], scale: [0.92, 1.08, 1] }}
-              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-            />
-          )}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <motion.span
-            key={Math.round(progress)}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold leading-none tracking-tight"
-            style={{ color: isComplete ? accent : theme.onSurface }}
-          >
-            {Math.round(progress)}%
-          </motion.span>
-          <span className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium mt-0.5" style={{ color: theme.subtle }}>
-            {done}/{total} items
-          </span>
-        </div>
+    <div className="relative flex flex-col items-center justify-center">
+      <svg width="108" height="108" className="-rotate-90">
+        <circle cx="54" cy="54" r={radius} fill="none" stroke={theme.trackBg} strokeWidth="6" />
+        <motion.circle
+          cx="54" cy="54" r={radius}
+          fill="none"
+          stroke={isComplete ? '#10B981' : accent}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          style={{ filter: `drop-shadow(0 0 8px ${isComplete ? '#10B981' : accent}55)` }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span
+          className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black leading-none tracking-tight tabular-nums"
+          style={{ color: isComplete ? '#10B981' : theme.onSurface }}
+        >
+          {Math.round(progress)}%
+        </span>
+        <span className="font-['IBM_Plex_Mono',monospace] text-[9px] font-bold text-[#7E7A75] mt-0.5">
+          {done}/{total} items
+        </span>
       </div>
-    </motion.div>
-  );
-}
-
-function MiniRing({ progress, done, total, label, accent, theme }: { progress: number; done: number; total: number; label: string; accent: string; theme: CanvasTheme }) {
-  const radius = 18;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - progress / 100);
-
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative w-10 h-10">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
-          <circle cx="22" cy="22" r={radius} fill="none" stroke={theme.trackBg} strokeWidth="4" />
-          <motion.circle
-            cx="22" cy="22" r={radius}
-            fill="none"
-            stroke={accent}
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            style={{ filter: `drop-shadow(0 0 4px ${accent}44)` }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-['Big_Shoulders_Display',sans-serif] text-[9px] font-extrabold leading-none" style={{ color: progress >= 100 ? accent : theme.onSurface }}>{Math.round(progress)}%</span>
-        </div>
-      </div>
-      <span className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium uppercase tracking-wider" style={{ color: theme.mutedText }}>{done}/{total} {label}</span>
     </div>
   );
 }
 
-interface ListSectionProps {
+interface InteractiveSectionProps {
   title: string;
   items: Array<CanvasExercise | CanvasFood>;
   type: 'ex' | 'food';
   checkedItems: Set<string>;
+  completedSetsMap: Record<string, number>;
+  filterMode: 'all' | 'pending' | 'done';
   onToggle: (id: string) => void;
-  variants: any;
+  onSetToggle: (exIdx: number, totalSets: number) => void;
   theme: CanvasTheme;
 }
 
-function ListSection({ title, items, type, checkedItems, onToggle, variants, theme }: ListSectionProps) {
-  if (items.length === 0) {
-    return null;
-  }
+function InteractiveSection({
+  title,
+  items,
+  type,
+  checkedItems,
+  completedSetsMap,
+  filterMode,
+  onToggle,
+  onSetToggle,
+  theme,
+}: InteractiveSectionProps) {
+  const filtered = items.map((item, idx) => ({ item, idx })).filter(({ idx }) => {
+    const isDone = checkedItems.has(`${type}_${idx}`);
+    if (filterMode === 'pending') return !isDone;
+    if (filterMode === 'done') return isDone;
+    return true;
+  });
+
+  if (filtered.length === 0) return null;
 
   return (
-    <section className="space-y-3">
-      <h2 className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-[0.12em]" style={{ color: theme.subtle }}>{title}</h2>
+    <section className="space-y-2.5">
+      <h2 className="font-['IBM_Plex_Mono',monospace] text-[9px] font-black uppercase tracking-[0.16em] text-[#7E7A75]">
+        {title} ({filtered.length})
+      </h2>
 
       <div className="space-y-2">
-        {items.map((item, idx) => {
+        {filtered.map(({ item, idx }) => {
           const itemId = `${type}_${idx}`;
           const isDone = checkedItems.has(itemId);
+          const isExercise = type === 'ex';
+          const ex = item as CanvasExercise;
+          const food = item as CanvasFood;
+          const currentSets = completedSetsMap[itemId] || (isDone ? ex.sets : 0);
 
           return (
             <motion.div
               layout
               key={itemId}
-              custom={idx}
-              variants={variants}
-              initial="hidden"
-              animate="visible"
-              onClick={() => onToggle(itemId)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onToggle(itemId);
-                }
-              }}
-              tabIndex={0}
-              role="checkbox"
-              aria-checked={isDone}
-              transition={{ layout: { type: 'spring', stiffness: 400, damping: 28 } }}
-              whileTap={{ scale: 0.97 }}
-              className="cursor-pointer rounded-[1.35rem] p-3 outline-none transition-all hover:-translate-y-0.5 active:scale-[0.99] focus-visible:ring-2"
-              style={{
-                background: isDone ? `${theme.accentSoft}` : theme.surface,
-                border: isDone ? `1px solid ${theme.accent}44` : `1px solid ${theme.border}`,
-                outlineColor: `${theme.accent}66`,
-              }}
+              whileTap={{ scale: 0.985 }}
+              className={`relative overflow-hidden rounded-xl border p-3.5 transition-all ${
+                isDone
+                  ? 'border-emerald-500/30 bg-emerald-500/[0.04]'
+                  : 'border-white/[0.06] bg-[#0c0c0e]/80 hover:border-white/15'
+              }`}
             >
-              <div className="flex items-start gap-3">
-                <div
-                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 transition-all"
-                  style={{
-                    borderColor: isDone ? theme.accent : theme.mutedText,
-                    background: isDone ? theme.accent : 'transparent',
-                  }}
-                >
-                  <AnimatePresence>
-                    {isDone && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                        className="text-[11px] font-black leading-none text-white"
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  {/* Checkbox Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => onToggle(itemId)}
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border transition-all ${
+                      isDone
+                        ? 'border-emerald-400 bg-emerald-500 text-black font-black text-xs'
+                        : 'border-white/20 hover:border-white/40'
+                    }`}
+                  >
+                    {isDone ? '✓' : ''}
+                  </button>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      {isExercise ? (
+                        <ExerciseIcon section={ex.section} className="h-5 w-5" />
+                      ) : (
+                        <FoodIcon category={food.category} name={food.name} className="h-5 w-5" />
+                      )}
+                      <h3
+                        className={`truncate font-['Big_Shoulders_Display',sans-serif] text-base font-bold uppercase ${
+                          isDone ? 'text-white/40 line-through' : 'text-white'
+                        }`}
                       >
-                        ✓
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    {type === 'food' ? (
-                      <FoodIcon category={(item as CanvasFood).category} name={item.name} />
-                    ) : (
-                      <ExerciseIcon section={(item as CanvasExercise).section} />
-                    )}
-                    <p className={`truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-tight ${isDone ? 'line-through' : ''}`}
-                      style={{ color: isDone ? theme.mutedText : theme.text }}>
-                      {item.name}
-                    </p>
-                  </div>
-
-                  <div className="mt-1 flex flex-wrap gap-1.5 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium" style={{ color: theme.mutedText }}>
-                    {type === 'ex' ? (
-                      <>
-                        <span>{(item as CanvasExercise).sets} sets</span>
-                        <span>{(item as CanvasExercise).reps} reps</span>
-                        {(item as CanvasExercise).weight > 0 && <span>{(item as CanvasExercise).weight} kg</span>}
-                      </>
-                    ) : (
-                      <>
-                        <span>{(item as CanvasFood).quantity} g</span>
-                        <span>{(item as CanvasFood).calories} kcal</span>
-                        <span>{(item as CanvasFood).protein} g protein</span>
-                      </>
-                    )}
-                  </div>
-
-                  {item.notes && (
-                    <div className="mt-2 flex items-start gap-2 rounded-2xl px-3 py-2 text-xs font-medium leading-relaxed"
-                      style={{ background: theme.noteBg, color: theme.mutedText }}>
-                      <span className="mt-0.5 shrink-0 opacity-50">✎</span>
-                      <p>{item.notes}</p>
+                        {item.name}
+                      </h3>
                     </div>
-                  )}
+
+                    {/* Metadata */}
+                    <div className="mt-1 flex flex-wrap gap-2 font-['IBM_Plex_Mono',monospace] text-[10px] font-bold text-white/50">
+                      {isExercise ? (
+                        <>
+                          <span className="text-[var(--builder-accent-soft)]">{ex.sets} series</span>
+                          <span>·</span>
+                          <span>{ex.reps} reps</span>
+                          {ex.weight > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="text-white/80">{ex.weight} kg</span>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[#E0793C]">{food.quantity || 100}g</span>
+                          <span>·</span>
+                          <span>{food.calories} kcal</span>
+                          <span>·</span>
+                          <span className="text-[#FB7185]">{food.protein}g prot</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Exercise Interactive Set-by-Set Pills */}
+                    {isExercise && ex.sets > 1 && (
+                      <div className="mt-2.5 flex items-center gap-1.5 pt-1 border-t border-white/[0.04]">
+                        <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase text-[#7E7A75] mr-1">
+                          SERIES:
+                        </span>
+                        {Array.from({ length: ex.sets }).map((_, setIndex) => {
+                          const setDone = currentSets > setIndex;
+                          return (
+                            <button
+                              key={setIndex}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSetToggleClick(setIndex + 1);
+                              }}
+                              className={`flex h-6 min-w-[24px] px-1.5 items-center justify-center rounded-md text-[9px] font-mono font-bold transition-all ${
+                                setDone
+                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                                  : 'bg-white/[0.04] text-white/40 border border-white/[0.06] hover:bg-white/[0.08] hover:text-white'
+                              }`}
+                            >
+                              {setDone ? `✓ S${setIndex + 1}` : `S${setIndex + 1}`}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
           );
+
+          function handleSetToggleClick(targetCount: number) {
+            onSetToggle(idx, ex.sets);
+          }
         })}
       </div>
     </section>

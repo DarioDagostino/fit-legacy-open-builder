@@ -1,33 +1,22 @@
 import { lazy, Suspense, useState, useMemo, useEffect, useCallback, useRef, type ComponentType } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { localAssetUrl } from '../../lib/cdn';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import {
   Search,
-  Dumbbell,
-  Trash2,
   Plus,
-  Share2,
-  Copy,
-  Image as ImageIcon,
   Minus,
-  Apple,
-  Palette,
-  X,
   Ghost,
-  MessageCircle,
-  Check,
-  CalendarDays,
-  SlidersHorizontal,
-  Pencil,
-  Settings2,
-  UserRound,
+  ArrowRight,
 } from 'lucide-react';
-import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS, type LegacitoSkin } from '@fit-legacy/shared';
+import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS, FIT_LEGACY_SOCIAL_LINKS, resolveFitLegacyAppUrls, type LegacitoSkin, Legacito } from '@fit-legacy/shared';
 import { DynamicLogoIcon } from '../DynamicLogoIcon';
 import { SabiasQueBanner } from './SabiasQueBanner';
 import { StreakGuard } from './StreakGuard';
 import { NotificationBell } from './NotificationBell';
-import { useWorkoutStore } from '../../lib/store';
+import { PlanDecisionPanel } from './PlanDecisionPanel';
+import { PlanWeeksPanel } from './PlanWeeksPanel';
+import { useWorkoutStore, type FoodItem, type MealComposition, type SelectedExercise } from '../../lib/store';
 import { createPersistentWirShare } from '../../lib/share';
 import { loadRoutineAnalyticsStats } from '../../lib/routineAnalytics';
 import { toast } from 'sonner';
@@ -37,6 +26,45 @@ import { AiMentorChat, LEGACITO_SKIN_OPTIONS } from '../../app/components/integr
 import { onUserScopeChanged, scopedRawGet, scopedRawSet } from '../../lib/userScope';
 import { reportCanonicalSyncError, syncCalendarActionsToSupabase, syncCalendarEntryToSupabase, syncRoutineToSupabase } from '../../lib/canonicalData';
 import { copyTextWithFallback, openWhatsAppShare } from './builderSharing';
+import { toWirUrl } from '../../lib/wir';
+import { LegacitoUiIcon, UiIcon } from '../UiIcon';
+import { PersonalHomePanel } from './PersonalHomePanel';
+import { PersonalTrainingPanel } from './PersonalTrainingPanel';
+import { OneRmCalculator } from './OneRmCalculator';
+import { RestTimer } from './RestTimer';
+import { SportsChronograph } from './SportsChronograph';
+import { WeeklyCoachSummaryPanel } from './WeeklyCoachSummaryPanel';
+import { builderPathForTab, resolveBuilderRoute, type BuilderRouteTab } from '../../lib/builderRoutes';
+
+const APP_URLS = resolveFitLegacyAppUrls(import.meta.env);
+const LEGAL_URLS = {
+  privacy: 'https://fitlegacy.app/privacy#privacy',
+  terms: 'https://fitlegacy.app/terms#terms',
+  cookies: 'https://fitlegacy.app/privacy#cookies',
+} as const;
+// Analytics owns longitudinal insights and Legacito. Keep these destinations
+// explicit so Builder never presents a second, divergent copy of those screens.
+const analyticsHandoffUrl = (path: string) => {
+  const returnTo = typeof window === 'undefined' ? '/dashboard' : window.location.pathname;
+  return `${APP_URLS.analytics}${path}?from=builder&returnTo=${encodeURIComponent(returnTo)}`;
+};
+const ANALYTICS_PROGRESS_URL = analyticsHandoffUrl('/progreso');
+const ANALYTICS_COACH_URL = analyticsHandoffUrl('/legacito');
+
+const PRODUCT_LINKS = [
+  { name: 'Legacy IA', href: APP_URLS.ai },
+  { name: 'Builder', href: APP_URLS.builder },
+  { name: 'The Road', href: APP_URLS.road },
+  { name: 'Planes', href: `${APP_URLS.landing}#pricing` },
+];
+
+const LEGACY_LINKS = [
+  { name: 'Hub', href: APP_URLS.landing },
+  { name: 'Privacidad', href: LEGAL_URLS.privacy },
+  { name: 'Términos', href: LEGAL_URLS.terms },
+  { name: 'Cookies', href: LEGAL_URLS.cookies, isCookies: true },
+  { name: 'Soporte', href: 'mailto:soporte@fitlegacy.app' },
+];
 
 const WirCanvasPreview = lazy(() =>
   import('../wir/WirCanvasPreview').then((module) => ({ default: module.WirCanvasPreview }))
@@ -63,7 +91,7 @@ function loadFoodIconRenderer() {
   return foodIconRendererPromise;
 }
 
-type TabType = 'catalog' | 'food' | 'build' | 'calendar' | 'export';
+type TabType = BuilderRouteTab;
 type BuilderProfile = 'woman' | 'man';
 
 const CUSTOMIZE_KEY = 'catalog-customize-config';
@@ -73,18 +101,18 @@ const LEGACITO_SKIN_KEY = 'fl-builder-legacito-skin-v1';
 
 const BUILDER_PROFILE_ASSETS: Record<BuilderProfile, string[]> = {
   woman: [
-    '/assets_coach_tips/women_orange_energetico/athletic_woman_confident_pose.webp',
-    '/assets_coach_tips/women_orange_energetico/athletic_woman_lunge_pose.webp',
-    '/assets_coach_tips/women_orange_energetico/athletic_woman_protein.webp',
-    '/assets_coach_tips/women_orange_energetico/athletic_woman_squat.webp',
-    '/assets_coach_tips/women_orange_energetico/victory_jump_illustration.webp',
+    localAssetUrl('/assets_coach_tips/women_orange_energetico/athletic_woman_confident_pose.webp'),
+    localAssetUrl('/assets_coach_tips/women_orange_energetico/athletic_woman_lunge_pose.webp'),
+    localAssetUrl('/assets_coach_tips/women_orange_energetico/athletic_woman_protein.webp'),
+    localAssetUrl('/assets_coach_tips/women_orange_energetico/athletic_woman_squat.webp'),
+    localAssetUrl('/assets_coach_tips/women_orange_energetico/victory_jump_illustration.webp'),
   ],
   man: [
-    '/assets_coach_tips/man_orange_energetico/confident_athlete_standing.webp',
-    '/assets_coach_tips/man_orange_energetico/751897927_1376542741270294_1485225782041362540_n.webp',
-    '/assets_coach_tips/man_orange_energetico/athletic_man_protein.webp',
-    '/assets_coach_tips/man_orange_energetico/752514664_1665291831230549_680017816444529485_n.webp',
-    '/assets_coach_tips/man_orange_energetico/dynamic_protein_celebration.webp',
+    localAssetUrl('/assets_coach_tips/man_orange_energetico/confident_athlete_standing.webp'),
+    localAssetUrl('/assets_coach_tips/man_orange_energetico/751897927_1376542741270294_1485225782041362540_n.webp'),
+    localAssetUrl('/assets_coach_tips/man_orange_energetico/athletic_man_protein.webp'),
+    localAssetUrl('/assets_coach_tips/man_orange_energetico/752514664_1665291831230549_680017816444529485_n.webp'),
+    localAssetUrl('/assets_coach_tips/man_orange_energetico/dynamic_protein_celebration.webp'),
   ],
 };
 
@@ -95,8 +123,26 @@ const BUILDER_PROFILE_OPTIONS: Array<{
   image: string;
 }> = [
   { value: 'woman', label: 'Woman', theme: 'Rose signal', image: BUILDER_PROFILE_ASSETS.woman[0] },
-  { value: 'man', label: 'Man', theme: 'Orange signal', image: BUILDER_PROFILE_ASSETS.man[0] },
+  { value: 'man', label: 'Man', theme: 'Golden signal', image: BUILDER_PROFILE_ASSETS.man[0] },
 ];
+
+const BUILDER_ONBOARDING_STEP_VARIANTS = {
+  enter: (direction: number) => ({
+    opacity: 0,
+    x: direction * 20,
+    scale: 0.992,
+  }),
+  center: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    x: direction * -14,
+    scale: 0.996,
+  }),
+};
 const CATALOG_BG_PRESETS = [
   {
     id: 'ember',
@@ -196,11 +242,13 @@ const ExerciseIcon = ({ section, className = "w-10 h-10" }: { section: string, c
   const iconFile = ICON_MAP[section.toLowerCase()] || 'icono_personalizado.svg';
   return (
     <img 
-      src={`/assets/icons/workouts/${iconFile}`} 
+      src={localAssetUrl(`/assets/icons/workouts/${iconFile}`)}
       alt={`Icono de ${section}`} 
       className={`${className} object-cover transition-transform duration-300 group-hover:scale-110`} 
       onError={(e) => {
-        (e.target as HTMLImageElement).src = '/assets/icons/workouts/icono_personalizado.svg';
+        const image = e.currentTarget;
+        const fallback = localAssetUrl('/assets/icons/workouts/icono_personalizado.svg');
+        if (!image.src.endsWith('/assets/icons/workouts/icono_personalizado.svg')) image.src = fallback;
       }}
     />
   );
@@ -223,15 +271,15 @@ const FoodIcon = ({ category, name = '', className = 'w-6 h-6' }: FoodIconProps)
   }, [Renderer]);
 
   if (!Renderer) {
-    return <Apple className={className} aria-hidden="true" />;
+    return <UiIcon name="fuel_protein" variant="rose" className={className} />;
   }
 
   return <Renderer category={category} name={name} className={className} />;
 };
 
 const ExerciseIconTile = ({ section, className = '' }: { section: string; className?: string }) => (
-  <div className={`shrink-0 overflow-hidden ${className}`.trim()}>
-    <ExerciseIcon section={section} className="h-full w-full scale-[1.15]" />
+  <div className={`shrink-0 flex items-center justify-center ${className}`.trim()}>
+    <ExerciseIcon section={section} className="h-full w-full object-contain" />
   </div>
 );
 
@@ -244,8 +292,8 @@ const FoodIconTile = ({
   name?: string;
   className?: string;
 }) => (
-  <div className={`builder-apple-tile flex shrink-0 items-center justify-center overflow-hidden ${className}`.trim()}>
-    <FoodIcon category={category} name={name} className="h-full w-full" />
+  <div className={`flex shrink-0 items-center justify-center ${className}`.trim()}>
+    <FoodIcon category={category} name={name} className="h-full w-full object-contain" />
   </div>
 );
 
@@ -257,41 +305,41 @@ const ONBOARDING_STEPS: Array<{
 }> = [
   {
     title: 'Elige tu señal',
-    body: 'Rose para Woman u Orange para Man. Ambos viven sobre negro mate.',
-    tab: 'catalog',
+    body: 'Elegí la identidad visual que te acompañará durante tu proceso.',
+    tab: 'home',
     icon: 'profile',
   },
   {
-    title: 'Agrega ejercicios',
-    body: 'Busca por grupo muscular, toca el + y arma la base del plan en segundos.',
-    tab: 'catalog',
+    title: 'Calibra tu objetivo',
+    body: 'Definí objetivo, experiencia, frecuencia y equipamiento para personalizar las sugerencias.',
+    tab: 'home',
     icon: 'add',
   },
   {
-    title: 'Suma meals',
-    body: 'Cambia a Meals para combinar comidas, calorias y macros con la rutina.',
-    tab: 'food',
-    icon: 'meals',
-  },
-  {
-    title: 'Ajusta la rutina',
-    body: 'En Routine editas series, reps, peso y notas antes de compartir.',
+    title: 'Construye tu plan',
+    body: 'Agregá ejercicios y ajustá series, repeticiones y carga según tu realidad.',
     tab: 'build',
     icon: 'routine',
   },
   {
-    title: 'Comparte y mide',
-    body: 'Share genera el link .wir y Calendar guarda analytics en tiempo real.',
-    tab: 'export',
+    title: 'Entrena y registra',
+    body: 'Completá cada serie y guardá la sesión para construir evidencia real.',
+    tab: 'train',
+    icon: 'routine',
+  },
+  {
+    title: 'Lee tu contexto con Legacito',
+    body: 'Legacito vive en Analytics: interpreta tu objetivo, plan e historial y explica cada sugerencia antes de que decidas.',
+    tab: 'coach',
     icon: 'share',
   },
 ];
 
 function OnboardingIcon({ type }: { type: 'profile' | 'add' | 'meals' | 'routine' | 'share' }) {
-  if (type === 'profile') return <UserRound className="h-5 w-5" />;
-  if (type === 'meals') return <Apple className="h-5 w-5" />;
-  if (type === 'routine') return <Dumbbell className="h-5 w-5" />;
-  if (type === 'share') return <Share2 className="h-5 w-5" />;
+  if (type === 'profile') return <UiIcon name="datos" className="h-5 w-5" active />;
+  if (type === 'meals') return <UiIcon name="fuel_protein" variant="green" className="h-5 w-5" />;
+  if (type === 'routine') return <UiIcon name="dumbbell" className="h-5 w-5" />;
+  if (type === 'share') return <UiIcon name="tips" className="h-5 w-5" active />;
   return <Plus className="h-5 w-5" />;
 }
 
@@ -311,9 +359,15 @@ export default function MobileFirstBuilder() {
     getShareableLink,
     loadRoutine,
     clearRoutine,
+    saveWorkoutDay,
+    saveMealComposition,
+    mealCompositions,
   } = useWorkoutStore();
 
-  const [activeTab, setActiveTab] = useState<TabType>('catalog');
+  const initialBuilderRoute = typeof window === 'undefined'
+    ? { tab: 'home' as TabType, mode: undefined }
+    : resolveBuilderRoute(window.location.pathname);
+  const [activeTab, setActiveTab] = useState<TabType>(initialBuilderRoute.tab);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
@@ -321,6 +375,17 @@ export default function MobileFirstBuilder() {
   const [customSeries, setCustomSeries] = useState(3);
   const [customReps, setCustomReps] = useState(10);
   const [customWeight, setCustomWeight] = useState(0);
+  const [workoutDraftItems, setWorkoutDraftItems] = useState<SelectedExercise[]>([]);
+  const [workoutDraftDayId, setWorkoutDraftDayId] = useState('day-1');
+  const [workoutDraftDayLabel, setWorkoutDraftDayLabel] = useState('Día 1');
+  const [workoutDraftDate, setWorkoutDraftDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [workoutDraftTime, setWorkoutDraftTime] = useState(() => new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }));
+  const [mealDraftItems, setMealDraftItems] = useState<FoodItem[]>([]);
+  const [mealDraftId, setMealDraftId] = useState(() => `meal-${Date.now()}`);
+  const [mealDraftSlot, setMealDraftSlot] = useState(1);
+  const [mealDraftName, setMealDraftName] = useState('Desayuno');
+  const [mealDraftDate, setMealDraftDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [mealDraftTime, setMealDraftTime] = useState(() => new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }));
   const [showCustomize, setShowCustomize] = useState(false);
   const [catalogLogo, setCatalogLogo] = useState<string | null>(null);
   const [catalogBgId, setCatalogBgId] = useState<string>('clean');
@@ -329,6 +394,10 @@ export default function MobileFirstBuilder() {
   const [calendarActions, setCalendarActions] = useState<CalendarAction[]>(() => loadCalendarActions());
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
+  const [onboardingDirection, setOnboardingDirection] = useState<1 | -1>(1);
+  const builderProfileRailRef = useRef<HTMLDivElement>(null);
+  const routeHydratedRef = useRef(false);
+  const reduceMotion = useReducedMotion();
   const [builderProfile, setBuilderProfile] = useState<BuilderProfile>(() => (
     scopedRawGet(BUILDER_PROFILE_KEY) === 'woman' ? 'woman' : 'man'
   ));
@@ -336,6 +405,53 @@ export default function MobileFirstBuilder() {
     const stored = scopedRawGet(LEGACITO_SKIN_KEY) as LegacitoSkin | null;
     return LEGACITO_SKIN_OPTIONS.some((option) => option.value === stored) ? stored! : 'legacy-ai';
   });
+  const [coachDisplayMode, setCoachDisplayMode] = useState<'avatar' | 'text'>('avatar');
+
+  // Every Builder screen has a stable URL so reloads, deep links and the
+  // browser back button keep the user inside the app instead of falling back
+  // to the landing route.
+  useEffect(() => {
+    const route = resolveBuilderRoute(window.location.pathname);
+    if (route.external) {
+      const destination = route.external === 'progress' ? '/progreso' : '/legacito';
+      window.location.replace(analyticsHandoffUrl(destination));
+      return;
+    }
+    if (route.mode && route.mode !== builderMode) setBuilderMode(route.mode);
+  }, []);
+
+  useEffect(() => {
+    if (!routeHydratedRef.current) {
+      routeHydratedRef.current = true;
+      return;
+    }
+    const nextPath = builderPathForTab(activeTab, builderMode);
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({ fitLegacyBuilder: true, tab: activeTab }, '', nextPath);
+    }
+  }, [activeTab, builderMode]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const route = resolveBuilderRoute(window.location.pathname);
+      if (route.external) {
+        const destination = route.external === 'progress' ? '/progreso' : '/legacito';
+        window.location.replace(analyticsHandoffUrl(destination));
+        return;
+      }
+      if (route.mode && route.mode !== builderMode) setBuilderMode(route.mode);
+      setActiveTab(route.tab);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [builderMode, setBuilderMode]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCoachDisplayMode((prev) => (prev === 'avatar' ? 'text' : 'avatar'));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     saveCalendarActions(calendarActions);
@@ -357,8 +473,6 @@ export default function MobileFirstBuilder() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showCustomize]);
   const [navVisible, setNavVisible] = useState(true);
-  const [chatOpen, setChatOpen] = useState(searchParams.get('start') === '1');
-  const [rightPanelMode, setRightPanelMode] = useState<'canvas' | 'legacito'>('canvas');
   const lastScrollYRef = useRef(0);
 
   useEffect(() => {
@@ -417,7 +531,7 @@ export default function MobileFirstBuilder() {
     return Object.entries(UNIFIED_EXERCISES)
       .flatMap(([section, categories]) => 
         categories.flatMap(cat => 
-          cat.exercises.map(ex => ({ ...ex, section }))
+          cat.exercises.map(ex => ({ ...ex, section, catalogGroup: cat.category }))
         )
       )
       // "Personalizado" should be user-created only, not pre-seeded catalog items.
@@ -444,6 +558,20 @@ export default function MobileFirstBuilder() {
     scopedRawSet(BUILDER_PROFILE_KEY, builderProfile);
     document.documentElement.dataset.builderProfile = builderProfile;
   }, [builderProfile]);
+
+  useEffect(() => {
+    if (!showOnboarding || onboardingStep !== 0) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const rail = builderProfileRailRef.current;
+      const selected = rail?.querySelector<HTMLElement>(`[data-builder-profile-option="${builderProfile}"]`);
+      if (!rail || !selected) return;
+      rail.scrollTo({
+        left: selected.offsetLeft - (rail.clientWidth - selected.clientWidth) / 2,
+        behavior: 'smooth',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [builderProfile, onboardingStep, showOnboarding]);
 
   useEffect(() => {
     scopedRawSet(LEGACITO_SKIN_KEY, legacitoSkin);
@@ -476,7 +604,7 @@ export default function MobileFirstBuilder() {
     }
     if (searchParams.get('start') === '1') {
       clearRoutine();
-      setActiveTab('build');
+      setActiveTab('home');
       return;
     }
     const plan = searchParams.get('plan');
@@ -532,7 +660,7 @@ export default function MobileFirstBuilder() {
     }
 
     const customId = `custom_${Date.now()}`;
-    addExercise({
+    const customExercise: SelectedExercise = {
       id: customId,
       name: trimmedName,
       section: 'custom',
@@ -540,15 +668,127 @@ export default function MobileFirstBuilder() {
       sets: customSeries,
       reps: customReps,
       weight: customWeight,
-    });
+    } as SelectedExercise;
+    setWorkoutDraftItems((current) => current.some((item) => item.id === customId) ? current : [...current, customExercise]);
 
-    toast.success(`${trimmedName} agregado`);
+    toast.success(`${trimmedName} listo para confirmar`);
     setCustomExerciseName('');
     setCustomSeries(3);
     setCustomReps(10);
     setCustomWeight(0);
-    setActiveTab('build');
   };
+
+  const toggleCatalogItem = (item: any) => {
+    if (builderMode === 'workout') {
+      const selected: SelectedExercise = {
+        ...item,
+        section: item.section || 'custom',
+        sets: Number(item.sets) > 0 ? Number(item.sets) : 3,
+        reps: Number(item.reps) > 0 ? Number(item.reps) : 10,
+        weight: Number(item.weight) >= 0 ? Number(item.weight) : 0,
+      } as SelectedExercise;
+      setWorkoutDraftItems((current) => current.some((draft) => draft.id === selected.id)
+        ? current.filter((draft) => draft.id !== selected.id)
+        : [...current, selected]);
+      return;
+    }
+    const selected: FoodItem = { ...item, quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 100 } as FoodItem;
+    setMealDraftItems((current) => current.some((draft) => draft.id === selected.id)
+      ? current.filter((draft) => draft.id !== selected.id)
+      : [...current, selected]);
+  };
+
+  const confirmCatalogDraft = () => {
+    if (builderMode === 'workout') {
+      if (workoutDraftItems.length === 0) {
+        toast.info('Elegí al menos un ejercicio antes de confirmar.');
+        return;
+      }
+      saveWorkoutDay(workoutDraftDayId, workoutDraftDayLabel, workoutDraftItems);
+      const workoutVolume = workoutDraftItems.reduce((total, exercise) => (
+        total + (Number(exercise.sets) || 0) * (Number(exercise.reps) || 0) * (Number(exercise.weight) || 0)
+      ), 0);
+      const workoutEntry = saveCalendarEntry({
+        date: workoutDraftDate,
+        type: 'workout',
+        name: `${workoutDraftDayLabel.trim() || 'Entrenamiento'} · ${currentRoutine.name || 'Mi plan'}`,
+        exercises: workoutDraftItems.length,
+        foods: 0,
+        totalVolume: workoutVolume,
+        totalCalories: 0,
+      });
+      setCalendarEntries(workoutEntry);
+      const workoutActionId = `builder-workout-${workoutDraftDayId}-${workoutDraftDate}`;
+      setCalendarActions((current) => [
+        ...current.filter((action) => action.id !== workoutActionId),
+        {
+          id: workoutActionId,
+          date: workoutDraftDate,
+          title: `${workoutDraftDayLabel.trim() || 'Entrenamiento'} · ${workoutDraftItems.length} ejercicios`,
+          type: 'workout',
+          time: workoutDraftTime || undefined,
+          notes: `Plan ${currentRoutine.name || 'Mi plan'}`,
+          completed: false,
+        },
+      ]);
+      const savedEntry = workoutEntry.find((entry) => entry.date === workoutDraftDate);
+      if (savedEntry) void syncCalendarEntryToSupabase(savedEntry).catch(reportCanonicalSyncError);
+      toast.success(`${workoutDraftDayLabel} guardado con ${workoutDraftItems.length} ejercicios`);
+      setWorkoutDraftItems([]);
+      setActiveTab('build');
+      return;
+    }
+    if (mealDraftItems.length === 0) {
+      toast.info('Elegí al menos un alimento antes de confirmar.');
+      return;
+    }
+    if (mealCompositions.some((meal) => meal.date === mealDraftDate && meal.slot === mealDraftSlot && meal.id !== mealDraftId)) {
+      toast.error(`La comida ${mealDraftSlot} de ese día ya está ocupada.`);
+      return;
+    }
+    const meal: Omit<MealComposition, 'createdAt' | 'updatedAt'> = {
+      id: mealDraftId,
+      slot: mealDraftSlot,
+      name: mealDraftName,
+      date: mealDraftDate,
+      time: mealDraftTime,
+      foods: mealDraftItems,
+    };
+    saveMealComposition(meal);
+    mealDraftItems.forEach((food) => addFood(food));
+    const mealCalories = mealDraftItems.reduce((total, food) => total + (Number(food.calories) || 0) * (Number(food.quantity) || 100) / 100, 0);
+    const mealEntry = saveCalendarEntry({
+      date: mealDraftDate,
+      type: 'nutrition',
+      name: `${mealDraftName.trim() || `Comida ${mealDraftSlot}`} · ${currentRoutine.name || 'Mi plan'}`,
+      exercises: 0,
+      foods: mealDraftItems.length,
+      totalVolume: 0,
+      totalCalories: mealCalories,
+    });
+    setCalendarEntries(mealEntry);
+    const mealActionId = `builder-meal-${mealDraftId}`;
+    setCalendarActions((current) => [
+      ...current.filter((action) => action.id !== mealActionId),
+      {
+        id: mealActionId,
+        date: mealDraftDate,
+        title: `${mealDraftName.trim() || `Comida ${mealDraftSlot}`} · ${mealDraftItems.length} ingredientes`,
+        type: 'meal',
+        time: mealDraftTime || undefined,
+        notes: `Slot ${mealDraftSlot} · Plan ${currentRoutine.name || 'Mi plan'}`,
+        completed: false,
+      },
+    ]);
+    const savedMealEntry = mealEntry.find((entry) => entry.date === mealDraftDate);
+    if (savedMealEntry) void syncCalendarEntryToSupabase(savedMealEntry).catch(reportCanonicalSyncError);
+    toast.success(`${mealDraftName} guardado con ${mealDraftItems.length} ingredientes`);
+    setMealDraftItems([]);
+    setMealDraftId(`meal-${Date.now()}`);
+    setActiveTab('food');
+  };
+
+  const activeDraftItems = builderMode === 'workout' ? workoutDraftItems : mealDraftItems;
 
   const addSampleRoutine = () => {
     const sampleIds = ['press_banca', 'remo_barra', 'sentadilla'];
@@ -648,19 +888,28 @@ export default function MobileFirstBuilder() {
   }, [activeTab, subtitleTick]);
 
   const subtitleOptions = [
-    'Construye rutinas y planes de nutrición compartibles en segundos.',
-    'Tu estudio personalizado para forjar el legado de cada cliente.',
-    'Diseña, comparte y mide el progreso de cada plan.',
+    'Elegí ejercicios y construí la base de tu entrenamiento.',
+    'Tu catálogo personal de movimientos y variantes.',
   ];
-  const screenSubtitle = activeTab === 'catalog'
-    ? subtitleOptions[subtitleTick % 2]
-    : activeTab === 'food'
-      ? 'Adjust meal portions before sharing.'
-      : activeTab === 'build'
-        ? 'Edit the routine your client will open.'
-        : activeTab === 'calendar'
-          ? 'Track shared routines and progress.'
-          : 'Preview the client view and send the link.';
+  const screenSubtitle = activeTab === 'home'
+    ? 'Tu entrenamiento de hoy, sin ruido.'
+    : activeTab === 'catalog'
+      ? subtitleOptions[subtitleTick % subtitleOptions.length]
+      : activeTab === 'food'
+        ? 'Organizá tu alimentación como un módulo separado.'
+: activeTab === 'build'
+          ? 'Tu semana en días, con ajustes de IA Coach 1.1 aplicables.'
+          : activeTab === 'train'
+            ? 'Completá cada serie y registrá evidencia real.'
+            : activeTab === 'oneRm'
+              ? 'Convertí una serie fuerte en una carga de referencia.'
+              : activeTab === 'timer'
+                ? 'Medí el descanso, el ritmo y el tiempo de cada sesión.'
+            : activeTab === 'calendar'
+              ? 'Revisá tu constancia y evolución en Analytics.'
+              : activeTab === 'coach'
+                ? 'Legacito interpreta tu contexto y propone ajustes en Analytics.'
+                : 'Guardá o compartí una copia de tu plan.';
 
   const selectedWirPalette = useMemo<'ember' | 'onyx' | 'midnight' | 'bloom' | undefined>(() => {
     if (catalogBgImage) {
@@ -811,8 +1060,14 @@ export default function MobileFirstBuilder() {
   }, []);
 
   const goToOnboardingStep = useCallback((stepIndex: number) => {
+    if (stepIndex === onboardingStep || stepIndex < 0 || stepIndex >= ONBOARDING_STEPS.length) return;
     const step = ONBOARDING_STEPS[stepIndex];
+    setOnboardingDirection(stepIndex > onboardingStep ? 1 : -1);
     setOnboardingStep(stepIndex);
+    if (step.tab === 'coach') {
+      window.location.assign(analyticsHandoffUrl('/legacito'));
+      return;
+    }
     setActiveTab(step.tab);
     if (step.tab === 'catalog' && step.icon !== 'profile') {
       setBuilderMode('workout');
@@ -820,7 +1075,7 @@ export default function MobileFirstBuilder() {
     if (step.tab === 'food') {
       setBuilderMode('nutrition');
     }
-  }, [setBuilderMode]);
+  }, [onboardingStep, setBuilderMode]);
 
   const advanceOnboarding = useCallback(() => {
     if (onboardingStep >= ONBOARDING_STEPS.length - 1) {
@@ -830,8 +1085,28 @@ export default function MobileFirstBuilder() {
     goToOnboardingStep(onboardingStep + 1);
   }, [completeOnboarding, goToOnboardingStep, onboardingStep]);
 
+  useEffect(() => {
+    if (!showOnboarding) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches('input, select, textarea, [contenteditable="true"]')) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        completeOnboarding();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        advanceOnboarding();
+      } else if (event.key === 'ArrowLeft' && onboardingStep > 0) {
+        event.preventDefault();
+        goToOnboardingStep(onboardingStep - 1);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [advanceOnboarding, completeOnboarding, goToOnboardingStep, onboardingStep, showOnboarding]);
+
   return (
-    <div data-builder-profile={builderProfile} className="builder-profile-root flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#0c0c0e] font-sans text-[#F1F0F4]">
+    <div data-builder-profile={builderProfile} className="builder-profile-root flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#080808] font-sans text-[#F1F0F4]">
       <StreakGuard />
       {/* App Header */}
       <header className="builder-studio-header relative z-20 shrink-0 px-3 sm:px-5" role="banner">
@@ -843,7 +1118,7 @@ export default function MobileFirstBuilder() {
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
                 <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-lg font-black uppercase leading-none tracking-[0.02em] sm:text-2xl">Builder</p>
-                <span className="hidden font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase tracking-[0.18em] text-[var(--builder-accent-soft)] sm:inline">Studio</span>
+                <span className="hidden font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase tracking-[0.18em] text-[var(--builder-accent-soft)] sm:inline">Personal</span>
               </div>
               <AnimatePresence mode="wait">
                 <motion.p
@@ -870,11 +1145,19 @@ export default function MobileFirstBuilder() {
                 <motion.div className="h-full rounded-full bg-[var(--builder-accent)]" animate={{ width: `${canvasProgress}%` }} />
               </div>
             </div>
-            <span className="builder-status-chip whitespace-nowrap px-3 py-2 text-[10px] font-black">{routineItemCount} blocks</span>
+            <span className="builder-status-chip whitespace-nowrap px-3 py-2 text-[10px] font-black">{currentRoutine.exercises.length} ejercicios</span>
           </div>
 
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <button onClick={() => setActiveTab('export')} className="builder-header-share hidden px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.14em] md:block" disabled={!hasRoutineItems}>Preview</button>
+            <button onClick={() => setActiveTab('export')} className="builder-header-share hidden px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.14em] md:block" disabled={!hasRoutineItems}>Compartir</button>
+            <button
+              onClick={() => setActiveTab('export')}
+              className="builder-icon-button flex h-10 w-10 items-center justify-center text-[#6E6558] hover:text-[var(--builder-accent)] md:hidden"
+              aria-label="Compartir mi plan"
+              disabled={!hasRoutineItems}
+            >
+              <UiIcon name="gallery" size={18} active={hasRoutineItems} />
+            </button>
             <NotificationBell />
             <button
               onClick={() => setShowCustomize(true)}
@@ -882,14 +1165,14 @@ export default function MobileFirstBuilder() {
               aria-label="Abrir ajustes del Builder"
               aria-expanded={showCustomize}
             >
-              <Settings2 className="h-4 w-4" />
+              <UiIcon name="ajustes" variant={showCustomize ? 'green' : 'rose'} className="h-5 w-5" />
             </button>
           </div>
         </div>
       </header>
 
       <div
-        className="relative z-10 flex-1 overflow-hidden lg:grid lg:grid-cols-[280px_minmax(0,1fr)_360px] lg:gap-4 lg:p-4"
+        className="relative z-10 flex-1 overflow-hidden lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-4 lg:p-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]"
         data-builder-preset={MOBILE_FIRST_CONFIG.id}
         data-default-viewport={MOBILE_FIRST_CONFIG.defaultViewport}
       >
@@ -913,25 +1196,27 @@ export default function MobileFirstBuilder() {
           initial={{ opacity: 0, x: -18, filter: 'blur(8px)' }}
           animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative hidden min-h-0 flex-col overflow-hidden rounded-[2rem] bg-[#0c0c0e] p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.7)] lg:flex"
+          className="relative hidden min-h-0 flex-col overflow-hidden rounded-[2rem] bg-[#111111] p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.7)] lg:flex"
         >
           <div className="builder-profile-ambient pointer-events-none absolute inset-0" />
           <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
           <div className="mb-5 flex items-start justify-between relative">
             <div className="space-y-0.5">
-              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium tracking-[0.16em] text-[var(--builder-accent-soft)]">Build your legacy</p>
-              <h2 className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold tracking-tight text-[#F1F0F4] uppercase">Builder Tools</h2>
+              <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium tracking-[0.16em] text-[var(--builder-accent-soft)]">Tu proceso, una señal</p>
+              <h2 className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold tracking-tight text-[#F1F0F4] uppercase">Mi entrenamiento</h2>
             </div>
           </div>
 
           <div className="relative flex flex-col gap-3">
             {[
-              { id: 'catalog' as TabType, label: 'Catalog', meta: `${filteredItems.length} options`, icon: Search },
-              { id: 'build' as TabType, label: 'Routine', meta: `${currentRoutine.exercises.length} exercises`, icon: Dumbbell },
-              { id: 'food' as TabType, label: 'Meals', meta: `${currentRoutine.foods.length} foods`, icon: Apple },
-              { id: 'calendar' as TabType, label: 'Calendar', meta: `${calendarEntries.length + calendarActions.length} items`, icon: CalendarDays },
-              { id: 'export' as TabType, label: 'Share', meta: 'Client preview', icon: Share2 },
+              { id: 'home' as TabType, label: 'Hoy', meta: 'Tu punto de partida', renderIcon: (active: boolean, size: number) => <UiIcon name="graph-pie" size={size} active={active} /> },
+              { id: 'build' as TabType, label: 'Mi plan', meta: `${currentRoutine.exercises.length} ejercicios`, renderIcon: (active: boolean, size: number) => <UiIcon name="rocket-launch-chart" size={size} active={active} /> },
+              { id: 'train' as TabType, label: 'Entrenar', meta: 'Registrar sesión', renderIcon: (active: boolean, size: number) => <UiIcon name="on-off-1" size={size} active={active} /> },
+              { id: 'oneRm' as TabType, label: '1RM', meta: 'Medir fuerza', renderIcon: (active: boolean, size: number) => <UiIcon name="rocket-launch-chart" size={size} active={active} /> },
+              { id: 'timer' as TabType, label: 'Timer', meta: 'Descanso y ritmo', renderIcon: (active: boolean, size: number) => <UiIcon name="date-time-setting" size={size} active={active} /> },
+              { id: 'calendar' as TabType, label: 'Progreso', meta: 'Ver en Analytics', externalHref: ANALYTICS_PROGRESS_URL, renderIcon: (active: boolean, size: number) => <UiIcon name="date-time-setting" size={size} active={active} /> },
+              { id: 'coach' as TabType, label: 'Legacito', meta: 'Abrir en Analytics', externalHref: ANALYTICS_COACH_URL, renderIcon: (_active: boolean, size: number) => <LegacitoUiIcon size={size} /> },
             ].map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -939,7 +1224,13 @@ export default function MobileFirstBuilder() {
                   key={item.id}
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.externalHref) {
+                      window.location.assign(item.id === 'calendar' ? analyticsHandoffUrl('/progreso') : analyticsHandoffUrl('/legacito'));
+                      return;
+                    }
+                    setActiveTab(item.id);
+                  }}
                   className={`relative flex items-center gap-3.5 overflow-hidden rounded-2xl px-4 py-3.5 text-left transition-all ${
                     isActive
                       ? 'builder-profile-active-surface text-[#F1F0F4]'
@@ -955,10 +1246,8 @@ export default function MobileFirstBuilder() {
                       transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
                     />
                   )}
-                  <span className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all ${
-                    isActive ? 'bg-[#F1F0F4]/15 text-white scale-105' : 'bg-[#0c0c0e]/60 text-[#6E6558]'
-                  }`}>
-                    <item.icon size={19} strokeWidth={2.25} />
+                  <span className="relative flex shrink-0 items-center justify-center">
+                    {item.renderIcon(isActive, 20)}
                   </span>
                   <span className="relative min-w-0">
                     <span className="block font-['Big_Shoulders_Display',sans-serif] text-base font-bold uppercase tracking-[0.03em]">{item.label}</span>
@@ -971,51 +1260,64 @@ export default function MobileFirstBuilder() {
             })}
           </div>
 
-          <div className="mt-5 min-h-0 flex-1 overflow-hidden relative">
-            <div className="mb-3 flex items-center justify-between px-1">
-              <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium tracking-[0.18em] text-[#9CA0A6] uppercase">Focus</p>
-              <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium text-[#6E6558]">{builderMode === 'workout' ? 'Exercises' : 'Meals'}</p>
-            </div>
-            <div className="space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
-              {(builderMode === 'workout' ? workoutFilters : foodFilters).map((filter) => (
-                <motion.button
-                  key={filter.id}
-                  whileHover={{ x: 3 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setActiveTab('catalog');
-                    setActiveFilter(filter.id);
-                  }}
-                  className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border px-3 py-2.5 text-left transition-all ${
-                    activeFilter === filter.id
-                      ? 'builder-profile-active-filter bg-[#18181c] text-[#F1F0F4]'
-                      : 'border-transparent text-[#6E6558] hover:border-[#F1F0F4]/10 hover:bg-[#18181c]/60 hover:text-[#9CA0A6]'
-                  }`}
-                >
-                  {activeFilter === filter.id && (
-                    <motion.span
-                      layoutId="desktop-filter-active-glow"
-                      className="builder-profile-accent-rail absolute left-0 top-1 bottom-1 w-0.5 rounded-r-full"
-                    />
-                  )}
-                   <span className="flex items-center gap-3">
-          {builderMode === 'workout'
-            ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-8 w-8 shrink-0" />
-            : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-8 w-8 shrink-0" />}
-                    <span className="flex min-w-0 flex-col">
-                      <span className="text-sm font-['Big_Shoulders_Display',sans-serif] font-bold uppercase tracking-[0.06em]">{filter.label}</span>
-                      <span className={`font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase tracking-[0.16em] ${
-                        activeFilter === filter.id ? 'text-[var(--builder-accent-soft)]' : 'text-[#6E6558]'
-                      }`}>
-                        {filter.id === 'all' ? 'All' : builderMode === 'workout' ? 'Muscle' : 'Meal'}
+          {(activeTab === 'catalog' || activeTab === 'food') ? (
+            <div className="mt-5 min-h-0 flex-1 overflow-hidden relative">
+              <div className="mb-3 flex items-center justify-between px-1">
+                <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium tracking-[0.18em] text-[#9CA0A6] uppercase">Filtrar</p>
+                <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium text-[#6E6558]">{builderMode === 'workout' ? 'Ejercicios' : 'Alimentos'}</p>
+              </div>
+              <div className="space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
+                {(builderMode === 'workout' ? workoutFilters : foodFilters).map((filter) => (
+                  <motion.button
+                    key={filter.id}
+                    whileHover={{ x: 3 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setActiveTab('catalog');
+                      setActiveFilter(filter.id);
+                    }}
+                    className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border px-3 py-2.5 text-left transition-all ${
+                      activeFilter === filter.id
+                        ? 'builder-profile-active-filter bg-[#18181c] text-[#F1F0F4]'
+                        : 'border-transparent text-[#6E6558] hover:border-[#F1F0F4]/10 hover:bg-[#18181c]/60 hover:text-[#9CA0A6]'
+                    }`}
+                  >
+                    {activeFilter === filter.id && (
+                      <motion.span layoutId="desktop-filter-active-glow" className="builder-profile-accent-rail absolute left-0 top-1 bottom-1 w-0.5 rounded-r-full" />
+                    )}
+                    <span className="flex items-center gap-3">
+                      {builderMode === 'workout'
+                        ? <ExerciseIcon section={filter.id === 'all' ? 'fullbody' : filter.id} className="h-8 w-8 shrink-0" />
+                        : <FoodIcon category={filter.id === 'all' ? 'protein' : filter.id} className="h-8 w-8 shrink-0" />}
+                      <span className="flex min-w-0 flex-col">
+                        <span className="text-sm font-['Big_Shoulders_Display',sans-serif] font-bold uppercase tracking-[0.06em]">{filter.label}</span>
+                        <span className={`font-['IBM_Plex_Mono',monospace] text-[8px] font-medium uppercase tracking-[0.16em] ${activeFilter === filter.id ? 'text-[var(--builder-accent-soft)]' : 'text-[#6E6558]'}`}>
+                          {filter.id === 'all' ? 'Todo' : builderMode === 'workout' ? 'Grupo' : 'Categoría'}
+                        </span>
                       </span>
                     </span>
-                  </span>
-                  {activeFilter === filter.id && <Check size={14} strokeWidth={2.5} className="text-[var(--builder-accent)]" />}
-                </motion.button>
-              ))}
+                    {activeFilter === filter.id && <UiIcon name="validation-1" size={16} variant="duo" />}
+                  </motion.button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mt-5 flex min-h-0 flex-1 flex-col gap-3">
+              <p className="px-1 font-['IBM_Plex_Mono',monospace] text-[9px] font-medium uppercase tracking-[0.18em] text-[#9CA0A6]">Accesos rápidos</p>
+              <button type="button" onClick={() => { setBuilderMode('workout'); setActiveTab('catalog'); }} className="builder-apple-card flex items-center justify-between p-4 text-left transition-colors hover:bg-[#211d19]">
+                <span><strong className="block text-sm text-[#F1F0F4]">Agregar ejercicios</strong><small className="mt-1 block text-[9px] text-[#6E6558]">Explorá el catálogo personal</small></span>
+                <Plus size={16} className="text-[var(--builder-accent-soft)]" />
+              </button>
+              <button type="button" onClick={() => { setBuilderMode('nutrition'); setActiveTab('food'); }} className="builder-apple-card flex items-center justify-between p-4 text-left transition-colors hover:bg-[#211d19]">
+                <span><strong className="block text-sm text-[#F1F0F4]">Mi alimentación</strong><small className="mt-1 block text-[9px] text-[#6E6558]">Módulo personal separado</small></span>
+                <UiIcon name="fuel_protein" size={17} variant="green" />
+              </button>
+              <button type="button" onClick={() => setActiveTab('export')} disabled={!hasRoutineItems} className="builder-apple-card flex items-center justify-between p-4 text-left transition-colors hover:bg-[#211d19] disabled:opacity-40">
+                <span><strong className="block text-sm text-[#F1F0F4]">Guardar o compartir</strong><small className="mt-1 block text-[9px] text-[#6E6558]">Generá una copia WIR</small></span>
+                 <UiIcon name="cloud-data-transfer" size={16} className="text-[var(--builder-accent-soft)]" active />
+              </button>
+            </div>
+          )}
         </motion.aside>
 
       {/* Main Viewport */}
@@ -1027,6 +1329,45 @@ export default function MobileFirstBuilder() {
         role="main"
       >
         <AnimatePresence mode="wait">
+          {activeTab === 'home' && (
+            <PersonalHomePanel onNavigate={(destination) => {
+              if (destination === 'catalog') setBuilderMode('workout');
+              setActiveTab(destination);
+            }} />
+          )}
+
+          {activeTab === 'train' && (
+            <PersonalTrainingPanel
+              onOpenPlan={() => setActiveTab('build')}
+              onComplete={() => setActiveTab('calendar')}
+            />
+          )}
+
+          {activeTab === 'oneRm' && (
+            <motion.div
+              key="builder-one-rm"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="builder-tool-page h-full overflow-y-auto"
+            >
+              <OneRmCalculator />
+            </motion.div>
+          )}
+
+          {activeTab === 'timer' && (
+            <motion.div
+              key="builder-timer"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="builder-tool-page h-full overflow-y-auto"
+            >
+              <SportsChronograph />
+              <RestTimer />
+            </motion.div>
+          )}
+
           {activeTab === 'catalog' && (
             <motion.div 
               key={`catalog-${builderMode}`}
@@ -1045,26 +1386,68 @@ export default function MobileFirstBuilder() {
                   />
                   
                   <button 
-                   onClick={() => setBuilderMode('workout')} 
+                   onClick={() => { setBuilderMode('workout'); if (activeTab === 'food') setActiveTab('catalog'); }} 
                    role="tab"
                    aria-selected={builderMode === 'workout'}
                    className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors duration-300 z-10 ${builderMode === 'workout' ? 'text-white' : 'text-[#6E6558] hover:text-[#F1F0F4]'}`}
                  >
-                   <Dumbbell size={16} />
+                   <UiIcon name="dumbbell" size={16} />
                    Exercises
                  </button>
                  <button 
-                   onClick={() => setBuilderMode('nutrition')} 
+                   onClick={() => { setBuilderMode('nutrition'); if (activeTab === 'catalog') setActiveTab('food'); }} 
                    role="tab"
                    aria-selected={builderMode === 'nutrition'}
                    className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors duration-300 z-10 ${builderMode === 'nutrition' ? 'text-white' : 'text-[#6E6558] hover:text-[#F1F0F4]'}`}
                  >
-                   <Apple size={16} />
+                   <UiIcon name="fuel_protein" size={18} variant="green" />
                    Meals
+                 </button>
+                </div>
+
+               <div className={`builder-draft-strip${activeDraftItems.length > 0 ? ' is-ready' : ''}`} aria-live="polite">
+                 <div className="min-w-0">
+                   <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-black uppercase tracking-[0.16em] text-[var(--builder-accent-soft)]">
+                     {activeDraftItems.length > 0 ? `${activeDraftItems.length} seleccionados` : 'Borrador sin confirmar'}
+                   </p>
+                   <p className="mt-1 truncate text-[10px] text-[#9CA0A6]">
+                     {builderMode === 'workout' ? 'Nada cambia hasta guardar el día.' : 'Armá la comida y definí slot, fecha y hora.'}
+                   </p>
+                 </div>
+                 <button
+                   type="button"
+                   onClick={confirmCatalogDraft}
+                   disabled={activeDraftItems.length === 0}
+                   className="builder-cta-primary shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-widest disabled:cursor-not-allowed disabled:opacity-35"
+                 >
+                   Confirmar
                  </button>
                </div>
 
-              <div className="space-y-3">
+               {builderMode === 'workout' && activeDraftItems.length > 0 && (
+                 <div className="grid grid-cols-[1fr_auto] gap-2">
+                   <label className="builder-apple-input flex items-center gap-2 px-3 py-2">
+                     <span className="sr-only">Nombre del día</span>
+                     <input value={workoutDraftDayLabel} onChange={(event) => setWorkoutDraftDayLabel(event.target.value)} className="min-w-0 flex-1 bg-transparent text-xs font-bold text-[#F1F0F4] outline-none" aria-label="Nombre del día" />
+                   </label>
+                   <select value={workoutDraftDayId} onChange={(event) => { setWorkoutDraftDayId(event.target.value); setWorkoutDraftDayLabel(`Día ${event.target.value.split('-').pop()}`); }} className="builder-apple-input px-2 text-[10px] font-black uppercase text-[#F1F0F4] outline-none" aria-label="Día de entrenamiento">
+                     {Array.from({ length: 7 }, (_, index) => <option key={index} value={`day-${index + 1}`}>Día {index + 1}</option>)}
+                   </select>
+                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Fecha de entrenamiento</span><input type="date" value={workoutDraftDate} onChange={(event) => setWorkoutDraftDate(event.target.value)} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Fecha de entrenamiento" /></label>
+                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Hora de entrenamiento</span><input type="time" value={workoutDraftTime} onChange={(event) => setWorkoutDraftTime(event.target.value)} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Hora de entrenamiento" /></label>
+                 </div>
+               )}
+
+               {builderMode === 'nutrition' && activeDraftItems.length > 0 && (
+                 <div className="grid grid-cols-3 gap-2">
+                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Slot de comida</span><select value={mealDraftSlot} onChange={(event) => setMealDraftSlot(Number(event.target.value))} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Slot de comida">{Array.from({ length: 6 }, (_, index) => <option key={index} value={index + 1}>Comida {index + 1}</option>)}</select></label>
+                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Fecha de comida</span><input type="date" value={mealDraftDate} onChange={(event) => setMealDraftDate(event.target.value)} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Fecha de comida" /></label>
+                   <label className="builder-apple-input px-2 py-2"><span className="sr-only">Hora de comida</span><input type="time" value={mealDraftTime} onChange={(event) => setMealDraftTime(event.target.value)} className="w-full bg-transparent text-[10px] font-black text-[#F1F0F4] outline-none" aria-label="Hora de comida" /></label>
+                   <label className="builder-apple-input col-span-3 px-3 py-2"><span className="sr-only">Nombre de la comida</span><input value={mealDraftName} onChange={(event) => setMealDraftName(event.target.value)} className="w-full bg-transparent text-xs font-bold text-[#F1F0F4] outline-none" aria-label="Nombre de la comida" /></label>
+                 </div>
+               )}
+
+               <div className="space-y-3">
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6E6558]" aria-hidden="true" />
                   <input 
@@ -1073,7 +1456,7 @@ export default function MobileFirstBuilder() {
                     placeholder={`Search ${builderMode === 'workout' ? 'exercises' : 'foods'}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="builder-apple-input w-full py-4 pl-12 pr-4 focus:outline-none font-bold text-[15px] text-[#F1F0F4] placeholder:text-[#9CA0A6]"
+                    className="builder-apple-input w-full py-4 pl-12 pr-4 focus:outline-none font-bold text-base text-[#F1F0F4] placeholder:text-[#9CA0A6] sm:text-[15px]"
                   />
                 </div>
                 <div className="flex items-center justify-between px-1">
@@ -1167,63 +1550,35 @@ export default function MobileFirstBuilder() {
                 ) : (
                   filteredItems.map((item, index) => {
                     const isSupp = builderMode === 'nutrition' && ((item as any).category === 'supplements' || normalizeFilterId((item as any).category) === 'supplements');
+                    const isSelected = activeDraftItems.some((draft) => draft.id === item.id);
                     return (
                   <motion.div
-                        key={`${builderMode}-${item.id}`}
+                        key={`${builderMode}-${(item as any).section ?? (item as any).category ?? 'item'}-${(item as any).catalogGroup ?? 'group'}-${item.id}`}
                         initial={{ opacity: 0, y: 18, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{ duration: 0.34, delay: Math.min(index * 0.018, 0.16), ease: [0.22, 1, 0.36, 1] }}
                         whileTap={{ scale: 0.985 }}
-                        onClick={() => {
-                          builderMode === 'workout' ? addExercise(item as any) : addFood(item as any);
-                          toast.success(`${item.name} added`);
-                        }}
-                        className={`builder-apple-card flex cursor-pointer items-center justify-between gap-3 p-3.5 transition-all group hover:-translate-y-0.5 sm:p-4 ${
-                          index % 2 === 0 ? 'min-h-[100px]' : 'min-h-[72px]'
-                        } sm:min-h-0`}
+                        onClick={() => toggleCatalogItem(item)}
+                        className={`builder-apple-card flex cursor-pointer items-center justify-between gap-3 p-3 transition-all group hover:-translate-y-0.5${isSelected ? ' builder-catalog-item--selected' : ''}`}
                       >
-                        {index % 2 === 0 ? (
-                          /* Even cards: large icon + small name below */
-                          <div className="flex min-w-0 items-center gap-4">
-                             {builderMode === 'workout' ? (
-                                <ExerciseIconTile section={(item as any).section} className="h-24 w-24 sm:h-28 sm:w-28" />
-                             ) : isSupp ? (
-                                <div className="builder-apple-icon-tile flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden p-1.5 sm:h-28 sm:w-28">
-                                  <FoodIcon category={(item as any).category} name={item.name} className="h-full w-full object-contain" />
-                                </div>
-                             ) : (
-                                <FoodIconTile category={(item as any).category} name={item.name} className="h-24 w-24 sm:h-28 sm:w-28" />
-                             )}
-                             <div className="min-w-0">
-                              <p className="line-clamp-2 font-black italic uppercase text-[13px] leading-tight text-[#F1F0F4] sm:text-sm">{item.name}</p>
-                              <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase tracking-widest">
-                                 {builderMode === 'workout' ? (item as any).section : (item as any).category}
-                               </p>
-                             </div>
+                        <div className="flex min-w-0 items-center gap-3.5">
+                          <div className="shrink-0 flex items-center justify-center">
+                            {builderMode === 'workout' ? (
+                              <ExerciseIcon section={(item as any).section} className="h-9 w-9 object-contain" />
+                            ) : (
+                              <FoodIcon category={(item as any).category} name={item.name} className="h-9 w-9 object-contain" />
+                            )}
                           </div>
-                        ) : (
-                          /* Odd cards: large name + small icon badge */
-                          <div className="flex min-w-0 items-center gap-3.5">
-                             <div className="flex min-w-0 flex-col">
-                              <p className="line-clamp-2 font-black italic uppercase text-[15px] leading-tight text-[#F1F0F4] sm:text-base">{item.name}</p>
-                              <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase tracking-widest">
-                                 {builderMode === 'workout' ? (item as any).section : (item as any).category}
-                               </p>
-                             </div>
-                             <div className="ml-auto flex shrink-0 items-center">
-                               {builderMode === 'workout' ? (
-                                  <ExerciseIcon section={(item as any).section} className="h-12 w-12 sm:h-14 sm:w-14" />
-                               ) : isSupp ? (
-                                  <FoodIcon category={(item as any).category} name={item.name} className="h-12 w-12 sm:h-14 sm:w-14" />
-                               ) : (
-                                  <FoodIcon category={(item as any).category} name={item.name} className="h-12 w-12 sm:h-14 sm:w-14" />
-                               )}
-                             </div>
+                          <div className="min-w-0">
+                            <p className="line-clamp-1 font-bold uppercase text-xs text-[#F1F0F4]">{item.name}</p>
+                            <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase tracking-widest">
+                              {builderMode === 'workout' ? (item as any).section : (item as any).category}
+                            </p>
                           </div>
-                        )}
-                        <button className="builder-icon-button flex h-10 w-10 shrink-0 items-center justify-center group-active:bg-[#F1F0F4]/20 group-active:text-white sm:h-8 sm:w-8">
-                           <Plus size={18} />
-                        </button>
+                        </div>
+                         <button type="button" className="builder-icon-button flex h-8 w-8 shrink-0 items-center justify-center text-[#7E7A75] hover:text-white" aria-label={isSelected ? `Quitar ${item.name}` : `Agregar ${item.name}`}>
+                           {isSelected ? <UiIcon name="validation-1" size={16} variant="duo" /> : <Plus size={16} />}
+                         </button>
                       </motion.div>
                     );
                   })
@@ -1279,7 +1634,7 @@ export default function MobileFirstBuilder() {
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
                 {currentRoutine.foods.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
-                    <Apple size={64} className="text-[#6E6558]/30" />
+                    <UiIcon name="fuel_protein" size={64} variant="rose" className="opacity-40" />
                     <div className="space-y-2">
                       <p className="font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-widest text-[#9CA0A6]">No meals yet</p>
                       <p className="max-w-xs text-xs font-medium leading-relaxed text-[#6E6558]">Add foods if this routine includes nutrition. You can also share workout-only links.</p>
@@ -1305,10 +1660,10 @@ export default function MobileFirstBuilder() {
                               <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Minus size={16} /></button>
                                <span className="text-lg font-black w-12 text-center leading-none text-[#F1F0F4]">{food.quantity}g</span>
                               <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Plus size={16} /></button>
-                              <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#F1F0F4]/10 text-[#6E6558] transition-colors hover:text-[var(--builder-accent)]"><Trash2 size={16} /></button>
+                              <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#F1F0F4]/10 text-[#6E6558] transition-colors hover:text-[var(--builder-accent)]"><UiIcon name="cancel-2" size={16} variant="duo" /></button>
                            </div>
                            <div className="relative">
-                              <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6E6558] opacity-40" />
+                               <UiIcon name="historial" size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6E6558] opacity-40" active />
                               <input 
                                 type="text"
                                 placeholder="Note..."
@@ -1325,116 +1680,12 @@ export default function MobileFirstBuilder() {
             </motion.div>
           )}
 
-          {activeTab === 'build' && (
-            <motion.div 
-              key="build-management"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="h-full flex flex-col p-6 space-y-6"
-            >
-              <div className="space-y-4">
-                <div className="relative">
-                  <input 
-                    type="text"
-                    value={currentRoutine.name}
-                    onChange={(e) => updateRoutineName(e.target.value)}
-                    className="w-full bg-transparent border-none p-0 pr-8 text-3xl font-black italic uppercase tracking-tighter focus:ring-0 placeholder:text-[#9CA0A6] text-[#F1F0F4]"
-                    placeholder="Untitled routine"
-                  />
-                  <Pencil size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-[#6E6558] pointer-events-none opacity-40" />
-                </div>
-                <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-widest text-[#6E6558] -mt-3">This is the routine your client will open</p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div className="builder-apple-tile p-3 text-center">
-                  <div className="mb-1 flex justify-center">
-                    <ExerciseIcon section="fullbody" className="w-5 h-5" />
-                  </div>
-                  <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Ejercicios</p>
-                  <p className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black leading-none text-[#F1F0F4]">{currentRoutine.exercises.length}</p>
-                </div>
-                <div className="builder-apple-tile p-3 text-center">
-                  <div className="mb-1 flex justify-center">
-                    <ExerciseIcon section="arms" className="w-5 h-5" />
-                  </div>
-                  <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Sets</p>
-                  <p className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black leading-none text-[#F1F0F4]">{totalSets}</p>
-                </div>
-                <div className="builder-apple-tile p-3 text-center">
-                  <div className="mb-1 flex justify-center">
-                    <ExerciseIcon section="legs" className="w-5 h-5" />
-                  </div>
-                  <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Volumen</p>
-                  <p className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black leading-none text-[#F1F0F4]">{Math.round(totalVolume)}</p>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
-                {currentRoutine.exercises.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
-                    <Dumbbell size={64} className="text-[#6E6558]/30" />
-                    <div className="space-y-2">
-                      <p className="font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-widest text-[#9CA0A6]">Start with an exercise</p>
-                      <p className="max-w-xs text-xs font-medium leading-relaxed text-[#6E6558]">Add items, preview the client view, then send the routine through WhatsApp.</p>
-                      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-center">
-                        <button onClick={() => { setActiveTab('catalog'); setBuilderMode('workout'); }} className="builder-cta-primary px-4 py-3 text-[10px] font-black uppercase tracking-widest">Add exercise</button>
-                        <button onClick={addSampleRoutine} className="builder-cta-ghost px-4 py-3 text-[10px] font-black uppercase tracking-widest">Use sample</button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  currentRoutine.exercises.map(ex => (
-                    <div key={ex.id} className="builder-apple-card p-5 space-y-5">
-                      <div className="flex justify-between items-center">
-                         <div className="flex items-center gap-3">
-                            <ExerciseIcon section={ex.section} className="w-8 h-8" />
-                             <h4 className="font-black italic uppercase text-sm tracking-tight text-[#F1F0F4]">{ex.name}</h4>
-                         </div>
-                         <button onClick={() => removeExercise(ex.id)} className="builder-icon-button -mr-2 flex h-8 w-8 items-center justify-center hover:text-red-500"><X size={16} /></button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4">
-                         <div className="space-y-1">
-                             <label className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Sets</label>
-                            <div className="builder-apple-tile flex items-center justify-between p-2">
-                               <button onClick={() => updateExercise(ex.id, { sets: Math.max(1, ex.sets - 1) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                                 <span className="text-lg font-black leading-none text-[#F1F0F4]">{ex.sets}</span>
-                                <button onClick={() => updateExercise(ex.id, { sets: ex.sets + 1 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
-                            </div>
-                         </div>
-                         <div className="space-y-1">
-                             <label className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Reps</label>
-                            <div className="builder-apple-tile flex items-center justify-between p-2">
-                               <button onClick={() => updateExercise(ex.id, { reps: Math.max(1, ex.reps - 1) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                                 <span className="text-lg font-black leading-none text-[#F1F0F4]">{ex.reps}</span>
-                                <button onClick={() => updateExercise(ex.id, { reps: ex.reps + 1 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
-                            </div>
-                         </div>
-                         <div className="space-y-1">
-                             <label className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">kg</label>
-                            <div className="builder-apple-tile flex items-center justify-between p-2">
-                               <button onClick={() => updateExercise(ex.id, { weight: Math.max(0, ex.weight - 2.5) })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Minus size={14} /></button>
-                                 <span className="text-lg font-black leading-none text-[#F1F0F4]">{ex.weight}</span>
-                                <button onClick={() => updateExercise(ex.id, { weight: ex.weight + 2.5 })} className="builder-icon-button flex h-6 w-6 items-center justify-center"><Plus size={14} /></button>
-                            </div>
-                         </div>
-                      </div>
-                      <div className="relative mt-4">
-                        <MessageCircle size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6E6558] opacity-40" />
-                        <input 
-                          type="text"
-                          placeholder="Note (rest, tempo, cues...)"
-                          value={ex.notes || ''}
-                          onChange={(e) => updateExercise(ex.id, { notes: e.target.value })}
-                          className="builder-apple-input w-full py-2 pl-8 pr-3 text-[10px] font-bold focus:outline-none placeholder:italic"
-                        />
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
+{activeTab === 'build' && (
+            <PlanWeeksPanel
+              onOpenCatalog={() => { setBuilderMode('workout'); setActiveTab('catalog'); }}
+              onOpenTraining={() => setActiveTab('train')}
+              onUseSample={addSampleRoutine}
+            />
           )}
 
           {activeTab === 'calendar' && (
@@ -1451,58 +1702,157 @@ export default function MobileFirstBuilder() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              className="h-full overflow-y-auto p-6 pb-52"
+              className="h-full overflow-y-auto p-4 pb-28 sm:p-6"
             >
               <div className="w-full max-w-3xl mx-auto space-y-6">
-                <div className="builder-apple-card p-5">
-                  <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#6E6558]">
-                    {hasRoutineItems ? 'Ready to share' : 'Nothing to share yet'}
-                  </p>
-                  <h2 className="mt-2 text-2xl font-extrabold tracking-normal text-[#F1F0F4]">
-                    {routineDisplayName}
-                  </h2>
-                  <p className="mt-2 text-sm font-medium leading-relaxed text-[#6E6558]">
-                    {hasRoutineItems
-                      ? `${routineItemCount} items. The client can open this link in any browser without installing an app.`
-                      : 'Add at least one exercise or meal before sending a link.'}
-                  </p>
+                {/* ─── Share Header Card ─── */}
+                <div className="fl-cut-card p-5 space-y-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-['IBM_Plex_Mono',monospace] text-[9px] font-black uppercase tracking-[0.16em] text-[#E0793C]">
+                        <span>COPIA INTERACTIVA LISTA</span>
+                        <span className="h-1 w-1 rounded-full bg-white/20" />
+                        <span className="text-white/40">{routineItemCount} ELEMENTOS</span>
+                      </div>
+                      <h2 className="mt-1 font-['Big_Shoulders_Display',sans-serif] text-3xl font-black uppercase text-[#F1F0F4]">
+                        {routineDisplayName}
+                      </h2>
+                      <p className="mt-1 text-xs font-medium text-[#9CA0A6]">
+                        Checklist interactivo que abre en cualquier teléfono o PC sin instalar nada.
+                      </p>
+                    </div>
+
+                    {/* Direct One-Click Actions */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const wirDoc = {
+                              v: 1 as const,
+                              name: routineDisplayName,
+                              template: shareTemplate,
+                              palette: selectedWirPalette,
+                              exercises: currentRoutine.exercises.map((ex) => ({
+                                name: ex.name,
+                                sets: ex.sets || 0,
+                                reps: ex.reps || 0,
+                                weight: ex.weight || 0,
+                                section: ex.section,
+                              })),
+                              foods: currentRoutine.foods.map((food) => ({
+                                name: food.name,
+                                quantity: food.quantity || 0,
+                                protein: food.protein || 0,
+                                calories: food.calories || 0,
+                                category: food.category,
+                              })),
+                            };
+                            const link = toWirUrl(wirDoc, window.location.origin);
+                            await copyTextWithFallback(link);
+                            toast.success('¡Enlace interactivo copiado al portapapeles!');
+                          } catch (e) {
+                            toast.error('Error al generar enlace');
+                          }
+                        }}
+                        className="fl-cut-cta fl-cut-cta--primary !min-h-[38px] !px-4 !text-[10px]"
+                      >
+                        COPIAR LINK
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          try {
+                            const wirDoc = {
+                              v: 1 as const,
+                              name: routineDisplayName,
+                              template: shareTemplate,
+                              palette: selectedWirPalette,
+                              exercises: currentRoutine.exercises.map((ex) => ({
+                                name: ex.name,
+                                sets: ex.sets || 0,
+                                reps: ex.reps || 0,
+                                weight: ex.weight || 0,
+                                section: ex.section,
+                              })),
+                              foods: currentRoutine.foods.map((food) => ({
+                                name: food.name,
+                                quantity: food.quantity || 0,
+                                protein: food.protein || 0,
+                                calories: food.calories || 0,
+                                category: food.category,
+                              })),
+                            };
+                            const link = toWirUrl(wirDoc, window.location.origin);
+                            const msg = `Te comparto tu rutina interactiva de Fit Legacy: ${routineDisplayName}\n\nAccedé y completá tu checklist acá: ${link}`;
+                            openWhatsAppShare(msg);
+                          } catch (e) {
+                            toast.error('Error al compartir por WhatsApp');
+                          }
+                        }}
+                        className="fl-cut-cta fl-cut-cta--secondary !min-h-[38px] !px-4 !text-[10px]"
+                      >
+                        WHATSAPP
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-[0.18em] text-[#6E6558]">Canvas Palette</p>
-                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    {CATALOG_BG_PRESETS.map(preset => (
+                {/* ─── Appearance Selector ─── */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-black uppercase tracking-[0.16em] text-[#7E7A75]">
+                      TEMA Y COLOR DE LA COPIA
+                    </p>
+                    <span className="font-mono text-[9px] text-white/40 uppercase">
+                      Paleta activa: {selectedWirPalette}
+                    </span>
+                  </div>
+                  <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
+                    {CATALOG_BG_PRESETS.map((preset) => (
                       <button
                         key={preset.id}
                         onClick={() => {
                           setCatalogBgId(preset.id);
                           setCatalogBgImage(null);
                         }}
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 transition-all ${catalogBgId === preset.id && !catalogBgImage ? 'builder-profile-selected-preset scale-110 shadow-md' : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'}`}
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all ${
+                          catalogBgId === preset.id && !catalogBgImage
+                            ? 'border-[#E0793C] scale-105 shadow-[0_0_16px_rgba(224,121,60,0.3)]'
+                            : 'border-white/10 opacity-70 hover:opacity-100'
+                        }`}
                         style={preset.style}
                         title={preset.label}
                       >
                         {catalogBgId === preset.id && !catalogBgImage && (
-                          <Check className="h-5 w-5 text-[#F1F0F4]" />
+                          <span className="text-xs font-black text-white">✓</span>
                         )}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
+
+                {/* ─── Preview Bar ─── */}
+                <div className="flex items-center justify-between pt-1">
                   <div>
-                    <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-[0.18em] text-[#6E6558]">Client preview</p>
-                    <p className="text-xs font-medium text-[#6E6558]">What the recipient opens from WhatsApp.</p>
+                    <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-black uppercase tracking-[0.16em] text-[#7E7A75]">
+                      VISTA PREVIA INTERACTIVA (PROBALA AQUÍ)
+                    </p>
+                    <p className="text-xs font-medium text-[#9CA0A6]">
+                      Hacé clic en las series y comidas para probar cómo interactuará tu alumno o amigo.
+                    </p>
                   </div>
                   <button
                     onClick={() => setActiveTab('build')}
-                    className="builder-cta-ghost px-4 py-2 text-[10px] font-black uppercase tracking-widest"
+                    className="fl-cut-chip border-white/10 text-white/60 hover:text-white cursor-pointer"
                   >
-                    Edit
+                    Editar contenido
                   </button>
                 </div>
 
-                <div className="flex justify-center">
+                {/* ─── Interactive WIR Canvas ─── */}
+                <div className="flex justify-center pt-1">
                   <div className="w-full max-w-sm">
                     <Suspense fallback={<ExportPreviewFallback />}>
                       <WirCanvasPreview
@@ -1530,8 +1880,22 @@ export default function MobileFirstBuilder() {
                     </Suspense>
                   </div>
                 </div>
-
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'coach' && (
+            <motion.div
+              key="personal-ai-coach"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="h-full overflow-y-auto p-3 pb-28 sm:p-6 lg:pb-6"
+            >
+              <WeeklyCoachSummaryPanel
+                skinId={legacitoSkin}
+                onNavigate={(dest) => setActiveTab(dest as TabType)}
+              />
             </motion.div>
           )}
 
@@ -1556,7 +1920,7 @@ export default function MobileFirstBuilder() {
           initial={{ opacity: 0, x: 18, filter: 'blur(8px)' }}
           animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
           transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-[#F1F0F4]/10 bg-[#18181c]/90 p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.45)] backdrop-blur-2xl ${rightPanelMode === 'canvas' ? 'lg:flex' : 'lg:hidden'} lg:flex-col`}
+className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-[#F1F0F4]/10 bg-[#18181c]/90 p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.45)] backdrop-blur-2xl xl:flex xl:flex-col"
         >
           <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
           <motion.div
@@ -1565,28 +1929,6 @@ export default function MobileFirstBuilder() {
             transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden="true"
           />
-          <div className="builder-right-panel-tabs" role="tablist" aria-label="Panel derecho">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={rightPanelMode === 'canvas'}
-              className={`builder-right-panel-tab ${rightPanelMode === 'canvas' ? 'is-active' : ''}`}
-              onClick={() => setRightPanelMode('canvas')}
-            >
-              <SlidersHorizontal size={12} />
-              Canvas
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={rightPanelMode === 'legacito'}
-              className={`builder-right-panel-tab ${rightPanelMode === 'legacito' ? 'is-active' : ''}`}
-              onClick={() => setRightPanelMode('legacito')}
-            >
-              <MessageCircle size={12} />
-              Legacito
-            </button>
-          </div>
           <div className="builder-live-canvas__header shrink-0 pb-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -1598,10 +1940,11 @@ export default function MobileFirstBuilder() {
                   value={currentRoutine.name}
                   onChange={(event) => updateRoutineName(event.target.value)}
                   className="mt-2 w-full truncate border-0 bg-transparent p-0 font-['Big_Shoulders_Display',sans-serif] text-2xl font-black uppercase text-[#F1F0F4] outline-none"
-                  aria-label="Canvas title"
+                  aria-label="Nombre de mi plan"
                 />
               </div>
               <button onClick={() => setActiveTab('export')} className="builder-header-share shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em]" disabled={!hasRoutineItems}>Preview</button>
+                <button onClick={() => window.location.assign(analyticsHandoffUrl('/legacito'))} className="builder-header-share shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em]" aria-label="Abrir Legacito en Analytics"><UiIcon name="historial" size={12} active /> Legacito</button>
             </div>
             <div className="mt-3 flex items-center gap-3">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
@@ -1631,13 +1974,13 @@ export default function MobileFirstBuilder() {
                         {currentRoutine.exercises.map((exercise, index) => (
                           <motion.div key={exercise.id} layout initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 18 }} className="builder-canvas-block">
                             <span className="builder-canvas-block__index">{String(index + 1).padStart(2, '0')}</span>
-                            <ExerciseIcon section={exercise.section} className="h-8 w-8 shrink-0" />
+                            <ExerciseIcon section={exercise.section || 'custom'} className="h-8 w-8 shrink-0" />
                             <div className="min-w-0 flex-1"><p>{exercise.name}</p><small>{exercise.sets} sets · {exercise.reps} reps · {exercise.weight} kg</small></div>
                             <div className="builder-canvas-block__actions">
                               <button onClick={() => updateExercise(exercise.id, { sets: Math.max(1, exercise.sets - 1) })} aria-label={`Reducir sets de ${exercise.name}`}><Minus size={12} /></button>
                               <b>{exercise.sets}</b>
                               <button onClick={() => updateExercise(exercise.id, { sets: exercise.sets + 1 })} aria-label={`Aumentar sets de ${exercise.name}`}><Plus size={12} /></button>
-                              <button onClick={() => removeExercise(exercise.id)} aria-label={`Eliminar ${exercise.name}`}><X size={12} /></button>
+                              <button onClick={() => removeExercise(exercise.id)} aria-label={`Eliminar ${exercise.name}`}><UiIcon name="cancel-2" size={14} variant="duo" /></button>
                             </div>
                           </motion.div>
                         ))}
@@ -1659,7 +2002,7 @@ export default function MobileFirstBuilder() {
                               <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} aria-label={`Reducir cantidad de ${food.name}`}><Minus size={12} /></button>
                               <b>{food.quantity}</b>
                               <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} aria-label={`Aumentar cantidad de ${food.name}`}><Plus size={12} /></button>
-                              <button onClick={() => removeFood(food.id)} aria-label={`Eliminar ${food.name}`}><X size={12} /></button>
+                              <button onClick={() => removeFood(food.id)} aria-label={`Eliminar ${food.name}`}><UiIcon name="cancel-2" size={14} variant="duo" /></button>
                             </div>
                           </motion.div>
                         ))}
@@ -1677,42 +2020,7 @@ export default function MobileFirstBuilder() {
                 <div key={label}><small>{label}</small><b>{value}</b></div>
               ))}
             </div>
-            <button onClick={() => setActiveTab('export')} disabled={!hasRoutineItems} className="builder-cta-primary mt-3 flex w-full items-center justify-center gap-2 py-3 text-[9px] font-black uppercase tracking-[0.16em]"><Share2 size={14} /> Preparar link</button>
-          </div>
-        </motion.aside>
-
-        <motion.aside
-          initial={{ opacity: 0, x: 18, filter: 'blur(8px)' }}
-          animate={{ opacity: rightPanelMode === 'legacito' ? 1 : 0, x: rightPanelMode === 'legacito' ? 0 : 18, filter: rightPanelMode === 'legacito' ? 'blur(0px)' : 'blur(8px)' }}
-          transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-[#F1F0F4]/10 bg-[#18181c]/90 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.45)] backdrop-blur-2xl ${rightPanelMode === 'legacito' ? 'lg:flex' : 'lg:hidden'} lg:flex-col`}
-          aria-label="Panel de Legacito"
-        >
-          <div className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-[var(--builder-accent)]/80 to-transparent" />
-          <div className="builder-right-panel-tabs relative z-10 mx-4 mt-4" role="tablist" aria-label="Panel derecho">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={rightPanelMode === 'canvas'}
-              className={`builder-right-panel-tab ${rightPanelMode === 'canvas' ? 'is-active' : ''}`}
-              onClick={() => setRightPanelMode('canvas')}
-            >
-              <SlidersHorizontal size={12} />
-              Canvas
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={rightPanelMode === 'legacito'}
-              className={`builder-right-panel-tab ${rightPanelMode === 'legacito' ? 'is-active' : ''}`}
-              onClick={() => setRightPanelMode('legacito')}
-            >
-              <MessageCircle size={12} />
-              Legacito
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 p-2">
-            <AiMentorChat embedded open={true} skinId={legacitoSkin} onSkinChange={setLegacitoSkin} onOpenChange={() => setRightPanelMode('canvas')} />
+<button onClick={() => setActiveTab('export')} disabled={!hasRoutineItems} className="builder-cta-primary mt-3 flex w-full items-center justify-center gap-2 py-3 text-[9px] font-black uppercase tracking-[0.16em]"><UiIcon name="cloud-data-transfer" size={14} active /> Preparar link</button>
           </div>
         </motion.aside>
       </div>
@@ -1722,191 +2030,258 @@ export default function MobileFirstBuilder() {
           <>
             <motion.div
               key="settings-backdrop"
+              className="settings-modal-backdrop"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Ajustes del Builder"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               onClick={() => setShowCustomize(false)}
-              className="fixed inset-0 z-40 bg-[#0c0c0e]/60 backdrop-blur-md lg:bg-[#0c0c0e]/38 lg:backdrop-blur-[3px]"
-              aria-hidden="true"
-            />
-            <motion.aside
-              key="settings-drawer"
-              initial={{ y: 48, x: 0, opacity: 0 }}
-              animate={{ y: 0, x: 0, opacity: 1 }}
-              exit={{ y: 48, x: 0, opacity: 0 }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="builder-glass-shell fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] sm:inset-y-4 sm:right-4 sm:left-auto sm:h-auto sm:max-w-[380px] sm:rounded-[2rem] lg:inset-y-0 lg:right-0 lg:bottom-auto lg:left-auto lg:h-full lg:w-[430px] lg:max-w-[min(430px,100vw)] lg:rounded-none lg:rounded-l-[2rem] lg:border-y-0 lg:border-r-0 lg:border-l lg:shadow-[-28px_0_80px_-38px_rgba(0,0,0,0.9)]"
-              aria-label="Ajustes del Builder"
-              role="dialog"
-              aria-modal="true"
             >
-            <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-px bg-gradient-to-b from-transparent via-[var(--builder-accent)]/70 to-transparent lg:block" aria-hidden="true" />
-            <div className="flex justify-center pt-2 sm:hidden" aria-hidden="true">
-              <div className="h-1.5 w-12 rounded-full bg-[#6E6558]/30" />
-            </div>
-            <div className="flex items-start justify-between gap-3 border-b border-[#F1F0F4]/10 px-4 pb-4 pt-3 sm:p-5 lg:px-6 lg:pb-5 lg:pt-6">
-              <div className="min-w-0 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-[var(--builder-accent)]" />
-                  <h2 className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-wide text-[#F1F0F4]">Builder settings</h2>
-                </div>
-                <p className="font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-snug text-[#6E6558] sm:text-xs sm:leading-relaxed">Identidad visual, vista del cliente y compartir.</p>
-              </div>
-              <button onClick={() => setShowCustomize(false)} className="builder-icon-button flex h-10 w-10 shrink-0 items-center justify-center" aria-label="Close settings">
-                <X className="h-4 w-4 text-[#6E6558]" />
-              </button>
-            </div>
+              <motion.section
+                key="settings-card"
+                className="settings-modal-card settings-footer-card"
+                initial={{ opacity: 0, y: 40, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 40, scale: 0.97 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                {/* ── Hero asset — brand logo + título flotando sobre la imagen ── */}
+                <div className="settings-modal-asset settings-footer-hero">
+                  <span className="settings-footer-handle" aria-hidden="true" />
+                  <img
+                    src="https://fsoevzostulbtoxcqqdh.supabase.co/storage/v1/object/public/analytics-assets/coachs_assets/confident_fitness_duo.webp"
+                    alt=""
+                    style={{ objectPosition: '50% 18%' }}
+                  />
 
-            <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 pb-28 sm:space-y-6 sm:p-5 sm:pb-28 lg:space-y-7 lg:px-6 lg:py-6 lg:pb-10">
-              <section className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#9CA0A6]">Theme</p>
-                  <span className="builder-theme-base">Black base</span>
-                </div>
-                <div className="builder-theme-switch" role="group" aria-label="Builder theme">
-                  {BUILDER_PROFILE_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`builder-theme-option ${builderProfile === option.value ? 'is-active' : ''}`}
-                      aria-pressed={builderProfile === option.value}
-                      onClick={() => setBuilderProfile(option.value)}
-                    >
-                      <img src={option.image} alt="" />
-                      <span>
-                        <strong>{option.label}</strong>
-                        <small>{option.theme}</small>
-                      </span>
-                      <i aria-hidden="true" />
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className="builder-cta-ghost w-full px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em]"
-                  onClick={() => {
-                    setOnboardingStep(0);
-                    setShowCustomize(false);
-                    setShowOnboarding(true);
-                  }}
-                >
-                  Revisar onboarding
-                </button>
-              </section>
+                  {/* Overlay gradiente */}
+                  <div className="settings-modal-asset-overlay" />
 
-              <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#6E6558]">Brand</p>
-                  {catalogLogo && (
-                    <button onClick={() => setCatalogLogo(null)} className="text-[10px] font-black uppercase tracking-wide text-[#6b1e23]">
-                      Remove
-                    </button>
-                  )}
-                </div>
-                <div className="builder-apple-card p-3 sm:p-4">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="builder-header-mark flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden p-1 sm:h-16 sm:w-16">
-                      {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" /> : <img src="/cyan.svg" alt="Fit Legacy Builder" className="h-full w-full rounded-lg object-cover" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#F1F0F4]">Catalog logo</p>
-                      <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-snug text-[#6E6558] sm:text-xs sm:leading-relaxed">Shown in the builder catalog.</p>
-                      <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium leading-snug text-[#9CA0A6]">
-                        Max 1 MB. Ideal: WebP/JPG, 1080x1920 vertical or 1200x1200 square.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <label className="builder-cta-ghost flex min-h-12 cursor-pointer items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-wide">
-                      <ImageIcon className="h-3.5 w-3.5" /> Upload logo
-                      <input type="file" accept="image/*" className="hidden" onChange={handleCatalogLogoUpload} />
-                    </label>
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#6E6558]">Client view</p>
-                <div className="grid grid-cols-1 gap-2">
-                  {CATALOG_BG_PRESETS.map(preset => (
-                    <button
-                      key={preset.id}
-                      onClick={() => {
-                        setCatalogBgId(preset.id);
-                        setCatalogBgImage(null);
-                      }}
-                      className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${catalogBgId === preset.id && !catalogBgImage ? 'builder-profile-selected-option' : ''}`}
-                    >
-                    <span className="h-9 w-12 shrink-0 rounded-2xl border border-white shadow-inner" style={preset.style} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#F1F0F4]">{preset.label}</span>
-                        <span className="block font-['IBM_Plex_Mono',monospace] text-xs font-medium text-[#6E6558]">Preview palette</span>
-                      </span>
-                      {catalogBgId === preset.id && !catalogBgImage && (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--builder-accent)] text-white">
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                <label className={`builder-cta-ghost flex cursor-pointer items-center justify-between gap-3 p-3 ${catalogBgImage ? 'builder-profile-selected-option text-[var(--builder-accent)]' : ''}`}>
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="builder-apple-tile flex h-9 w-12 items-center justify-center">
-                      <ImageIcon className="h-4 w-4" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-black">{catalogBgImage ? 'Custom image' : 'Upload image'}</span>
-                      <span className="block text-xs font-medium text-[#6E6558]">Use a custom background.</span>
-                    </span>
-                  </span>
-                  {catalogBgImage && <Check className="h-4 w-4" />}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleCatalogBgUpload} />
-                </label>
-
-                {catalogBgImage && (
-                  <button onClick={() => { setCatalogBgImage(null); setCatalogBgId('clean'); }} className="builder-cta-ghost w-full px-3 py-2 text-xs font-black uppercase tracking-wide text-[#6b1e23] hover:bg-[#fff4f4]">
-                    Remove image
+                  {/* Close button */}
+                  <button
+                    type="button"
+                    className="settings-modal-close settings-modal-close--over"
+                    onClick={() => setShowCustomize(false)}
+                    aria-label="Cerrar ajustes"
+                  >
+                    <UiIcon name="cancel-2" size={18} variant="duo" />
                   </button>
-                )}
-              </section>
 
-              <section className="space-y-3">
-                <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-wide text-[#6E6558]">Share</p>
-                <div className="builder-apple-card p-4">
-                  <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#F1F0F4]">{routineDisplayName}</p>
-                  <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-xs font-medium text-[#6E6558]">{routineItemCount} items ready</p>
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <button
-                      onClick={handleCopyShareLink}
-                      disabled={!hasRoutineItems}
-                      className="builder-cta-ghost flex items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-wide"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      Copy
-                    </button>
-                    <button
-                      onClick={handleShareToWhatsApp}
-                      disabled={!hasRoutineItems}
-                      className="builder-cta-primary flex items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-wide"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      Send
-                    </button>
+                  {/* Logo + textos */}
+                  <div className="settings-modal-hero-brand">
+                    <span className="settings-modal-mark">
+                      <DynamicLogoIcon />
+                    </span>
+                    <div className="settings-modal-hero-text">
+                      <small>Fit Legacy</small>
+                      <h2>Builder</h2>
+                    </div>
+                  </div>
+
+                  {/* Copy */}
+                  <div className="settings-modal-asset-copy">
+                    <span>Builder live</span>
+                    <strong>Crea y comparte planes</strong>
                   </div>
                 </div>
-              </section>
 
-              <section className="builder-apple-card p-4">
-                <SocialJoin
-                  title="Únete"
-                  align="center"
-                  className="[&_h4]:mb-3 [&_h4]:text-[9px] [&_div]:gap-2 [&_a]:h-8 [&_a]:w-8"
-                />
-              </section>
-            </div>
-            </motion.aside>
+                <div className="settings-modal-content settings-footer-content">
+                  {/* ── Sistema de entrenamiento ── */}
+                  <div className="settings-footer-intro">
+                    <div>
+                      <span className="settings-modal-label">Sistema de entrenamiento</span>
+                      <p>Tu centro de creación conectado con todo el ecosistema Fit Legacy.</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="settings-footer-sync is-online"
+                      title="Builder activo"
+                    >
+                      <i aria-hidden="true" />
+                      <span>Builder activo</span>
+                      <strong>{routineDisplayName}</strong>
+                    </button>
+                  </div>
+
+                  {/* ── Theme selector (builder profile) ── */}
+                  <section className="settings-footer-theme">
+                    <div className="settings-footer-section-heading">
+                      <span className="settings-modal-label">Perfil</span>
+                      <small>{builderProfile === 'woman' ? 'Rose signal' : 'Golden signal'}</small>
+                    </div>
+                    <div className="settings-modal-theme-toggle">
+                      {BUILDER_PROFILE_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`settings-modal-theme-btn ${builderProfile === option.value ? 'is-active' : ''}`}
+                          aria-pressed={builderProfile === option.value}
+                          onClick={() => setBuilderProfile(option.value)}
+                          title={`${option.label} — ${option.theme}`}
+                        >
+                          <img src={option.image} alt="" className="h-4 w-4 rounded-full object-cover" />
+                          <span>{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* ── Brand (catalog logo upload) ── */}
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="settings-modal-label">Brand</span>
+                      {catalogLogo && (
+                        <button onClick={() => setCatalogLogo(null)} className="text-[10px] font-black uppercase tracking-wide text-[#6b1e23]">
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="builder-apple-card p-3 sm:p-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="builder-header-mark flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden p-1 sm:h-16 sm:w-16">
+                          {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" /> : <img src={localAssetUrl('/cyan.svg')} alt="Fit Legacy Builder" className="h-full w-full rounded-lg object-cover" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#F1F0F4]">Catalog logo</p>
+                          <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-snug text-[#6E6558] sm:text-xs sm:leading-relaxed">Shown in the builder catalog.</p>
+                          <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium leading-snug text-[#9CA0A6]">
+                            Max 1 MB. Ideal: WebP/JPG, 1080x1920 vertical or 1200x1200 square.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <label className="builder-cta-ghost flex min-h-12 cursor-pointer items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-wide">
+                          <UiIcon name="gallery" className="h-4 w-4" active={Boolean(catalogLogo)} /> Upload logo
+                          <input type="file" accept="image/*" className="hidden" onChange={handleCatalogLogoUpload} />
+                        </label>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* ── Vista compartida (share preview background presets) ── */}
+                  <section className="space-y-3">
+                    <span className="settings-modal-label">Vista compartida</span>
+                    <div className="grid grid-cols-1 gap-2">
+                      {CATALOG_BG_PRESETS.map(preset => (
+                        <button
+                          key={preset.id}
+                          onClick={() => {
+                            setCatalogBgId(preset.id);
+                            setCatalogBgImage(null);
+                          }}
+                          className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${catalogBgId === preset.id && !catalogBgImage ? 'builder-profile-selected-option' : ''}`}
+                        >
+                          <span className="h-9 w-12 shrink-0 rounded-2xl border border-white shadow-inner" style={preset.style} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#F1F0F4]">{preset.label}</span>
+                            <span className="block font-['IBM_Plex_Mono',monospace] text-xs font-medium text-[#6E6558]">Preview palette</span>
+                          </span>
+                          {catalogBgId === preset.id && !catalogBgImage && (
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--builder-accent)] text-white">
+                              <UiIcon name="validation-1" className="h-4 w-4" variant="duo" />
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    <label className={`builder-cta-ghost flex cursor-pointer items-center justify-between gap-3 p-3 ${catalogBgImage ? 'builder-profile-selected-option text-[var(--builder-accent)]' : ''}`}>
+                      <span className="flex min-w-0 items-center gap-3">
+                        <span className="builder-apple-tile flex h-9 w-12 items-center justify-center">
+                          <UiIcon name="gallery" className="h-5 w-5" active={Boolean(catalogBgImage)} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-black">{catalogBgImage ? 'Custom image' : 'Upload image'}</span>
+                          <span className="block text-xs font-medium text-[#6E6558]">Use a custom background.</span>
+                        </span>
+                      </span>
+                      {catalogBgImage && <UiIcon name="validation-1" className="h-4 w-4" variant="duo" />}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleCatalogBgUpload} />
+                    </label>
+
+                    {catalogBgImage && (
+                      <button onClick={() => { setCatalogBgImage(null); setCatalogBgId('clean'); }} className="builder-cta-ghost w-full px-3 py-2 text-xs font-black uppercase tracking-wide text-[#6b1e23] hover:bg-[#fff4f4]">
+                        Remove image
+                      </button>
+                    )}
+                  </section>
+
+                  {/* ── Producto / Legado links ── */}
+                  <div className="settings-footer-link-grid">
+                    <nav aria-label="Productos Fit Legacy">
+                      <span className="settings-modal-label">Producto</span>
+                      <ul>
+                        {PRODUCT_LINKS.map((link) => (
+                          <li key={link.name}>
+                            <a href={link.href}><span>{link.name}</span><b aria-hidden="true">↗</b></a>
+                          </li>
+                        ))}
+                      </ul>
+                    </nav>
+                    <nav aria-label="Información de Fit Legacy">
+                      <span className="settings-modal-label">Legado</span>
+                      <ul>
+                        {LEGACY_LINKS.map((link) => (
+                          <li key={link.name}>
+                            <a
+                              href={link.href}
+                              onClick={link.isCookies
+                                ? (event) => {
+                                    event.preventDefault();
+                                    window.dispatchEvent(new CustomEvent('open-cookie-settings'));
+                                  }
+                                : undefined}
+                            >
+                              <span>{link.name}</span><b aria-hidden="true">↗</b>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </nav>
+                  </div>
+
+                  {/* ── Social links footer ── */}
+                  <footer className="settings-footer-meta">
+                    <div>
+                      <span className="settings-modal-label">Únete</span>
+                      <div className="settings-modal-social-links">
+                        {FIT_LEGACY_SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
+                          <a
+                            key={name}
+                            className="settings-modal-social-link"
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={name}
+                            title={name}
+                          >
+                            <Icon />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="settings-modal-motto"><span>Memento Mori.</span><strong>Memento Vivere.</strong></p>
+                  </footer>
+
+                  {/* ── Logout button ── */}
+                  <button
+                    type="button"
+                    className="settings-modal-logout fl-cut-cta fl-cut-cta--primary"
+                    onClick={() => {
+                      setShowCustomize(false);
+                      window.location.href = '/';
+                    }}
+                  >
+                    <UiIcon name="on-off-1" size={18} variant="duo" />
+                    <span>Cerrar sesión</span>
+                  </button>
+                </div>
+              </motion.section>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
@@ -1919,7 +2294,7 @@ export default function MobileFirstBuilder() {
               disabled={!hasRoutineItems}
               className="builder-cta-ghost flex h-12 items-center justify-center gap-2 text-xs font-black uppercase tracking-wide"
             >
-              <Copy className="h-4 w-4" />
+               <UiIcon name="cloud-data-transfer" className="h-4 w-4" />
               Copy
             </button>
             <button
@@ -1927,7 +2302,7 @@ export default function MobileFirstBuilder() {
               disabled={!hasRoutineItems}
               className="builder-cta-primary flex h-12 items-center justify-center gap-2 text-xs font-black uppercase tracking-wide"
             >
-              <Share2 className="h-4 w-4" />
+               <UiIcon name="cloud-data-transfer" className="h-4 w-4" active />
               WhatsApp
             </button>
           </div>
@@ -1951,73 +2326,101 @@ export default function MobileFirstBuilder() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-              className="fixed bottom-[92px] left-0 right-0 z-[60] px-4"
+              className="builder-onboarding-shell fixed bottom-[92px] left-0 right-0 z-[60] px-4"
               aria-label="Primeros pasos del builder"
+              aria-modal="true"
+              role="dialog"
             >
-            <div className="builder-onboarding builder-glass-shell mx-auto max-w-md overflow-hidden rounded-[1.75rem] p-3">
+            <motion.div
+              layout
+              transition={{ layout: { duration: reduceMotion ? 0.01 : 0.32, ease: [0.22, 1, 0.36, 1] } }}
+              className={`builder-onboarding builder-glass-shell mx-auto max-w-md overflow-hidden rounded-[1.75rem] p-3${onboardingStep === 0 ? ' builder-onboarding--identity' : ''}`}
+            >
               <div className="mb-3 flex items-center justify-between gap-3 px-1">
-                <div>
-                  <p className="builder-onboarding__eyebrow">Primer ingreso · {builderProfile === 'woman' ? 'Rose' : 'Orange'}</p>
-                  <h2 className="text-lg font-black italic uppercase tracking-tight text-[#F1F0F4]">
-                    Calibra tu Builder
-                  </h2>
-                </div>
+                <AnimatePresence mode="wait" initial={false} custom={reduceMotion ? 0 : onboardingDirection}>
+                  <motion.div
+                    key={`builder-onboarding-heading-${onboardingStep}`}
+                    className="builder-onboarding__heading"
+                    custom={reduceMotion ? 0 : onboardingDirection}
+                    variants={BUILDER_ONBOARDING_STEP_VARIANTS}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: reduceMotion ? 0.01 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <p className="builder-onboarding__eyebrow">0{onboardingStep + 1} / 0{ONBOARDING_STEPS.length} · {ONBOARDING_STEPS[onboardingStep].title}</p>
+                    <h2 className="text-lg font-black italic uppercase tracking-tight text-[#F1F0F4]">
+                      {onboardingStep === 0 ? 'Elegí tu señal' : 'Calibra tu Builder'}
+                    </h2>
+                  </motion.div>
+                </AnimatePresence>
                 <button
+                  type="button"
                   onClick={completeOnboarding}
                   className="builder-icon-button flex h-9 w-9 shrink-0 items-center justify-center text-[#6E6558] hover:bg-[#2A2520] hover:text-[#F1F0F4]"
                   aria-label="Cerrar guia inicial"
                 >
-                  <X className="h-4 w-4" />
+                  <UiIcon name="cancel-2" className="h-5 w-5" variant="duo" />
                 </button>
               </div>
 
-              <div className="relative -mx-3 mb-3 overflow-hidden">
-                <div className="builder-onboarding__hero relative h-48">
-                  <AnimatePresence mode="wait">
+              <AnimatePresence mode="popLayout" initial={false} custom={reduceMotion ? 0 : onboardingDirection}>
+                <motion.div
+                  key={`builder-onboarding-step-${onboardingStep}`}
+                  className="builder-onboarding__step-content"
+                  custom={reduceMotion ? 0 : onboardingDirection}
+                  variants={BUILDER_ONBOARDING_STEP_VARIANTS}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: reduceMotion ? 0.01 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+                >
+                {onboardingStep > 0 && <div className="relative -mx-3 mb-3 overflow-hidden">
+                  <div className="builder-onboarding__hero relative h-48">
                     <motion.img
                       key={`${builderProfile}-${onboardingStep}`}
                       src={BUILDER_PROFILE_ASSETS[builderProfile][onboardingStep]}
-                      initial={{ opacity: 0, scale: 1.08 }}
+                      initial={{ opacity: 0, scale: reduceMotion ? 1 : 1.045 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ duration: reduceMotion ? 0.01 : 0.46, ease: [0.22, 1, 0.36, 1] }}
                       className="h-full w-full object-cover"
                       style={{ objectPosition: '50% 18%' }}
                       alt=""
                     />
-                  </AnimatePresence>
-                  <div className="builder-onboarding__hero-copy">
-                    <span>0{onboardingStep + 1} / 0{ONBOARDING_STEPS.length}</span>
-                    <strong>{ONBOARDING_STEPS[onboardingStep].title}</strong>
+                    <div className="builder-onboarding__hero-copy">
+                      <span>0{onboardingStep + 1} / 0{ONBOARDING_STEPS.length}</span>
+                      <strong>{ONBOARDING_STEPS[onboardingStep].title}</strong>
+                    </div>
+                  </div>
+                </div>}
+                {onboardingStep === 0 ? (
+                  <div ref={builderProfileRailRef} className="builder-profile-grid" aria-label="Perfil visual">
+                    {BUILDER_PROFILE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        data-builder-profile-option={option.value}
+                        className={`builder-profile-choice ${builderProfile === option.value ? 'is-active' : ''}`}
+                        aria-pressed={builderProfile === option.value}
+                        onClick={(event) => {
+                          setBuilderProfile(option.value);
+                          event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }}
+                      >
+                        <img src={option.image} alt="" />
+                        <span><strong>{option.label}</strong><small>{option.theme}</small></span>
+                        <i aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="builder-onboarding__active-step">
+                    <span><OnboardingIcon type={ONBOARDING_STEPS[onboardingStep].icon} /></span>
                     <p>{ONBOARDING_STEPS[onboardingStep].body}</p>
                   </div>
-                </div>
-              </div>
-              {onboardingStep === 0 ? (
-                <div className="builder-profile-grid" aria-label="Perfil visual">
-                  {BUILDER_PROFILE_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`builder-profile-choice ${builderProfile === option.value ? 'is-active' : ''}`}
-                      aria-pressed={builderProfile === option.value}
-                      onClick={() => setBuilderProfile(option.value)}
-                    >
-                      <img src={option.image} alt="" />
-                      <span><strong>{option.label}</strong><small>{option.theme}</small></span>
-                      <i aria-hidden="true" />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="builder-onboarding__active-step">
-                  <span><OnboardingIcon type={ONBOARDING_STEPS[onboardingStep].icon} /></span>
-                  <div>
-                    <strong>{ONBOARDING_STEPS[onboardingStep].title}</strong>
-                    <small>{ONBOARDING_STEPS[onboardingStep].body}</small>
-                  </div>
-                </div>
-              )}
+                )}
+                </motion.div>
+              </AnimatePresence>
 
               <div className="builder-onboarding__rail" aria-label={`Paso ${onboardingStep + 1} de ${ONBOARDING_STEPS.length}`}>
                 {ONBOARDING_STEPS.map((step, index) => (
@@ -2026,6 +2429,7 @@ export default function MobileFirstBuilder() {
                     type="button"
                     className={onboardingStep === index ? 'is-active' : index < onboardingStep ? 'is-done' : ''}
                     onClick={() => goToOnboardingStep(index)}
+                    aria-current={onboardingStep === index ? 'step' : undefined}
                     aria-label={`Ir al paso ${index + 1}: ${step.title}`}
                   />
                 ))}
@@ -2033,19 +2437,22 @@ export default function MobileFirstBuilder() {
 
               <div className="mt-3 flex items-center justify-between gap-3">
                 <button
+                  type="button"
                   onClick={completeOnboarding}
-                  className="builder-cta-ghost px-3 py-3 text-[10px] font-black uppercase tracking-widest text-[#9CA0A6]"
+                  className="builder-cta-ghost fl-cut-cta fl-cut-cta--secondary px-3 py-3 text-[10px] font-black uppercase tracking-widest text-[#9CA0A6]"
                 >
                   Saltar
                 </button>
                 <button
+                  type="button"
                   onClick={advanceOnboarding}
-                  className="builder-cta-primary px-4 py-3 text-[10px] font-black uppercase tracking-widest"
+                  className="builder-onboarding__next builder-cta-primary fl-cut-cta fl-cut-cta--primary px-4 py-3 text-[10px] font-black uppercase tracking-widest"
                 >
-                  {onboardingStep === ONBOARDING_STEPS.length - 1 ? 'Listo' : 'Siguiente'}
+                  <span>{onboardingStep === ONBOARDING_STEPS.length - 1 ? 'Listo' : 'Siguiente'}</span>
+                  {onboardingStep === ONBOARDING_STEPS.length - 1 ? <UiIcon name="validation-1" className="builder-onboarding__next-icon" size={17} variant="duo" /> : <ArrowRight className="builder-onboarding__next-icon" size={15} />}
                 </button>
               </div>
-            </div>
+            </motion.div>
             </motion.section>
           </>
         )}
@@ -2053,56 +2460,109 @@ export default function MobileFirstBuilder() {
 
       <SabiasQueBanner
         profile={builderProfile}
-        className="fixed bottom-0 left-0 right-0 z-40 px-3 lg:hidden"
       />
 
-      {/* Mobile Footer Nav */}
+      {/* Mobile Nav (Vertical Right Rail Dock - Analytics Style) */}
       <div className="builder-footer-nav-wrapper">
-        <nav className={`builder-footer-nav${navVisible ? '' : ' builder-footer-nav--hidden'}`} role="navigation">
-          {[
-            { id: 'catalog' as TabType, icon: () => <img src="/cyan.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />, badge: null },
-            { id: 'food' as TabType, icon: () => <Apple size={18} />, badge: currentRoutine.foods.length > 0 ? currentRoutine.foods.length : null },
-            { id: 'build' as TabType, icon: () => <ExerciseIcon section="fullbody" className="h-5 w-5" />, badge: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.length : null },
-            { id: 'calendar' as TabType, icon: () => <CalendarDays size={18} />, badge: calendarEntries.length + calendarActions.length > 0 ? (calendarEntries.length + calendarActions.length > 9 ? '9+' : calendarEntries.length + calendarActions.length) : null },
-            { id: 'export' as TabType, icon: () => <img src="/icons/fl-1.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />, badge: null },
-          ].map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => { setActiveTab(item.id); if (item.id === 'catalog') setBuilderMode('workout'); }}
-                className={`builder-footer-nav-btn${isActive ? ' is-active' : ''}`}
-                aria-label={item.id}
-              >
-                <span className="builder-footer-nav-btn-icon">
-                  <item.icon />
-                  {item.badge !== null && (
-                    <span className="builder-footer-nav-btn-badge">{item.badge}</span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
         <button
           type="button"
           className={`builder-footer-nav-toggle${navVisible ? '' : ' builder-footer-nav-toggle--pinned'}`}
           onClick={() => setNavVisible((v) => !v)}
-          aria-label={navVisible ? 'Collapse navigation' : 'Expand navigation'}
+          aria-label={navVisible ? 'Ocultar navegación' : 'Mostrar navegación'}
         >
-          <i className="builder-footer-nav-toggle-icon" style={{ transform: navVisible ? 'rotate(0deg)' : 'rotate(180deg)' }} />
+          <span className="builder-footer-nav-toggle-icon" />
         </button>
+        <nav className={`builder-footer-nav${navVisible ? '' : ' builder-footer-nav--hidden'}`} role="navigation" aria-label="Navegación principal">
+          {[
+            { id: 'home' as TabType, label: 'Hoy', renderIcon: (active: boolean) => <UiIcon name="graph-pie" size={22} active={active} />, badge: null },
+            { id: 'build' as TabType, label: 'Mi plan', renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.length : null },
+            { id: 'train' as TabType, label: 'Entrenar', renderIcon: (active: boolean) => <UiIcon name="on-off-1" size={22} active={active} />, badge: null },
+            { id: 'oneRm' as TabType, label: '1RM', renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: null },
+            { id: 'timer' as TabType, label: 'Timer', renderIcon: (active: boolean) => <UiIcon name="date-time-setting" size={22} active={active} />, badge: null },
+            { id: 'calendar' as TabType, label: 'Progreso', externalHref: ANALYTICS_PROGRESS_URL, renderIcon: (active: boolean) => <UiIcon name="date-time-setting" size={22} active={active} />, badge: null },
+            { id: 'coach' as TabType, label: 'Legacito', externalHref: ANALYTICS_COACH_URL, renderIcon: () => null, badge: null },
+          ].map((item) => {
+            const isActive = activeTab === item.id;
+            if (item.id === 'coach') {
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    if (item.externalHref) {
+                      window.location.assign(item.id === 'calendar' ? analyticsHandoffUrl('/progreso') : analyticsHandoffUrl('/legacito'));
+                      return;
+                    }
+                    setActiveTab(item.id);
+                  }}
+                  className={`builder-footer-nav-btn builder-footer-nav-btn--coach${isActive ? ' is-active' : ''}`}
+                  aria-label="Abrir Legacito en Analytics"
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    {coachDisplayMode === 'avatar' ? (
+                      <motion.div
+                        key="coach-avatar-full"
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="flex h-full w-full items-center justify-center py-0.5"
+                      >
+                        <Legacito
+                          mood={isActive ? 'celebrating' : 'thinking'}
+                          size={42}
+                          skinId={legacitoSkin}
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="coach-text-full"
+                        initial={{ opacity: 0, y: 3 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -3 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="flex h-full w-full flex-col items-center justify-center px-0.5"
+                      >
+                        <span className="font-['IBM_Plex_Mono',monospace] text-[8.5px] font-black tracking-wider text-[var(--builder-accent-soft)]">
+                          LEGACITO
+                        </span>
+                        <span className="text-[7px] font-bold tracking-tight text-white/50">
+                          1.1
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </button>
+              );
+            }
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  if (item.externalHref) {
+                    window.location.assign(item.externalHref);
+                    return;
+                  }
+                  setActiveTab(item.id);
+                }}
+                className={`builder-footer-nav-btn${isActive ? ' is-active' : ''}`}
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <span className="builder-footer-nav-btn-icon">
+                  {item.renderIcon(isActive)}
+                  {item.badge !== null && (
+                    <span className="builder-footer-nav-btn-badge">{item.badge}</span>
+                  )}
+                </span>
+                <span className="builder-footer-nav-btn-label">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
-
-      {!showOnboarding && !showCustomize && (
-        <AiMentorChat
-          open={chatOpen}
-          skinId={legacitoSkin}
-          onSkinChange={setLegacitoSkin}
-          onOpenChange={setChatOpen}
-        />
-      )}
 
     </div>
   );

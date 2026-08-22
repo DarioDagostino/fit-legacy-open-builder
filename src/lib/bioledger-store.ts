@@ -30,6 +30,21 @@ export interface BioLedgerStats {
   totalSessions: number;
   totalExercises: number;
   averageSessionValue: number;
+  bestLift?: {
+    exerciseName: string;
+    estimated1RmKg: number;
+    weightKg: number;
+    reps: number;
+    date: string;
+  };
+  restTimerHistory?: Array<{
+    durationSeconds: number;
+    mode: 'single' | 'interval';
+    preset?: string;
+    rounds?: number;
+    xpEarned: number;
+    date: string;
+  }>;
 }
 
 interface BioLedgerState {
