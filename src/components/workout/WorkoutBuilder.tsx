@@ -35,6 +35,7 @@ import { RestTimer } from './RestTimer';
 import { SportsChronograph } from './SportsChronograph';
 import { WeeklyCoachSummaryPanel } from './WeeklyCoachSummaryPanel';
 import { CompositionDraftPanel } from './CompositionDraftPanel';
+import { MealTimelinePanel } from './MealTimelinePanel';
 import { builderPathForTab, resolveBuilderRoute, type BuilderRouteTab } from '../../lib/builderRoutes';
 
 const APP_URLS = resolveFitLegacyAppUrls(import.meta.env);
@@ -362,6 +363,7 @@ export default function MobileFirstBuilder() {
     clearRoutine,
     saveWorkoutDay,
     saveMealComposition,
+    removeMealComposition,
     mealCompositions,
   } = useWorkoutStore();
 
@@ -823,6 +825,33 @@ export default function MobileFirstBuilder() {
     window.requestAnimationFrame(() => {
       document.querySelector<HTMLInputElement>('input[aria-label="Buscar ejercicios y comidas"]')?.focus();
     });
+  };
+
+  const startMealDraft = (slot: number, date: string, time: string, name: string) => {
+    setBuilderMode('nutrition');
+    setMealDraftItems([]);
+    setMealDraftId(`meal-${Date.now()}`);
+    setMealDraftSlot(slot);
+    setMealDraftName(name);
+    setMealDraftDate(date);
+    setMealDraftTime(time);
+    setActiveTab('catalog');
+  };
+
+  const editMealComposition = (meal: MealComposition) => {
+    setBuilderMode('nutrition');
+    setMealDraftItems(meal.foods.map((food) => ({ ...food })));
+    setMealDraftId(meal.id);
+    setMealDraftSlot(meal.slot);
+    setMealDraftName(meal.name);
+    setMealDraftDate(meal.date);
+    setMealDraftTime(meal.time);
+    setActiveTab('catalog');
+  };
+
+  const deleteMealComposition = (meal: MealComposition) => {
+    removeMealComposition(meal.id);
+    toast.success(`${meal.name} quitada del día.`);
   };
 
   const activeDraftItems = builderMode === 'workout' ? workoutDraftItems : mealDraftItems;
@@ -1630,90 +1659,16 @@ export default function MobileFirstBuilder() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="h-full flex flex-col p-6 space-y-6"
+              className="h-full overflow-y-auto p-4 pb-28 sm:p-6"
             >
-              <div className="space-y-1">
-                <h2 className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-extrabold uppercase tracking-tighter text-[#F1F0F4]">Meals</h2>
-                <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-medium uppercase tracking-widest text-[#6E6558]">Adjust the food section before sharing</p>
-              </div>
-
-              <div className="grid grid-cols-4 gap-2">
-                  <div className="builder-apple-tile p-3 text-center">
-                    <div className="mb-1 flex justify-center">
-                      <FoodIcon category="carbs" name="rice" className="w-4 h-4" />
-                    </div>
-                    <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Kcal</p>
-                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[var(--builder-accent-soft)]">{Math.round(totalMacros.calories)}</p>
-                  </div>
-                  <div className="builder-apple-tile p-3 text-center">
-                    <div className="mb-1 flex justify-center">
-                      <FoodIcon category="protein" name="egg" className="w-4 h-4" />
-                    </div>
-                    <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Prot</p>
-                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[var(--builder-accent)]">{Math.round(totalMacros.protein)}g</p>
-                  </div>
-                  <div className="builder-apple-tile p-3 text-center">
-                    <div className="mb-1 flex justify-center">
-                      <FoodIcon category="carbs" name="noodles" className="w-4 h-4" />
-                    </div>
-                    <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Carb</p>
-                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[#9CA0A6]">{Math.round(totalMacros.carbs)}g</p>
-                  </div>
-                  <div className="builder-apple-tile p-3 text-center">
-                    <div className="mb-1 flex justify-center">
-                      <FoodIcon category="fats" name="avocado" className="w-4 h-4" />
-                    </div>
-                    <p className="font-['IBM_Plex_Mono',monospace] text-[7px] font-medium text-[#6E6558] uppercase">Fat</p>
-                    <p className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black leading-none text-[var(--builder-accent-deep)]">{Math.round(totalMacros.fats)}g</p>
-                  </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar pb-28">
-                {currentRoutine.foods.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
-                    <UiIcon name="fuel_protein" size={64} variant="rose" className="opacity-40" />
-                    <div className="space-y-2">
-                      <p className="font-['Big_Shoulders_Display',sans-serif] text-sm font-bold uppercase tracking-widest text-[#9CA0A6]">No meals yet</p>
-                      <p className="max-w-xs text-xs font-medium leading-relaxed text-[#6E6558]">Add foods if this routine includes nutrition. You can also share workout-only links.</p>
-                      <button onClick={() => { setActiveTab('catalog'); setBuilderMode('nutrition'); }} className="builder-cta-primary mt-2 px-4 py-3 text-[10px] font-black uppercase tracking-widest">Add food</button>
-                    </div>
-                  </div>
-                ) : (
-                  currentRoutine.foods.map(food => (
-                    <div key={food.id} className="builder-apple-card flex items-center justify-between p-5">
-                       <div className="space-y-1">
-                          <div className="flex items-center gap-2 mb-1">
-                             <FoodIcon category={food.category || 'all'} name={food.name} className="w-5 h-5" />
-                            <h4 className="font-black italic uppercase text-xs text-[#F1F0F4]">{food.name}</h4>
-                          </div>
-                          <div className="flex items-center gap-3">
-                             <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[var(--builder-accent-soft)] uppercase">{Math.round((food.protein * food.quantity) / 100)}g P</span>
-                             <span className="text-[8px] font-medium text-[#6E6558]">•</span>
-                             <span className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase">{Math.round((food.calories * food.quantity) / 100)} Kcal</span>
-                          </div>
-                       </div>
-                        <div className="flex flex-col gap-3">
-                           <div className="builder-apple-tile flex items-center gap-3 p-2">
-                              <button onClick={() => updateFood(food.id, { quantity: Math.max(25, food.quantity - 25) })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Minus size={16} /></button>
-                               <span className="text-lg font-black w-12 text-center leading-none text-[#F1F0F4]">{food.quantity}g</span>
-                              <button onClick={() => updateFood(food.id, { quantity: food.quantity + 25 })} className="builder-icon-button flex h-7 w-7 items-center justify-center"><Plus size={16} /></button>
-                              <button onClick={() => removeFood(food.id)} className="ml-1 pl-3 border-l border-[#F1F0F4]/10 text-[#6E6558] transition-colors hover:text-[var(--builder-accent)]"><UiIcon name="cancel-2" size={16} variant="duo" /></button>
-                           </div>
-                           <div className="relative">
-                               <UiIcon name="historial" size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6E6558] opacity-40" active />
-                              <input 
-                                type="text"
-                                placeholder="Note..."
-                                value={food.notes || ''}
-                                onChange={(e) => updateFood(food.id, { notes: e.target.value })}
-                                className="builder-apple-input w-full py-1.5 pl-8 pr-3 text-[10px] font-bold text-[#F1F0F4] placeholder:text-[#9CA0A6] placeholder:italic focus:outline-none"
-                              />
-                           </div>
-                        </div>
-                     </div>
-                  ))
-                )}
-              </div>
+              <MealTimelinePanel
+                date={mealDraftDate}
+                compositions={mealCompositions}
+                onDateChange={setMealDraftDate}
+                onAddMeal={startMealDraft}
+                onEditMeal={editMealComposition}
+                onRemoveMeal={deleteMealComposition}
+              />
             </motion.div>
           )}
 
