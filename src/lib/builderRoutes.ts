@@ -1,6 +1,7 @@
 export type BuilderRouteTab =
   | 'home'
   | 'catalog'
+  | 'draft'
   | 'food'
   | 'build'
   | 'train'
@@ -24,11 +25,13 @@ const ROUTE_TABLE: Record<string, BuilderRoute> = {
   '/dashboard': { tab: 'home' },
   '/ejercicios': { tab: 'build', mode: 'workout' },
   '/ejercicios/catalogo': { tab: 'catalog', mode: 'workout' },
+  '/ejercicios/borrador': { tab: 'draft', mode: 'workout' },
   '/entrenar': { tab: 'train', mode: 'workout' },
   '/1rm': { tab: 'oneRm', mode: 'workout' },
   '/timer': { tab: 'timer', mode: 'workout' },
   '/comidas': { tab: 'food', mode: 'nutrition' },
   '/comidas/catalogo': { tab: 'catalog', mode: 'nutrition' },
+  '/comidas/borrador': { tab: 'draft', mode: 'nutrition' },
   '/perfil': { tab: 'home' },
   '/calendario': { tab: 'calendar' },
   '/compartir': { tab: 'export' },
@@ -46,6 +49,8 @@ export function builderPathForTab(tab: BuilderRouteTab, mode: BuilderMode): stri
   switch (tab) {
     case 'catalog':
       return mode === 'nutrition' ? '/comidas/catalogo' : '/ejercicios/catalogo';
+    case 'draft':
+      return mode === 'nutrition' ? '/comidas/borrador' : '/ejercicios/borrador';
     case 'food':
       return '/comidas';
     case 'build':

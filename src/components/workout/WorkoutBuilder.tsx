@@ -27,7 +27,7 @@ import { onUserScopeChanged, scopedRawGet, scopedRawSet } from '../../lib/userSc
 import { reportCanonicalSyncError, syncCalendarActionsToSupabase, syncCalendarEntryToSupabase, syncRoutineToSupabase } from '../../lib/canonicalData';
 import { copyTextWithFallback, openWhatsAppShare } from './builderSharing';
 import { toWirUrl } from '../../lib/wir';
-import { LegacitoUiIcon, UiIcon } from '../UiIcon';
+import { UiIcon } from '../UiIcon';
 import { PersonalHomePanel } from './PersonalHomePanel';
 import { PersonalTrainingPanel } from './PersonalTrainingPanel';
 import { OneRmCalculator } from './OneRmCalculator';
@@ -51,8 +51,6 @@ const analyticsHandoffUrl = (path: string) => {
   const returnTo = typeof window === 'undefined' ? '/dashboard' : window.location.pathname;
   return `${APP_URLS.analytics}${path}?from=builder&returnTo=${encodeURIComponent(returnTo)}`;
 };
-const ANALYTICS_PROGRESS_URL = analyticsHandoffUrl('/progreso');
-const ANALYTICS_COACH_URL = analyticsHandoffUrl('/legacito');
 
 const PRODUCT_LINKS = [
   { name: 'Legacy IA', href: APP_URLS.ai },
@@ -409,7 +407,6 @@ export default function MobileFirstBuilder() {
     const stored = scopedRawGet(LEGACITO_SKIN_KEY) as LegacitoSkin | null;
     return LEGACITO_SKIN_OPTIONS.some((option) => option.value === stored) ? stored! : 'legacy-ai';
   });
-  const [coachDisplayMode, setCoachDisplayMode] = useState<'avatar' | 'text'>('avatar');
 
   // Every Builder screen has a stable URL so reloads, deep links and the
   // browser back button keep the user inside the app instead of falling back
@@ -449,13 +446,6 @@ export default function MobileFirstBuilder() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, [builderMode, setBuilderMode]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCoachDisplayMode((prev) => (prev === 'avatar' ? 'text' : 'avatar'));
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     saveCalendarActions(calendarActions);
@@ -823,6 +813,7 @@ export default function MobileFirstBuilder() {
   };
 
   const continueAddingDraft = () => {
+    setActiveTab('catalog');
     window.requestAnimationFrame(() => {
       document.querySelector<HTMLInputElement>('input[aria-label="Buscar ejercicios y comidas"]')?.focus();
     });
@@ -965,6 +956,8 @@ export default function MobileFirstBuilder() {
     ? 'Tu entrenamiento de hoy, sin ruido.'
     : activeTab === 'catalog'
       ? subtitleOptions[subtitleTick % subtitleOptions.length]
+      : activeTab === 'draft'
+        ? builderMode === 'workout' ? 'Revisá la rutina antes de guardarla.' : 'Revisá la comida antes de guardarla.'
       : activeTab === 'food'
         ? 'Organizá tu alimentación como un módulo separado.'
 : activeTab === 'build'
@@ -1285,8 +1278,7 @@ export default function MobileFirstBuilder() {
               { id: 'train' as TabType, label: 'Entrenar', meta: 'Registrar sesión', renderIcon: (active: boolean, size: number) => <UiIcon name="on-off-1" size={size} active={active} /> },
               { id: 'oneRm' as TabType, label: '1RM', meta: 'Medir fuerza', renderIcon: (active: boolean, size: number) => <UiIcon name="rocket-launch-chart" size={size} active={active} /> },
               { id: 'timer' as TabType, label: 'Timer', meta: 'Descanso y ritmo', renderIcon: (active: boolean, size: number) => <UiIcon name="date-time-setting" size={size} active={active} /> },
-              { id: 'calendar' as TabType, label: 'Progreso', meta: 'Ver en Analytics', externalHref: ANALYTICS_PROGRESS_URL, renderIcon: (active: boolean, size: number) => <UiIcon name="date-time-setting" size={size} active={active} /> },
-              { id: 'coach' as TabType, label: 'Legacito', meta: 'Abrir en Analytics', externalHref: ANALYTICS_COACH_URL, renderIcon: (_active: boolean, size: number) => <LegacitoUiIcon size={size} /> },
+              { id: 'food' as TabType, label: 'Meals', meta: `${mealCompositions.length} comidas`, renderIcon: (active: boolean, size: number) => <UiIcon name="fuel_protein" size={size} active={active} variant="green" /> },
             ].map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -1295,10 +1287,6 @@ export default function MobileFirstBuilder() {
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => {
-                    if (item.externalHref) {
-                      window.location.assign(item.id === 'calendar' ? analyticsHandoffUrl('/progreso') : analyticsHandoffUrl('/legacito'));
-                      return;
-                    }
                     setActiveTab(item.id);
                   }}
                   className={`relative flex items-center gap-3.5 overflow-hidden rounded-2xl px-4 py-3.5 text-left transition-all ${
@@ -1456,7 +1444,7 @@ export default function MobileFirstBuilder() {
                   />
                   
                   <button 
-                   onClick={() => { setBuilderMode('workout'); if (activeTab === 'food') setActiveTab('catalog'); }} 
+                   onClick={() => { setBuilderMode('workout'); setActiveTab('catalog'); }} 
                    role="tab"
                    aria-selected={builderMode === 'workout'}
                    className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors duration-300 z-10 ${builderMode === 'workout' ? 'text-white' : 'text-[#6E6558] hover:text-[#F1F0F4]'}`}
@@ -1465,7 +1453,7 @@ export default function MobileFirstBuilder() {
                    Exercises
                  </button>
                  <button 
-                   onClick={() => { setBuilderMode('nutrition'); if (activeTab === 'catalog') setActiveTab('food'); }} 
+                   onClick={() => { setBuilderMode('nutrition'); setActiveTab('catalog'); }} 
                    role="tab"
                    aria-selected={builderMode === 'nutrition'}
                    className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors duration-300 z-10 ${builderMode === 'nutrition' ? 'text-white' : 'text-[#6E6558] hover:text-[#F1F0F4]'}`}
@@ -1484,6 +1472,15 @@ export default function MobileFirstBuilder() {
                      {builderMode === 'workout' ? 'Revisá el día antes de guardarlo.' : 'Revisá la comida antes de guardarla.'}
                    </p>
                  </div>
+                 {activeDraftItems.length > 0 && (
+                   <button
+                     type="button"
+                     onClick={() => setActiveTab('draft')}
+                     className="builder-cta-ghost shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-widest"
+                   >
+                     Revisar borrador
+                   </button>
+                 )}
                </div>
 
                {activeDraftItems.length > 0 && (
@@ -1654,6 +1651,53 @@ export default function MobileFirstBuilder() {
                   })
                 )}
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'draft' && (
+            <motion.div
+              key={`draft-${builderMode}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="h-full overflow-y-auto p-3 pb-28 sm:p-6"
+            >
+              {activeDraftItems.length > 0 ? (
+                <CompositionDraftPanel
+                  mode={builderMode}
+                  exercises={workoutDraftItems}
+                  foods={mealDraftItems}
+                  dayId={workoutDraftDayId}
+                  dayLabel={workoutDraftDayLabel}
+                  dayDate={workoutDraftDate}
+                  dayTime={workoutDraftTime}
+                  mealSlot={mealDraftSlot}
+                  mealName={mealDraftName}
+                  mealDate={mealDraftDate}
+                  mealTime={mealDraftTime}
+                  onDayIdChange={(value) => { setWorkoutDraftDayId(value); setWorkoutDraftDayLabel(`Día ${value.split('-').pop()}`); }}
+                  onDayLabelChange={setWorkoutDraftDayLabel}
+                  onDayDateChange={setWorkoutDraftDate}
+                  onDayTimeChange={setWorkoutDraftTime}
+                  onMealSlotChange={setMealDraftSlot}
+                  onMealNameChange={setMealDraftName}
+                  onMealDateChange={setMealDraftDate}
+                  onMealTimeChange={setMealDraftTime}
+                  onUpdateExercise={updateWorkoutDraftExercise}
+                  onRemoveExercise={removeWorkoutDraftExercise}
+                  onUpdateFood={updateMealDraftFood}
+                  onRemoveFood={removeMealDraftFood}
+                  onConfirm={confirmCatalogDraft}
+                  onDiscard={discardCatalogDraft}
+                  onContinueAdding={continueAddingDraft}
+                />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+                  <UiIcon name={builderMode === 'workout' ? 'dumbbell' : 'fuel_protein'} size={58} className="opacity-40" />
+                  <div><h2 className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black uppercase text-[#F1F0F4]">Borrador vacío</h2><p className="mt-1 text-xs text-[#6E6558]">Agregá elementos desde el catálogo para comenzar.</p></div>
+                  <button type="button" onClick={() => setActiveTab('catalog')} className="builder-cta-primary px-4 py-3 text-[10px] font-black uppercase tracking-widest">Abrir catálogo</button>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -2476,60 +2520,24 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
             { id: 'train' as TabType, label: 'Entrenar', renderIcon: (active: boolean) => <UiIcon name="on-off-1" size={22} active={active} />, badge: null },
             { id: 'oneRm' as TabType, label: '1RM', renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: null },
             { id: 'timer' as TabType, label: 'Timer', renderIcon: (active: boolean) => <UiIcon name="date-time-setting" size={22} active={active} />, badge: null },
-            { id: 'calendar' as TabType, label: 'Progreso', externalHref: ANALYTICS_PROGRESS_URL, renderIcon: (active: boolean) => <UiIcon name="date-time-setting" size={22} active={active} />, badge: null },
-            { id: 'coach' as TabType, label: 'Legacito', externalHref: ANALYTICS_COACH_URL, renderIcon: () => null, badge: null },
+            { id: 'food' as TabType, label: 'Meals', renderIcon: (active: boolean) => <UiIcon name="fuel_protein" size={22} active={active} variant="green" />, badge: mealCompositions.length > 0 ? mealCompositions.length : null },
+            { id: 'settings' as const, label: 'Ajustes', renderIcon: (active: boolean) => <UiIcon name="ajustes" size={22} active={active} variant={active ? 'green' : 'rose'} />, badge: null },
           ].map((item) => {
             const isActive = activeTab === item.id;
-            if (item.id === 'coach') {
+            if (item.id === 'settings') {
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => {
-                    if (item.externalHref) {
-                      window.location.assign(item.id === 'calendar' ? analyticsHandoffUrl('/progreso') : analyticsHandoffUrl('/legacito'));
-                      return;
-                    }
-                    setActiveTab(item.id);
+                    setShowCustomize(true);
                   }}
-                  className={`builder-footer-nav-btn builder-footer-nav-btn--coach${isActive ? ' is-active' : ''}`}
-                  aria-label="Abrir Legacito en Analytics"
-                  aria-current={isActive ? 'page' : undefined}
+                  className="builder-footer-nav-btn"
+                  aria-label="Abrir ajustes del Builder"
+                  aria-expanded={showCustomize}
                 >
-                  <AnimatePresence mode="wait" initial={false}>
-                    {coachDisplayMode === 'avatar' ? (
-                      <motion.div
-                        key="coach-avatar-full"
-                        initial={{ opacity: 0, scale: 0.85 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.85 }}
-                        transition={{ duration: 0.3, ease: 'easeOut' }}
-                        className="flex h-full w-full items-center justify-center py-0.5"
-                      >
-                        <Legacito
-                          mood={isActive ? 'celebrating' : 'thinking'}
-                          size={42}
-                          skinId={legacitoSkin}
-                        />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="coach-text-full"
-                        initial={{ opacity: 0, y: 3 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -3 }}
-                        transition={{ duration: 0.3, ease: 'easeOut' }}
-                        className="flex h-full w-full flex-col items-center justify-center px-0.5"
-                      >
-                        <span className="font-['IBM_Plex_Mono',monospace] text-[8.5px] font-black tracking-wider text-[var(--builder-accent-soft)]">
-                          LEGACITO
-                        </span>
-                        <span className="text-[7px] font-bold tracking-tight text-white/50">
-                          1.1
-                        </span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <span className="builder-footer-nav-btn-icon">{item.renderIcon(showCustomize)}</span>
+                  <span className="builder-footer-nav-btn-label">{item.label}</span>
                 </button>
               );
             }
@@ -2538,10 +2546,6 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  if (item.externalHref) {
-                    window.location.assign(item.externalHref);
-                    return;
-                  }
                   setActiveTab(item.id);
                 }}
                 className={`builder-footer-nav-btn${isActive ? ' is-active' : ''}`}
