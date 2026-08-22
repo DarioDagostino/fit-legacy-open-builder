@@ -2914,6 +2914,17 @@ body:has(.builder-profile-root) #root {
   gap: 6px;
 }
 
+.builder-catalog-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  background: #080808;
+}
+
 .builder-meal-macro-strip > div {
   display: grid;
   gap: 3px;

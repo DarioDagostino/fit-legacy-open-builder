@@ -1434,34 +1434,20 @@ export default function MobileFirstBuilder() {
               exit={{ opacity: 0, y: -10 }}
               className="h-full flex flex-col gap-4 overflow-hidden rounded-[2rem] p-3 pt-3 sm:gap-6 sm:p-6"
             >
-               {/* Internal Discovery Toggle */}
-               <div className="builder-glass-shell relative flex h-[52px] items-center overflow-hidden rounded-[1.35rem] p-1 sm:h-14" role="tablist" aria-label="Modo del catálogo">
-                  <motion.div 
-                     initial={false}
-                     animate={{ x: builderMode === 'workout' ? 0 : '100%' }}
-                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                     className="builder-profile-tab-indicator absolute bottom-1 left-1 top-1 z-0 w-[calc(50%-4px)] rounded-[1.05rem]"
-                  />
-                  
-                  <button 
-                   onClick={() => { setBuilderMode('workout'); setActiveTab('catalog'); }} 
-                   role="tab"
-                   aria-selected={builderMode === 'workout'}
-                   className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors duration-300 z-10 ${builderMode === 'workout' ? 'text-white' : 'text-[#6E6558] hover:text-[#F1F0F4]'}`}
-                 >
-                   <UiIcon name="dumbbell" size={16} />
-                   Exercises
-                 </button>
-                 <button 
-                   onClick={() => { setBuilderMode('nutrition'); setActiveTab('catalog'); }} 
-                   role="tab"
-                   aria-selected={builderMode === 'nutrition'}
-                   className={`relative flex-1 h-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors duration-300 z-10 ${builderMode === 'nutrition' ? 'text-white' : 'text-[#6E6558] hover:text-[#F1F0F4]'}`}
-                 >
-                   <UiIcon name="fuel_protein" size={18} variant="green" />
-                   Meals
-                 </button>
-                </div>
+               <div className="builder-catalog-context" aria-live="polite">
+                 <div className="flex items-center gap-3">
+                   <UiIcon name={builderMode === 'workout' ? 'dumbbell' : 'fuel_protein'} size={18} variant={builderMode === 'nutrition' ? 'green' : undefined} />
+                   <div>
+                     <p className="font-['Big_Shoulders_Display',sans-serif] text-lg font-black uppercase text-[#F1F0F4]">
+                       {builderMode === 'workout' ? 'Catálogo de ejercicios' : 'Catálogo de alimentos'}
+                     </p>
+                     <p className="font-['IBM_Plex_Mono',monospace] text-[9px] uppercase tracking-[0.14em] text-[#6E6558]">
+                       {builderMode === 'workout' ? 'Mi Plan · solo entrenamiento' : 'Meals · solo nutrición'}
+                     </p>
+                   </div>
+                 </div>
+                 <span className="builder-status-chip text-[9px]">{builderMode === 'workout' ? 'Ejercicios' : 'Meals'}</span>
+               </div>
 
                <div className={`builder-draft-strip${activeDraftItems.length > 0 ? ' is-ready' : ''}`} aria-live="polite">
                  <div className="min-w-0">
