@@ -36,6 +36,7 @@ import { SportsChronograph } from './SportsChronograph';
 import { WeeklyCoachSummaryPanel } from './WeeklyCoachSummaryPanel';
 import { CompositionDraftPanel } from './CompositionDraftPanel';
 import { MealTimelinePanel } from './MealTimelinePanel';
+import { ExerciseSummaryPanel } from './ExerciseSummaryPanel';
 import { builderPathForTab, resolveBuilderRoute, type BuilderRouteTab } from '../../lib/builderRoutes';
 
 const APP_URLS = resolveFitLegacyAppUrls(import.meta.env);
@@ -855,6 +856,9 @@ export default function MobileFirstBuilder() {
   };
 
   const activeDraftItems = builderMode === 'workout' ? workoutDraftItems : mealDraftItems;
+  const todayCalendarKey = new Date().toISOString().slice(0, 10);
+  const todayWorkoutCalendarEntry = calendarEntries.find((entry) => entry.date === todayCalendarKey && (entry.type === 'workout' || entry.type === 'mixed'));
+  const todayWorkoutCalendarAction = calendarActions.find((action) => action.date === todayCalendarKey && action.type === 'workout');
 
   const addSampleRoutine = () => {
     const sampleIds = ['press_banca', 'remo_barra', 'sentadilla'];
@@ -1672,11 +1676,12 @@ export default function MobileFirstBuilder() {
             </motion.div>
           )}
 
-{activeTab === 'build' && (
-            <PlanWeeksPanel
+          {activeTab === 'build' && (
+            <ExerciseSummaryPanel
+              calendarEntry={todayWorkoutCalendarEntry}
+              calendarAction={todayWorkoutCalendarAction}
               onOpenCatalog={() => { setBuilderMode('workout'); setActiveTab('catalog'); }}
-              onOpenTraining={() => setActiveTab('train')}
-              onUseSample={addSampleRoutine}
+              onTrain={() => setActiveTab('train')}
             />
           )}
 
