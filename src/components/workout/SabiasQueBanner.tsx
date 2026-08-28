@@ -125,7 +125,7 @@ export function SabiasQueBanner({ profile, context = 'home', onNavigateTab }: { 
   const visibleIndex = index % tips.length;
   const tip = tips[visibleIndex];
   const tipImage = PROFILE_TIP_IMAGES[profile][visibleIndex % PROFILE_TIP_IMAGES[profile].length];
-  const accent = profile === 'woman' ? '#ef7aa6' : '#d7a532';
+  const accent = profile === 'woman' ? '#f43f5e' : '#00d2ee';
 
   return (
     <motion.aside

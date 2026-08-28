@@ -13,12 +13,13 @@
 }
 
 [data-builder-profile='woman'] {
-  /* Mujer: rose mate, sin neón ni resplandor de superficie. */
-  --builder-accent: var(--rose-matte, #c75078);
-  --builder-accent-soft: var(--rose-matte-soft, #d9779e);
-  --builder-accent-deep: var(--rose-matte-deep, #7a3a55);
-  --builder-accent-rgb: var(--rose-matte-rgb, 199, 80, 120);
-  --builder-accent-shadow: rgba(199, 80, 120, 0.18);
+  /* Mujer: rose mate vibrante */
+  --builder-tone: rose;
+  --builder-accent: var(--rose-matte, #f43f5e);
+  --builder-accent-soft: var(--rose-matte-soft, #fb7185);
+  --builder-accent-deep: var(--rose-matte-deep, #be123c);
+  --builder-accent-rgb: var(--rose-matte-rgb, 244, 63, 94);
+  --builder-accent-shadow: rgba(244, 63, 94, 0.28);
   --builder-orange-matte: var(--orange-matte, #a75e38);
 }
 

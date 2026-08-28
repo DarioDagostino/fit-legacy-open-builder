@@ -2815,10 +2815,9 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
           {[
             { id: 'home' as TabType, label: 'Hoy', meta: 'Tu punto de partida', renderIcon: (active: boolean) => <UiIcon name="graph-pie" size={22} active={active} />, badge: null },
             { id: 'build' as TabType, label: 'Mi plan', meta: `${currentRoutine.exercises.length} ejercicios`, renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.length : null },
-            { id: 'train' as TabType, label: 'Entrenar', meta: 'Registrar sesión', renderIcon: (active: boolean) => <UiIcon name="on-off-1" size={22} active={active} />, badge: null },
+            { id: 'food' as TabType, label: 'Comidas', meta: `${mealCompositions.length} comidas`, renderIcon: (active: boolean) => <UiIcon name="fuel_protein" size={22} active={active} variant="green" />, badge: mealCompositions.length > 0 ? mealCompositions.length : null },
             { id: 'oneRm' as TabType, label: '1RM', meta: 'Medir fuerza', renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: null },
             { id: 'timer' as TabType, label: 'Descanso', meta: 'Descanso y ritmo', renderIcon: (active: boolean) => <UiIcon name="date-time-setting" size={22} active={active} />, badge: null },
-            { id: 'food' as TabType, label: 'Comidas', meta: `${mealCompositions.length} comidas`, renderIcon: (active: boolean) => <UiIcon name="fuel_protein" size={22} active={active} variant="green" />, badge: mealCompositions.length > 0 ? mealCompositions.length : null },
             { id: 'settings' as const, label: 'Ajustes', meta: 'Preferencias', renderIcon: (active: boolean) => <UiIcon name="ajustes" size={22} active={active} variant={active ? 'green' : 'rose'} />, badge: null },
           ].map((item) => {
             const isActive = item.id === 'settings' ? showCustomize : activeTab === item.id;
