@@ -8,10 +8,14 @@ import {
   Minus,
   Ghost,
   ArrowRight,
+  Eye,
+  X,
 } from 'lucide-react';
 import { SocialJoin, UNIFIED_EXERCISES, UNIFIED_FOODS, FIT_LEGACY_SOCIAL_LINKS, resolveFitLegacyAppUrls, type LegacitoSkin, Legacito } from '@fit-legacy/shared';
+import { WORKOUT_GUIDE_EXERCISES, WORKOUT_GUIDE_CATEGORIES, getWorkoutGuideAssetUrl, getWorkoutGuideFrameAttribution, getExerciseAssetUrl, getLegacyMappedAssetUrl, getLegacyMappedSlug } from '@fit-legacy/shared/builder';
+import { WorkoutGuideAttribution } from '../WorkoutGuideAttribution';
 import { DynamicLogoIcon } from '../DynamicLogoIcon';
-import { SabiasQueBanner } from './SabiasQueBanner';
+import { SabiasQueBanner, type BuilderTipContext } from './SabiasQueBanner';
 import { StreakGuard } from './StreakGuard';
 import { NotificationBell } from './NotificationBell';
 import { PlanDecisionPanel } from './PlanDecisionPanel';
@@ -28,6 +32,7 @@ import { reportCanonicalSyncError, syncCalendarActionsToSupabase, syncCalendarEn
 import { copyTextWithFallback, openWhatsAppShare } from './builderSharing';
 import { toWirUrl } from '../../lib/wir';
 import { UiIcon } from '../UiIcon';
+import { updateBuilderBestLift, recordBuilderRestTimerSession } from '../builderToolLedger';
 import { PersonalHomePanel } from './PersonalHomePanel';
 import { PersonalTrainingPanel } from './PersonalTrainingPanel';
 import { OneRmCalculator } from './OneRmCalculator';
@@ -55,7 +60,8 @@ const analyticsHandoffUrl = (path: string) => {
 const PRODUCT_LINKS = [
   { name: 'Legacy IA', href: APP_URLS.ai },
   { name: 'Builder', href: APP_URLS.builder },
-  { name: 'The Road', href: APP_URLS.road },
+  // POST-MVP: The Road se suma cuando el ecosistema esté consolidado.
+  // { name: 'The Road', href: APP_URLS.road },
   { name: 'Planes', href: `${APP_URLS.landing}#pricing` },
 ];
 
@@ -123,8 +129,8 @@ const BUILDER_PROFILE_OPTIONS: Array<{
   theme: string;
   image: string;
 }> = [
-  { value: 'woman', label: 'Woman', theme: 'Rose signal', image: BUILDER_PROFILE_ASSETS.woman[0] },
-  { value: 'man', label: 'Man', theme: 'Golden signal', image: BUILDER_PROFILE_ASSETS.man[0] },
+  { value: 'woman', label: 'Mujer', theme: 'Rose mate', image: BUILDER_PROFILE_ASSETS.woman[0] },
+  { value: 'man', label: 'Hombre', theme: 'Cyan mate', image: BUILDER_PROFILE_ASSETS.man[0] },
 ];
 
 const BUILDER_ONBOARDING_STEP_VARIANTS = {
@@ -364,6 +370,7 @@ export default function MobileFirstBuilder() {
     saveMealComposition,
     removeMealComposition,
     mealCompositions,
+    planDays,
   } = useWorkoutStore();
 
   const initialBuilderRoute = typeof window === 'undefined'
@@ -371,6 +378,10 @@ export default function MobileFirstBuilder() {
     : resolveBuilderRoute(window.location.pathname);
   const [activeTab, setActiveTab] = useState<TabType>(initialBuilderRoute.tab);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [equipmentFilter, setEquipmentFilter] = useState<string>('all');
+  const [muscleFilter, setMuscleFilter] = useState<string>('all');
+  const [detailExercise, setDetailExercise] = useState<any | null>(null);
+  const [detailFrame, setDetailFrame] = useState<1 | 2 | 3>(1);
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [customExerciseName, setCustomExerciseName] = useState('');
@@ -394,7 +405,9 @@ export default function MobileFirstBuilder() {
   const [catalogBgImage, setCatalogBgImage] = useState<string | null>(null);
   const [calendarEntries, setCalendarEntries] = useState<CalendarEntry[]>(() => loadCalendarEntries());
   const [calendarActions, setCalendarActions] = useState<CalendarAction[]>(() => loadCalendarActions());
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // Read the completion flag during initialization so the footer/tips never
+  // flash for a frame before the onboarding effect runs.
+  const [showOnboarding, setShowOnboarding] = useState(() => scopedRawGet(ONBOARDING_KEY) !== 'done');
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [onboardingDirection, setOnboardingDirection] = useState<1 | -1>(1);
   const builderProfileRailRef = useRef<HTMLDivElement>(null);
@@ -467,21 +480,39 @@ export default function MobileFirstBuilder() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showCustomize]);
   const [navVisible, setNavVisible] = useState(true);
-  const lastScrollYRef = useRef(0);
+  const scrollPositionsRef = useRef<WeakMap<EventTarget, number>>(new WeakMap());
+  const scrollDirectionRef = useRef<'up' | 'down' | null>(null);
 
   useEffect(() => {
-    const THRESHOLD = 10;
-    const onScroll = () => {
-      const sy = window.scrollY;
-      const delta = sy - lastScrollYRef.current;
-      if (Math.abs(delta) > THRESHOLD) {
-        setNavVisible(delta < 0);
-        lastScrollYRef.current = sy;
-      }
+    const builderRoot = document.querySelector('.builder-profile-root');
+    if (!builderRoot) return undefined;
+
+    // Builder keeps the page itself locked to the phone canvas. The active
+    // screen (Hoy, Mi plan, Meals, 1RM, etc.) owns the scroll, so listen in
+    // capture phase and treat every internal scroller as one navigation rail.
+    const THRESHOLD = 14;
+    const onScroll = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || !target.closest('.builder-profile-root')) return;
+
+      const previous = scrollPositionsRef.current.get(target) ?? target.scrollTop;
+      const delta = target.scrollTop - previous;
+      scrollPositionsRef.current.set(target, target.scrollTop);
+      if (Math.abs(delta) <= THRESHOLD) return;
+      const direction = delta > 0 ? 'down' : 'up';
+      if (direction === scrollDirectionRef.current) return;
+      scrollDirectionRef.current = direction;
+      setNavVisible(direction === 'up');
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+
+    builderRoot.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    return () => builderRoot.removeEventListener('scroll', onScroll, true);
   }, []);
+
+  useEffect(() => {
+    scrollDirectionRef.current = null;
+    setNavVisible(true);
+  }, [activeTab, showCustomize]);
 
   const workoutFilters = useMemo(() => {
     return [
@@ -522,14 +553,28 @@ export default function MobileFirstBuilder() {
 
   // Pre-compute exercise and food arrays (only once, never changes)
   const allExercises = useMemo(() => {
-    return Object.entries(UNIFIED_EXERCISES)
+    const legacy = Object.entries(UNIFIED_EXERCISES)
       .flatMap(([section, categories]) => 
         categories.flatMap(cat => 
-          cat.exercises.map(ex => ({ ...ex, section, catalogGroup: cat.category }))
+          cat.exercises.map(ex => ({ ...ex, section, catalogGroup: cat.category, _source: 'legacy' as const }))
         )
       )
       // "Personalizado" should be user-created only, not pre-seeded catalog items.
       .filter((ex) => normalizeFilterId((ex as any).section) !== 'custom');
+    const wg = WORKOUT_GUIDE_EXERCISES.map(ex => ({ ...ex, catalogGroup: (ex as any).muscleGroup || ex.category, _source: 'workout-guide' as const }));
+    return [...legacy, ...wg];
+  }, []);
+
+  const workoutGuideEquipmentOptions = useMemo(() => {
+    const set = new Set<string>();
+    WORKOUT_GUIDE_EXERCISES.forEach((ex: any) => { if (ex.equipment) set.add(ex.equipment); });
+    return ['all', ...Array.from(set).sort()];
+  }, []);
+
+  const workoutGuideMuscleOptions = useMemo(() => {
+    const set = new Set<string>();
+    WORKOUT_GUIDE_EXERCISES.forEach((ex: any) => { if (ex.muscleGroup) set.add(ex.muscleGroup); });
+    return ['all', ...Array.from(set).sort()];
   }, []);
 
   const allFoods = useMemo(() => {
@@ -542,10 +587,6 @@ export default function MobileFirstBuilder() {
   // Set Language and A11y (Senior)
   useEffect(() => {
     document.documentElement.lang = 'es';
-  }, []);
-
-  useEffect(() => {
-    setShowOnboarding(scopedRawGet(ONBOARDING_KEY) !== 'done');
   }, []);
 
   useEffect(() => {
@@ -628,7 +669,7 @@ export default function MobileFirstBuilder() {
     const normalizedSearch = normalizeCatalogText(search);
 
     return items.filter(item => {
-      const itemText = normalizeCatalogText(`${item.name} ${(item as any).tags?.join(' ') || ''} ${(item as any).category || ''}`);
+      const itemText = normalizeCatalogText(`${item.name} ${(item as any).tags?.join(' ') || ''} ${(item as any).category || ''} ${(item as any).equipment || ''} ${(item as any).muscleGroup || ''}`);
       const matchesSearch = itemText.includes(normalizedSearch);
       const cat = builderMode === 'workout' ? (item as any).section : (item as any).category;
       const normalizedCat = normalizeFilterId(cat);
@@ -637,10 +678,17 @@ export default function MobileFirstBuilder() {
           (normalizedFilter === 'fruits' && FRUIT_TERMS.some((term) => itemText.includes(term))) ||
           (normalizedFilter === 'vegetables' && VEGETABLE_TERMS.some((term) => itemText.includes(term)))
         );
-      const matchesFilter = normalizedFilter === 'all' || normalizedCat === normalizedFilter || matchesVirtualFoodFilter;
-      return matchesSearch && matchesFilter;
+      const matchesCategory = normalizedFilter === 'all' || normalizedCat === normalizedFilter || matchesVirtualFoodFilter;
+
+      if (builderMode === 'workout') {
+        const matchesEquipment = equipmentFilter === 'all' || (item as any).equipment === equipmentFilter;
+        const matchesMuscle = muscleFilter === 'all' || (item as any).muscleGroup === muscleFilter || (item as any).category === muscleFilter;
+        return matchesSearch && matchesCategory && matchesEquipment && matchesMuscle;
+      }
+
+      return matchesSearch && matchesCategory;
     });
-  }, [search, activeFilter, builderMode, allExercises, allFoods]);
+  }, [search, activeFilter, equipmentFilter, muscleFilter, builderMode, allExercises, allFoods]);
 
   const isCustomWorkoutFilter = useMemo(() => {
     return builderMode === 'workout' && normalizeFilterId(activeFilter) === 'custom';
@@ -802,6 +850,33 @@ export default function MobileFirstBuilder() {
     setMealDraftItems((current) => current.filter((food) => food.id !== id));
   };
 
+  const moveWorkoutDraftExercise = (id: string, direction: -1 | 1) => {
+    setWorkoutDraftItems((current) => {
+      const index = current.findIndex((exercise) => exercise.id === id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  };
+
+  const moveMealDraftFood = (id: string, direction: -1 | 1) => {
+    setMealDraftItems((current) => {
+      const index = current.findIndex((food) => food.id === id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  };
+
+  const applyWorkoutDraftPreset = (preset: { label: string; sets: number; reps: number }) => {
+    setWorkoutDraftItems((current) => current.map((exercise) => ({ ...exercise, sets: preset.sets, reps: preset.reps })));
+    toast.success(`Preset ${preset.label} aplicado al borrador.`);
+  };
+
   const discardCatalogDraft = () => {
     if (builderMode === 'workout') {
       setWorkoutDraftItems([]);
@@ -844,6 +919,77 @@ export default function MobileFirstBuilder() {
   const deleteMealComposition = (meal: MealComposition) => {
     removeMealComposition(meal.id);
     toast.success(`${meal.name} quitada del día.`);
+  };
+
+  const copyPreviousMeals = () => {
+    const previousDate = new Date(`${mealDraftDate}T12:00:00`);
+    previousDate.setDate(previousDate.getDate() - 1);
+    const previousDateKey = previousDate.toISOString().slice(0, 10);
+    const sourceMeals = mealCompositions
+      .filter((meal) => meal.date === previousDateKey)
+      .sort((a, b) => a.slot - b.slot);
+    const occupiedSlots = new Set(
+      mealCompositions.filter((meal) => meal.date === mealDraftDate).map((meal) => meal.slot),
+    );
+    const mealsToCopy = sourceMeals.filter((meal) => !occupiedSlots.has(meal.slot)).slice(0, 6 - occupiedSlots.size);
+
+    if (mealsToCopy.length === 0) {
+      toast.info('No hay slots libres para copiar en este día.');
+      return;
+    }
+
+    mealsToCopy.forEach((meal) => {
+      const id = `meal-${Date.now()}-${meal.slot}`;
+      const foods = meal.foods.map((food) => ({ ...food }));
+      saveMealComposition({
+        id,
+        slot: meal.slot,
+        name: meal.name,
+        date: mealDraftDate,
+        time: meal.time,
+        foods,
+      });
+      foods.forEach((food) => addFood(food));
+      const mealCalories = foods.reduce((total, food) => total + (Number(food.calories) || 0) * (Number(food.quantity) || 100) / 100, 0);
+      const mealEntry = saveCalendarEntry({
+        date: mealDraftDate,
+        type: 'nutrition',
+        name: `${meal.name.trim() || `Comida ${meal.slot}`} · ${currentRoutine.name || 'Mi plan'}`,
+        exercises: 0,
+        foods: foods.length,
+        totalVolume: 0,
+        totalCalories: mealCalories,
+      });
+      setCalendarEntries(mealEntry);
+      const actionId = `builder-meal-${id}`;
+      setCalendarActions((current) => [
+        ...current.filter((action) => action.id !== actionId),
+        {
+          id: actionId,
+          date: mealDraftDate,
+          title: `${meal.name.trim() || `Comida ${meal.slot}`} · ${foods.length} ingredientes`,
+          type: 'meal',
+          time: meal.time || undefined,
+          notes: `Slot ${meal.slot} · Plan ${currentRoutine.name || 'Mi plan'}`,
+          completed: false,
+        },
+      ]);
+    });
+    toast.success(`${mealsToCopy.length} ${mealsToCopy.length === 1 ? 'comida copiada' : 'comidas copiadas'} al ${mealDraftDate}.`);
+  };
+
+  const editWorkoutDay = (dayId: string) => {
+    const day = planDays.find((candidate) => candidate.id === dayId);
+    const exercises = day
+      ? day.exerciseIds.map((id) => currentRoutine.exercises.find((exercise) => exercise.id === id)).filter(Boolean) as SelectedExercise[]
+      : currentRoutine.exercises;
+    setBuilderMode('workout');
+    setWorkoutDraftItems(exercises.map((exercise) => ({ ...exercise })));
+    setWorkoutDraftDayId(day?.id || 'day-1');
+    setWorkoutDraftDayLabel(day?.label || 'Día 1');
+    setWorkoutDraftDate(new Date().toISOString().slice(0, 10));
+    setWorkoutDraftTime(new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }));
+    setActiveTab('draft');
   };
 
   const activeDraftItems = builderMode === 'workout' ? workoutDraftItems : mealDraftItems;
@@ -942,11 +1088,22 @@ export default function MobileFirstBuilder() {
   }, [currentRoutine, routineDisplayName]);
 
   const [subtitleTick, setSubtitleTick] = useState(0);
+  const [homeHeaderPhase, setHomeHeaderPhase] = useState(0);
   useEffect(() => {
     if (activeTab !== 'catalog') return;
     const t = setTimeout(() => setSubtitleTick(i => i + 1), 4000);
     return () => clearTimeout(t);
   }, [activeTab, subtitleTick]);
+
+  useEffect(() => {
+    if (activeTab !== 'home' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const timer = window.setInterval(() => setHomeHeaderPhase((phase) => (phase + 1) % 3), 4200);
+    return () => window.clearInterval(timer);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'home') setHomeHeaderPhase(0);
+  }, [activeTab]);
 
   const subtitleOptions = [
     'Elegí ejercicios y construí la base de tu entrenamiento.',
@@ -973,6 +1130,28 @@ export default function MobileFirstBuilder() {
               : activeTab === 'coach'
                 ? 'Legacito interpreta tu contexto y propone ajustes en Analytics.'
                 : 'Guardá o compartí una copia de tu plan.';
+
+  const tipContext: BuilderTipContext = activeTab === 'catalog'
+    ? builderMode === 'nutrition' ? 'meals' : 'catalog'
+    : activeTab === 'build'
+      ? 'plan'
+      : activeTab === 'food'
+        ? 'meals'
+        : activeTab === 'draft'
+          ? 'draft'
+          : activeTab === 'train'
+            ? 'train'
+            : activeTab === 'oneRm'
+              ? 'oneRm'
+              : activeTab === 'timer'
+                ? 'timer'
+                : activeTab === 'calendar'
+                  ? 'calendar'
+                  : activeTab === 'coach'
+                    ? 'coach'
+                    : activeTab === 'export'
+                      ? 'export'
+                      : 'home';
 
   const selectedWirPalette = useMemo<'ember' | 'onyx' | 'midnight' | 'bloom' | undefined>(() => {
     if (catalogBgImage) {
@@ -1169,33 +1348,90 @@ export default function MobileFirstBuilder() {
   }, [advanceOnboarding, completeOnboarding, goToOnboardingStep, onboardingStep, showOnboarding]);
 
   return (
-    <div data-builder-profile={builderProfile} className="builder-profile-root flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#080808] font-sans text-[#F1F0F4]">
+    <>
+    <div className="builder-phone-mock">
+      <div className="builder-phone-mock__bezel">
+        <div className="builder-phone-mock__screen">
+    <div data-builder-profile={builderProfile} data-builder-tab={activeTab} className="builder-profile-root flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#080808] font-sans text-[#F1F0F4]">
       <StreakGuard />
-      {/* App Header */}
-      <header className="builder-studio-header relative z-20 shrink-0 px-3 sm:px-5" role="banner">
-        <div className="mx-auto flex h-[64px] max-w-[1600px] items-center justify-between gap-3 sm:h-[76px]">
+      {/* The principal identity header belongs to Hoy; tool routes use the
+          workspace surface directly to avoid a duplicated title stack. */}
+      {activeTab === 'home' && <header className="builder-studio-header relative z-20 shrink-0 px-5" role="banner">
+        <div className="mx-auto flex min-h-[58px] max-w-[1600px] items-center justify-between gap-3 py-3">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <div className="builder-studio-header__mark flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden sm:h-12 sm:w-12">
-              <DynamicLogoIcon />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-baseline gap-2">
-                <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-lg font-black uppercase leading-none tracking-[0.02em] sm:text-2xl">Builder</p>
-                <span className="hidden font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase tracking-[0.18em] text-[var(--builder-accent-soft)] sm:inline">Personal</span>
+            {activeTab === 'home' ? (
+              <div className="builder-header-cycle min-w-0" aria-live="polite">
+                <AnimatePresence mode="wait" initial={false}>
+                  {homeHeaderPhase === 0 && (
+                    <motion.div
+                      key="brand"
+                      className="builder-header-cycle__phase builder-header-cycle__phase--brand"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <div className="builder-studio-header__mark builder-header-cycle__mark flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden sm:h-12 sm:w-12">
+                        <DynamicLogoIcon interactive={false} variant="header" profile={builderProfile} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="builder-header-cycle__brand-title truncate font-['Big_Shoulders_Display',sans-serif] font-black leading-none tracking-[0.02em]">Fit Legacy</p>
+                        <p className="builder-header-cycle__tagline">Tu plan, tu ritmo</p>
+                      </div>
+                    </motion.div>
+                  )}
+                  {homeHeaderPhase === 1 && (
+                    <motion.div
+                      key="plan-rhythm"
+                      className="builder-header-cycle__phase builder-header-cycle__phase--plan"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <div className="min-w-0">
+                        <p className="builder-header-cycle__title">Ritmo del plan</p>
+                        <p className="builder-header-cycle__tagline">Ordená la carga de tu semana y llegá a cada sesión con un plan claro para entrenar sin improvisar.</p>
+                      </div>
+                    </motion.div>
+                  )}
+                  {homeHeaderPhase === 2 && (
+                    <motion.div
+                      key="progress"
+                      className="builder-header-cycle__phase"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <div className="min-w-0">
+                        <p className="builder-header-cycle__title builder-header-cycle__title--accent">Builder</p>
+                        <p className="builder-header-cycle__tagline">Elegí · ajustá · entrená</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={`${activeTab}-${subtitleTick}`}
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -3 }}
-                  transition={{ duration: 0.2 }}
-                  className="mt-1 max-w-[48vw] truncate font-['IBM_Plex_Mono',monospace] text-[9px] font-medium text-[#6E6558] sm:max-w-sm sm:text-[10px]"
-                >
-                  {screenSubtitle}
-                </motion.p>
-              </AnimatePresence>
-            </div>
+            ) : (
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <p className="builder-studio-header__title truncate font-['Big_Shoulders_Display',sans-serif] font-black uppercase leading-none tracking-[0.02em]">Builder</p>
+                  <span className="hidden font-['IBM_Plex_Mono',monospace] text-[8px] font-bold uppercase tracking-[0.18em] text-[var(--builder-accent-soft)] sm:inline">Personal</span>
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={`${activeTab}-${subtitleTick}`}
+                    initial={{ opacity: 0, y: 3 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -3 }}
+                    transition={{ duration: 0.2 }}
+                    className="builder-studio-header__subtitle mt-1 max-w-[48vw] truncate font-['IBM_Plex_Mono',monospace] font-medium text-[#6E6558]"
+                  >
+                    {screenSubtitle}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
+            )}
           </div>
 
           <div className="builder-studio-header__status hidden min-w-[280px] items-center gap-3 lg:flex">
@@ -1211,28 +1447,8 @@ export default function MobileFirstBuilder() {
             <span className="builder-status-chip whitespace-nowrap px-3 py-2 text-[10px] font-black">{currentRoutine.exercises.length} ejercicios</span>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <button onClick={() => setActiveTab('export')} className="builder-header-share hidden px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.14em] md:block" disabled={!hasRoutineItems}>Compartir</button>
-            <button
-              onClick={() => setActiveTab('export')}
-              className="builder-icon-button flex h-10 w-10 items-center justify-center text-[#6E6558] hover:text-[var(--builder-accent)] md:hidden"
-              aria-label="Compartir mi plan"
-              disabled={!hasRoutineItems}
-            >
-              <UiIcon name="gallery" size={18} active={hasRoutineItems} />
-            </button>
-            <NotificationBell />
-            <button
-              onClick={() => setShowCustomize(true)}
-              className="builder-icon-button flex h-10 w-10 items-center justify-center text-[#6E6558] hover:text-[var(--builder-accent)]"
-              aria-label="Abrir ajustes del Builder"
-              aria-expanded={showCustomize}
-            >
-              <UiIcon name="ajustes" variant={showCustomize ? 'green' : 'rose'} className="h-5 w-5" />
-            </button>
-          </div>
         </div>
-      </header>
+      </header>}
 
       <div
         className="relative z-10 flex-1 overflow-hidden lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-4 lg:p-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]"
@@ -1388,7 +1604,7 @@ export default function MobileFirstBuilder() {
       >
         <AnimatePresence mode="wait">
           {activeTab === 'home' && (
-            <PersonalHomePanel onNavigate={(destination) => {
+            <PersonalHomePanel onShare={() => setActiveTab('export')} onNavigate={(destination) => {
               if (destination === 'catalog') setBuilderMode('workout');
               setActiveTab(destination);
             }} />
@@ -1409,7 +1625,7 @@ export default function MobileFirstBuilder() {
               exit={{ opacity: 0, y: -10 }}
               className="builder-tool-page h-full overflow-y-auto"
             >
-              <OneRmCalculator />
+              <OneRmCalculator onUpdateBestLift={updateBuilderBestLift} />
             </motion.div>
           )}
 
@@ -1421,8 +1637,7 @@ export default function MobileFirstBuilder() {
               exit={{ opacity: 0, y: -10 }}
               className="builder-tool-page h-full overflow-y-auto"
             >
-              <SportsChronograph />
-              <RestTimer />
+              <RestTimer onRecordSession={recordBuilderRestTimerSession} />
             </motion.div>
           )}
 
@@ -1432,72 +1647,95 @@ export default function MobileFirstBuilder() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="h-full flex flex-col gap-4 overflow-hidden rounded-[2rem] p-3 pt-3 sm:gap-6 sm:p-6"
+              className="builder-catalog-screen h-full flex flex-col gap-4 overflow-hidden rounded-[2rem] p-3 pt-3 sm:gap-6 sm:p-6"
             >
-               <div className="builder-catalog-context" aria-live="polite">
-                 <div className="flex items-center gap-3">
-                   <UiIcon name={builderMode === 'workout' ? 'dumbbell' : 'fuel_protein'} size={18} variant={builderMode === 'nutrition' ? 'green' : undefined} />
-                   <div>
-                     <p className="font-['Big_Shoulders_Display',sans-serif] text-lg font-black uppercase text-[#F1F0F4]">
-                       {builderMode === 'workout' ? 'Catálogo de ejercicios' : 'Catálogo de alimentos'}
-                     </p>
-                     <p className="font-['IBM_Plex_Mono',monospace] text-[9px] uppercase tracking-[0.14em] text-[#6E6558]">
-                       {builderMode === 'workout' ? 'Mi Plan · solo entrenamiento' : 'Meals · solo nutrición'}
-                     </p>
+               {/* Mock Screen Header + Segment Switcher */}
+               <div className="flex flex-col gap-2 shrink-0 border-b border-white/[0.06] pb-2.5">
+                 <div className="flex items-center justify-between gap-2">
+                   <div className="flex items-center gap-2.5 min-w-0">
+                     <UiIcon name={builderMode === 'workout' ? 'dumbbell' : 'fuel_protein'} size={18} variant={builderMode === 'nutrition' ? 'green' : undefined} />
+                     <div className="min-w-0">
+                       <p className="font-['Big_Shoulders_Display',sans-serif] text-lg font-black uppercase text-[#F1F0F4] leading-tight">
+                         {builderMode === 'workout' ? 'Catálogo de ejercicios' : 'Catálogo de alimentos'}
+                       </p>
+                       <p className="font-['IBM_Plex_Mono',monospace] text-[9px] uppercase tracking-[0.14em] text-[#6E6558]">
+                         {builderMode === 'workout' ? 'Mi Plan · solo entrenamiento' : 'Meals · solo nutrición'}
+                       </p>
+                     </div>
+                   </div>
+
+                   {/* Segmented Screen Switcher within Mock (Catálogo <-> Borrador) */}
+                   <div className="flex items-center p-0.5 bg-[#141416] rounded-xl border border-white/10 shrink-0">
+                     <button
+                       type="button"
+                       onClick={() => setActiveTab('catalog')}
+                       className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                         activeTab === 'catalog'
+                           ? 'bg-[var(--builder-accent)] text-black font-extrabold shadow-sm'
+                           : 'text-[#9CA0A6] hover:text-white'
+                       }`}
+                     >
+                       <span>Catálogo</span>
+                     </button>
+                     <button
+                       type="button"
+                       onClick={() => setActiveTab('draft')}
+                       className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                         activeTab === 'draft'
+                           ? 'bg-[var(--builder-accent)] text-black font-extrabold shadow-sm'
+                           : 'text-[#9CA0A6] hover:text-white'
+                       }`}
+                     >
+                       <span>Borrador</span>
+                       {activeDraftItems.length > 0 && (
+                         <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--builder-accent)] px-1 text-[8px] font-mono font-black text-black">
+                           {activeDraftItems.length}
+                         </span>
+                       )}
+                     </button>
                    </div>
                  </div>
-                 <span className="builder-status-chip text-[9px]">{builderMode === 'workout' ? 'Ejercicios' : 'Meals'}</span>
                </div>
 
-               <div className={`builder-draft-strip${activeDraftItems.length > 0 ? ' is-ready' : ''}`} aria-live="polite">
-                 <div className="min-w-0">
-                   <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-black uppercase tracking-[0.16em] text-[var(--builder-accent-soft)]">
-                     {activeDraftItems.length > 0 ? `${activeDraftItems.length} seleccionados` : 'Borrador sin confirmar'}
-                   </p>
-                   <p className="mt-1 truncate text-[10px] text-[#9CA0A6]">
-                     {builderMode === 'workout' ? 'Revisá el día antes de guardarlo.' : 'Revisá la comida antes de guardarla.'}
-                   </p>
-                 </div>
-                 {activeDraftItems.length > 0 && (
-                   <button
-                     type="button"
-                     onClick={() => setActiveTab('draft')}
-                     className="builder-cta-ghost shrink-0 px-3 py-2 text-[9px] font-black uppercase tracking-widest"
-                   >
-                     Revisar borrador
-                   </button>
-                 )}
-               </div>
-
+               {/* Active Draft Status Bar (Compact mobile notification strip) */}
                {activeDraftItems.length > 0 && (
-                 <CompositionDraftPanel
-                   mode={builderMode}
-                   exercises={workoutDraftItems}
-                   foods={mealDraftItems}
-                   dayId={workoutDraftDayId}
-                   dayLabel={workoutDraftDayLabel}
-                   dayDate={workoutDraftDate}
-                   dayTime={workoutDraftTime}
-                   mealSlot={mealDraftSlot}
-                   mealName={mealDraftName}
-                   mealDate={mealDraftDate}
-                   mealTime={mealDraftTime}
-                   onDayIdChange={(value) => { setWorkoutDraftDayId(value); setWorkoutDraftDayLabel(`Día ${value.split('-').pop()}`); }}
-                   onDayLabelChange={setWorkoutDraftDayLabel}
-                   onDayDateChange={setWorkoutDraftDate}
-                   onDayTimeChange={setWorkoutDraftTime}
-                   onMealSlotChange={setMealDraftSlot}
-                   onMealNameChange={setMealDraftName}
-                   onMealDateChange={setMealDraftDate}
-                   onMealTimeChange={setMealDraftTime}
-                   onUpdateExercise={updateWorkoutDraftExercise}
-                   onRemoveExercise={removeWorkoutDraftExercise}
-                   onUpdateFood={updateMealDraftFood}
-                   onRemoveFood={removeMealDraftFood}
-                   onConfirm={confirmCatalogDraft}
-                   onDiscard={discardCatalogDraft}
-                   onContinueAdding={continueAddingDraft}
-                 />
+                 <motion.div
+                   initial={{ opacity: 0, y: -6 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   className="builder-draft-strip is-ready shrink-0 flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-[#1c1a17]/90 border border-[var(--builder-accent)]/30 backdrop-blur-md shadow-md"
+                   aria-live="polite"
+                 >
+                   <div className="min-w-0 flex items-center gap-2.5">
+                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--builder-accent)] text-black font-black text-xs">
+                       {activeDraftItems.length}
+                     </span>
+                     <div className="min-w-0">
+                       <p className="font-['IBM_Plex_Mono',monospace] text-[10px] font-black uppercase tracking-[0.14em] text-[var(--builder-accent-soft)]">
+                         {activeDraftItems.length === 1 ? '1 seleccionado' : `${activeDraftItems.length} seleccionados`}
+                       </p>
+                       <p className="truncate text-[10px] text-[#9CA0A6]">
+                         {builderMode === 'workout' ? 'Editá series, reps y pesos en tu borrador.' : 'Editá cantidades en tu borrador.'}
+                       </p>
+                     </div>
+                   </div>
+                   <div className="flex shrink-0 gap-1.5">
+                     <button
+                       type="button"
+                       onClick={() => setActiveTab('draft')}
+                       className="builder-cta-primary px-3 py-2 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5"
+                     >
+                       <span>Revisar</span>
+                       <ArrowRight size={11} />
+                     </button>
+                     <button
+                       type="button"
+                       onClick={discardCatalogDraft}
+                       className="builder-cta-ghost px-2.5 py-2 text-[9px] font-black uppercase tracking-widest text-[#9CA0A6] hover:text-white"
+                     >
+                       Vaciar
+                     </button>
+                   </div>
+                 </motion.div>
                )}
 
                <div className="space-y-3">
@@ -1506,12 +1744,40 @@ export default function MobileFirstBuilder() {
                   <input 
                     type="text"
                     aria-label="Buscar ejercicios y comidas"
-                    placeholder={`Search ${builderMode === 'workout' ? 'exercises' : 'foods'}...`}
+                    placeholder={`Buscar ${builderMode === 'workout' ? 'ejercicios' : 'comidas'}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="builder-apple-input w-full py-4 pl-12 pr-4 focus:outline-none font-bold text-base text-[#F1F0F4] placeholder:text-[#9CA0A6] sm:text-[15px]"
                   />
                 </div>
+
+                {builderMode === 'workout' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={equipmentFilter}
+                      onChange={(e) => setEquipmentFilter(e.target.value)}
+                      aria-label="Filtrar por equipamiento"
+                      className="rounded-xl border border-white/10 bg-[#141416] px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#F1F0F4] focus:border-white/20 focus:outline-none"
+                    >
+                      <option value="all">Todos los equipos</option>
+                      {workoutGuideEquipmentOptions.filter(opt => opt !== 'all').map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={muscleFilter}
+                      onChange={(e) => setMuscleFilter(e.target.value)}
+                      aria-label="Filtrar por músculo"
+                      className="rounded-xl border border-white/10 bg-[#141416] px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#F1F0F4] focus:border-white/20 focus:outline-none"
+                    >
+                      <option value="all">Todos los músculos</option>
+                      {workoutGuideMuscleOptions.filter(opt => opt !== 'all').map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between px-1">
                   <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium tracking-[0.18em] text-[#6E6558] uppercase">Focus</p>
                   <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium text-[#6E6558]">{filteredItems.length} options</p>
@@ -1553,7 +1819,7 @@ export default function MobileFirstBuilder() {
                       type="text"
                       value={customExerciseName}
                       onChange={(e) => setCustomExerciseName(e.target.value)}
-                      placeholder="Exercise name"
+                      placeholder="Nombre del ejercicio"
                       className="builder-apple-input w-full py-2.5 px-3 text-xs font-bold text-[#F1F0F4] placeholder:text-[#9CA0A6] focus:outline-none"
                     />
 
@@ -1604,6 +1870,7 @@ export default function MobileFirstBuilder() {
                   filteredItems.map((item, index) => {
                     const isSupp = builderMode === 'nutrition' && ((item as any).category === 'supplements' || normalizeFilterId((item as any).category) === 'supplements');
                     const isSelected = activeDraftItems.some((draft) => draft.id === item.id);
+                    const assetUrl = builderMode === 'workout' ? getExerciseAssetUrl(item as any, 1) : null;
                     return (
                   <motion.div
                         key={`${builderMode}-${(item as any).section ?? (item as any).category ?? 'item'}-${(item as any).catalogGroup ?? 'group'}-${item.id}`}
@@ -1617,7 +1884,17 @@ export default function MobileFirstBuilder() {
                         <div className="flex min-w-0 items-center gap-3.5">
                           <div className="shrink-0 flex items-center justify-center">
                             {builderMode === 'workout' ? (
-                              <ExerciseIcon section={(item as any).section} className="h-9 w-9 object-contain" />
+                              assetUrl ? (
+                                <img
+                                  src={assetUrl}
+                                  alt={item.name}
+                                  className="h-9 w-9 object-contain"
+                                  loading="lazy"
+                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              ) : (
+                                <ExerciseIcon section={(item as any).section} className="h-9 w-9 object-contain" />
+                              )
                             ) : (
                               <FoodIcon category={(item as any).category} name={item.name} className="h-9 w-9 object-contain" />
                             )}
@@ -1625,16 +1902,38 @@ export default function MobileFirstBuilder() {
                           <div className="min-w-0">
                             <p className="line-clamp-1 font-bold uppercase text-xs text-[#F1F0F4]">{item.name}</p>
                             <p className="font-['IBM_Plex_Mono',monospace] text-[8px] font-medium text-[#6E6558] uppercase tracking-widest">
-                              {builderMode === 'workout' ? (item as any).section : (item as any).category}
+                              {builderMode === 'workout' ? ((item as any).muscleGroup || (item as any).section) : (item as any).category}
                             </p>
                           </div>
                         </div>
-                         <button type="button" className="builder-icon-button flex h-8 w-8 shrink-0 items-center justify-center text-[#7E7A75] hover:text-white" aria-label={isSelected ? `Quitar ${item.name}` : `Agregar ${item.name}`}>
-                           {isSelected ? <UiIcon name="validation-1" size={16} variant="duo" /> : <Plus size={16} />}
-                         </button>
+                        <div className="flex items-center gap-1">
+                          {assetUrl && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDetailExercise(item as any);
+                                setDetailFrame(1);
+                              }}
+                              className="builder-icon-button flex h-8 w-8 shrink-0 items-center justify-center text-[#7E7A75] hover:text-white"
+                              aria-label={`Ver detalle de ${item.name}`}
+                            >
+                              <Eye size={15} />
+                            </button>
+                          )}
+                          <button type="button" className="builder-icon-button flex h-8 w-8 shrink-0 items-center justify-center text-[#7E7A75] hover:text-white" aria-label={isSelected ? `Quitar ${item.name}` : `Agregar ${item.name}`}>
+                            {isSelected ? <UiIcon name="validation-1" size={16} variant="duo" /> : <Plus size={16} />}
+                          </button>
+                        </div>
                       </motion.div>
                     );
                   })
+                )}
+
+                {builderMode === 'workout' && (
+                  <div className="pt-4 pb-2">
+                    <WorkoutGuideAttribution />
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -1643,47 +1942,111 @@ export default function MobileFirstBuilder() {
           {activeTab === 'draft' && (
             <motion.div
               key={`draft-${builderMode}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="h-full overflow-y-auto p-3 pb-28 sm:p-6"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 12 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="builder-draft-screen h-full flex flex-col gap-3.5 overflow-hidden rounded-[2rem] p-3 pt-3 sm:gap-5 sm:p-6"
             >
-              {activeDraftItems.length > 0 ? (
-                <CompositionDraftPanel
-                  mode={builderMode}
-                  exercises={workoutDraftItems}
-                  foods={mealDraftItems}
-                  dayId={workoutDraftDayId}
-                  dayLabel={workoutDraftDayLabel}
-                  dayDate={workoutDraftDate}
-                  dayTime={workoutDraftTime}
-                  mealSlot={mealDraftSlot}
-                  mealName={mealDraftName}
-                  mealDate={mealDraftDate}
-                  mealTime={mealDraftTime}
-                  onDayIdChange={(value) => { setWorkoutDraftDayId(value); setWorkoutDraftDayLabel(`Día ${value.split('-').pop()}`); }}
-                  onDayLabelChange={setWorkoutDraftDayLabel}
-                  onDayDateChange={setWorkoutDraftDate}
-                  onDayTimeChange={setWorkoutDraftTime}
-                  onMealSlotChange={setMealDraftSlot}
-                  onMealNameChange={setMealDraftName}
-                  onMealDateChange={setMealDraftDate}
-                  onMealTimeChange={setMealDraftTime}
-                  onUpdateExercise={updateWorkoutDraftExercise}
-                  onRemoveExercise={removeWorkoutDraftExercise}
-                  onUpdateFood={updateMealDraftFood}
-                  onRemoveFood={removeMealDraftFood}
-                  onConfirm={confirmCatalogDraft}
-                  onDiscard={discardCatalogDraft}
-                  onContinueAdding={continueAddingDraft}
-                />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-                  <UiIcon name={builderMode === 'workout' ? 'dumbbell' : 'fuel_protein'} size={58} className="opacity-40" />
-                  <div><h2 className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black uppercase text-[#F1F0F4]">Borrador vacío</h2><p className="mt-1 text-xs text-[#6E6558]">Agregá elementos desde el catálogo para comenzar.</p></div>
-                  <button type="button" onClick={() => setActiveTab('catalog')} className="builder-cta-primary px-4 py-3 text-[10px] font-black uppercase tracking-widest">Abrir catálogo</button>
+              {/* Mock Screen Header + Segment Switcher */}
+              <div className="flex flex-col gap-2 shrink-0 border-b border-white/[0.06] pb-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <UiIcon name={builderMode === 'workout' ? 'dumbbell' : 'fuel_protein'} size={18} variant={builderMode === 'nutrition' ? 'green' : undefined} />
+                    <div className="min-w-0">
+                      <p className="font-['Big_Shoulders_Display',sans-serif] text-lg font-black uppercase text-[#F1F0F4] leading-tight">
+                        {builderMode === 'workout' ? 'Borrador editable' : 'Borrador de comidas'}
+                      </p>
+                      <p className="font-['IBM_Plex_Mono',monospace] text-[9px] uppercase tracking-[0.14em] text-[#6E6558]">
+                        {builderMode === 'workout' ? 'Ajustá series, reps y pesos' : 'Ajustá porciones y macros'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Segmented Screen Switcher within Mock (Catálogo <-> Borrador) */}
+                  <div className="flex items-center p-0.5 bg-[#141416] rounded-xl border border-white/10 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('catalog')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                        activeTab === 'catalog'
+                          ? 'bg-[var(--builder-accent)] text-black font-extrabold shadow-sm'
+                          : 'text-[#9CA0A6] hover:text-white'
+                      }`}
+                    >
+                      <span>Catálogo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('draft')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                        activeTab === 'draft'
+                          ? 'bg-[var(--builder-accent)] text-black font-extrabold shadow-sm'
+                          : 'text-[#9CA0A6] hover:text-white'
+                      }`}
+                    >
+                      <span>Borrador</span>
+                      {activeDraftItems.length > 0 && (
+                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--builder-accent)] px-1 text-[8px] font-mono font-black text-black">
+                          {activeDraftItems.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar pb-28">
+                {activeDraftItems.length > 0 ? (
+                  <CompositionDraftPanel
+                    mode={builderMode}
+                    exercises={workoutDraftItems}
+                    foods={mealDraftItems}
+                    dayId={workoutDraftDayId}
+                    dayLabel={workoutDraftDayLabel}
+                    dayDate={workoutDraftDate}
+                    dayTime={workoutDraftTime}
+                    mealSlot={mealDraftSlot}
+                    mealName={mealDraftName}
+                    mealDate={mealDraftDate}
+                    mealTime={mealDraftTime}
+                    onDayIdChange={(value) => { setWorkoutDraftDayId(value); setWorkoutDraftDayLabel(`Día ${value.split('-').pop()}`); }}
+                    onDayLabelChange={setWorkoutDraftDayLabel}
+                    onDayDateChange={setWorkoutDraftDate}
+                    onDayTimeChange={setWorkoutDraftTime}
+                    onMealSlotChange={setMealDraftSlot}
+                    onMealNameChange={setMealDraftName}
+                    onMealDateChange={setMealDraftDate}
+                    onMealTimeChange={setMealDraftTime}
+                    onUpdateExercise={updateWorkoutDraftExercise}
+                    onRemoveExercise={removeWorkoutDraftExercise}
+                    onUpdateFood={updateMealDraftFood}
+                    onRemoveFood={removeMealDraftFood}
+                    onMoveExercise={moveWorkoutDraftExercise}
+                    onMoveFood={moveMealDraftFood}
+                    onApplyWorkoutPreset={applyWorkoutDraftPreset}
+                    onConfirm={confirmCatalogDraft}
+                    onDiscard={discardCatalogDraft}
+                    onContinueAdding={continueAddingDraft}
+                  />
+                ) : (
+                  <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-4 text-center p-6 rounded-2xl bg-[#141416]/50 border border-white/5">
+                    <UiIcon name={builderMode === 'workout' ? 'dumbbell' : 'fuel_protein'} size={50} className="opacity-35" />
+                    <div>
+                      <h2 className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black uppercase text-[#F1F0F4]">Borrador vacío</h2>
+                      <p className="mt-1 text-xs text-[#6E6558] max-w-xs">Agregá ejercicios desde el catálogo para configurar series y repeticiones.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('catalog')}
+                      className="builder-cta-primary px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                    >
+                      <Plus size={14} />
+                      <span>Abrir catálogo</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
 
@@ -1693,12 +2056,18 @@ export default function MobileFirstBuilder() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="h-full overflow-y-auto p-4 pb-28 sm:p-6"
+              className="builder-meals-screen h-full overflow-y-auto p-4 pb-28 sm:p-6"
             >
               <MealTimelinePanel
                 date={mealDraftDate}
                 compositions={mealCompositions}
                 onDateChange={setMealDraftDate}
+                onDateStep={(days) => {
+                  const nextDate = new Date(`${mealDraftDate}T12:00:00`);
+                  nextDate.setDate(nextDate.getDate() + days);
+                  setMealDraftDate(nextDate.toISOString().slice(0, 10));
+                }}
+                onCopyPreviousDay={copyPreviousMeals}
                 onAddMeal={startMealDraft}
                 onEditMeal={editMealComposition}
                 onRemoveMeal={deleteMealComposition}
@@ -1712,6 +2081,7 @@ export default function MobileFirstBuilder() {
               calendarAction={todayWorkoutCalendarAction}
               onOpenCatalog={() => { setBuilderMode('workout'); setActiveTab('catalog'); }}
               onTrain={() => setActiveTab('train')}
+              onEditDay={editWorkoutDay}
             />
           )}
 
@@ -1941,6 +2311,7 @@ export default function MobileFirstBuilder() {
           )}
           */}
         </AnimatePresence>
+
       </motion.main>
 
         <motion.aside
@@ -2054,262 +2425,204 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
 
       <AnimatePresence>
         {showCustomize && (
-          <>
-            <motion.div
-              key="settings-backdrop"
-              className="settings-modal-backdrop"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Ajustes del Builder"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setShowCustomize(false)}
+          <motion.div
+            key="settings-backdrop"
+            className="settings-modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ajustes"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setShowCustomize(false)}
+          >
+            <motion.section
+              key="settings-card"
+              className="settings-modal-card settings-footer-card"
+              initial={{ opacity: 0, y: 40, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.97 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(event) => event.stopPropagation()}
             >
-              <motion.section
-                key="settings-card"
-                className="settings-modal-card settings-footer-card"
-                initial={{ opacity: 0, y: 40, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 40, scale: 0.97 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                onClick={(event) => event.stopPropagation()}
-              >
-                {/* ── Hero asset — brand logo + título flotando sobre la imagen ── */}
-                <div className="settings-modal-asset settings-footer-hero">
-                  <span className="settings-footer-handle" aria-hidden="true" />
-                  <img
-                    src="https://fsoevzostulbtoxcqqdh.supabase.co/storage/v1/object/public/analytics-assets/coachs_assets/confident_fitness_duo.webp"
-                    alt=""
-                    style={{ objectPosition: '50% 18%' }}
-                  />
+              {/* ── Hero asset — brand logo + título flotando sobre la imagen ── */}
+              <div className="settings-modal-asset settings-footer-hero">
+                <span className="settings-footer-handle" aria-hidden="true" />
+                <img
+                  src="https://fsoevzostulbtoxcqqdh.supabase.co/storage/v1/object/public/analytics-assets/coachs_assets/confident_fitness_duo.webp"
+                  alt=""
+                  style={{ objectPosition: '50% 18%' }}
+                />
 
-                  {/* Overlay gradiente */}
-                  <div className="settings-modal-asset-overlay" />
+                {/* Overlay gradiente */}
+                <div className="settings-modal-asset-overlay" />
 
-                  {/* Close button */}
-                  <button
-                    type="button"
-                    className="settings-modal-close settings-modal-close--over"
-                    onClick={() => setShowCustomize(false)}
-                    aria-label="Cerrar ajustes"
-                  >
-                    <UiIcon name="cancel-2" size={18} variant="duo" />
-                  </button>
+                {/* Close button — esquina superior derecha */}
+                <button
+                  type="button"
+                  className="settings-modal-close settings-modal-close--over"
+                  onClick={() => setShowCustomize(false)}
+                  aria-label="Cerrar ajustes"
+                >
+                  <UiIcon name="cancel-2" size={18} variant="duo" />
+                </button>
 
-                  {/* Logo + textos */}
-                  <div className="settings-modal-hero-brand">
-                    <span className="settings-modal-mark">
-                      <DynamicLogoIcon />
-                    </span>
-                    <div className="settings-modal-hero-text">
-                      <small>Fit Legacy</small>
-                      <h2>Builder</h2>
-                    </div>
-                  </div>
-
-                  {/* Copy */}
-                  <div className="settings-modal-asset-copy">
-                    <span>Builder live</span>
-                    <strong>Crea y comparte planes</strong>
+                {/* Logo + textos — esquina inferior izquierda */}
+                <div className="settings-modal-hero-brand">
+                  <span className="settings-modal-mark">
+                    <DynamicLogoIcon interactive={false} variant="footer" />
+                  </span>
+                  <div className="settings-modal-hero-text">
+                    <small>Fit Legacy</small>
+                    <h2>Ajustes</h2>
                   </div>
                 </div>
 
-                <div className="settings-modal-content settings-footer-content">
-                  {/* ── Sistema de entrenamiento ── */}
-                  <div className="settings-footer-intro">
-                    <div>
-                      <span className="settings-modal-label">Sistema de entrenamiento</span>
-                      <p>Tu centro de creación conectado con todo el ecosistema Fit Legacy.</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="settings-footer-sync is-online"
-                      title="Builder activo"
-                    >
-                      <i aria-hidden="true" />
-                      <span>Builder activo</span>
-                      <strong>{routineDisplayName}</strong>
-                    </button>
+                {/* Copy — esquina inferior derecha */}
+                <div className="settings-modal-asset-copy">
+                  <span>Builder live</span>
+                  <strong>Tu centro de creación</strong>
+                </div>
+              </div>
+
+              <div className="settings-modal-content settings-footer-content">
+                {/* ── Sistema de entrenamiento ── */}
+                <div className="settings-footer-intro">
+                  <div>
+                    <span className="settings-modal-label">Sistema de entrenamiento</span>
+                    <p>Tu centro de creación conectado con todo el ecosistema Fit Legacy.</p>
                   </div>
+                  <button
+                    type="button"
+                    className="settings-footer-sync is-online"
+                    title="Builder activo"
+                  >
+                    <i aria-hidden="true" />
+                    <span>Live conectado</span>
+                    <strong>{routineDisplayName}</strong>
+                  </button>
+                </div>
 
-                  {/* ── Theme selector (builder profile) ── */}
-                  <section className="settings-footer-theme">
-                    <div className="settings-footer-section-heading">
-                      <span className="settings-modal-label">Perfil</span>
-                      <small>{builderProfile === 'woman' ? 'Rose signal' : 'Golden signal'}</small>
-                    </div>
-                    <div className="settings-modal-theme-toggle">
-                      {BUILDER_PROFILE_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`settings-modal-theme-btn ${builderProfile === option.value ? 'is-active' : ''}`}
-                          aria-pressed={builderProfile === option.value}
-                          onClick={() => setBuilderProfile(option.value)}
-                          title={`${option.label} — ${option.theme}`}
-                        >
-                          <img src={option.image} alt="" className="h-4 w-4 rounded-full object-cover" />
-                          <span>{option.label}</span>
-                        </button>
+                {/* ── Notificaciones de Builder ── */}
+                <section className="settings-global-notifications" aria-labelledby="settings-builder-notifications-title">
+                  <span className="settings-global-notifications__icon" aria-hidden="true">
+                    <UiIcon name="alert" size={18} active />
+                  </span>
+                  <div className="settings-global-notifications__copy">
+                    <span className="settings-modal-label">Notificaciones de Builder</span>
+                    <strong id="settings-builder-notifications-title">Avisos de este tablero</strong>
+                    <p>Sincronización, racha y alertas de tus rutinas. Solo se muestran dentro de esta app.</p>
+                  </div>
+                  <div className="settings-global-notifications__actions">
+                    <NotificationBell />
+                  </div>
+                </section>
+
+                {/* ── Producto / Legado link grid (idéntico a Analytics) ── */}
+                <div className="settings-footer-link-grid">
+                  <nav aria-label="Productos Fit Legacy">
+                    <span className="settings-modal-label">Producto</span>
+                    <ul>
+                      {PRODUCT_LINKS.map((link) => (
+                        <li key={link.name}>
+                          <a href={link.href}>
+                            <span>{link.name}</span>
+                            <b aria-hidden="true">↗</b>
+                          </a>
+                        </li>
                       ))}
-                    </div>
-                  </section>
-
-                  {/* ── Brand (catalog logo upload) ── */}
-                  <section className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="settings-modal-label">Brand</span>
-                      {catalogLogo && (
-                        <button onClick={() => setCatalogLogo(null)} className="text-[10px] font-black uppercase tracking-wide text-[#6b1e23]">
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <div className="builder-apple-card p-3 sm:p-4">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="builder-header-mark flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden p-1 sm:h-16 sm:w-16">
-                          {catalogLogo ? <img src={catalogLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" /> : <img src={localAssetUrl('/cyan.svg')} alt="Fit Legacy Builder" className="h-full w-full rounded-lg object-cover" />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#F1F0F4]">Catalog logo</p>
-                          <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[11px] font-medium leading-snug text-[#6E6558] sm:text-xs sm:leading-relaxed">Shown in the builder catalog.</p>
-                          <p className="mt-1 font-['IBM_Plex_Mono',monospace] text-[10px] font-medium leading-snug text-[#9CA0A6]">
-                            Max 1 MB. Ideal: WebP/JPG, 1080x1920 vertical or 1200x1200 square.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <label className="builder-cta-ghost flex min-h-12 cursor-pointer items-center justify-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-wide">
-                          <UiIcon name="gallery" className="h-4 w-4" active={Boolean(catalogLogo)} /> Upload logo
-                          <input type="file" accept="image/*" className="hidden" onChange={handleCatalogLogoUpload} />
-                        </label>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* ── Vista compartida (share preview background presets) ── */}
-                  <section className="space-y-3">
-                    <span className="settings-modal-label">Vista compartida</span>
-                    <div className="grid grid-cols-1 gap-2">
-                      {CATALOG_BG_PRESETS.map(preset => (
-                        <button
-                          key={preset.id}
-                          onClick={() => {
-                            setCatalogBgId(preset.id);
-                            setCatalogBgImage(null);
-                          }}
-                          className={`builder-cta-ghost flex items-center gap-3 p-3 text-left ${catalogBgId === preset.id && !catalogBgImage ? 'builder-profile-selected-option' : ''}`}
-                        >
-                          <span className="h-9 w-12 shrink-0 rounded-2xl border border-white shadow-inner" style={preset.style} />
-                          <span className="min-w-0 flex-1">
-                            <span className="block font-['Big_Shoulders_Display',sans-serif] text-sm font-bold text-[#F1F0F4]">{preset.label}</span>
-                            <span className="block font-['IBM_Plex_Mono',monospace] text-xs font-medium text-[#6E6558]">Preview palette</span>
-                          </span>
-                          {catalogBgId === preset.id && !catalogBgImage && (
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--builder-accent)] text-white">
-                              <UiIcon name="validation-1" className="h-4 w-4" variant="duo" />
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-
-                    <label className={`builder-cta-ghost flex cursor-pointer items-center justify-between gap-3 p-3 ${catalogBgImage ? 'builder-profile-selected-option text-[var(--builder-accent)]' : ''}`}>
-                      <span className="flex min-w-0 items-center gap-3">
-                        <span className="builder-apple-tile flex h-9 w-12 items-center justify-center">
-                          <UiIcon name="gallery" className="h-5 w-5" active={Boolean(catalogBgImage)} />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-sm font-black">{catalogBgImage ? 'Custom image' : 'Upload image'}</span>
-                          <span className="block text-xs font-medium text-[#6E6558]">Use a custom background.</span>
-                        </span>
-                      </span>
-                      {catalogBgImage && <UiIcon name="validation-1" className="h-4 w-4" variant="duo" />}
-                      <input type="file" accept="image/*" className="hidden" onChange={handleCatalogBgUpload} />
-                    </label>
-
-                    {catalogBgImage && (
-                      <button onClick={() => { setCatalogBgImage(null); setCatalogBgId('clean'); }} className="builder-cta-ghost w-full px-3 py-2 text-xs font-black uppercase tracking-wide text-[#6b1e23] hover:bg-[#fff4f4]">
-                        Remove image
-                      </button>
-                    )}
-                  </section>
-
-                  {/* ── Producto / Legado links ── */}
-                  <div className="settings-footer-link-grid">
-                    <nav aria-label="Productos Fit Legacy">
-                      <span className="settings-modal-label">Producto</span>
-                      <ul>
-                        {PRODUCT_LINKS.map((link) => (
-                          <li key={link.name}>
-                            <a href={link.href}><span>{link.name}</span><b aria-hidden="true">↗</b></a>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                    <nav aria-label="Información de Fit Legacy">
-                      <span className="settings-modal-label">Legado</span>
-                      <ul>
-                        {LEGACY_LINKS.map((link) => (
-                          <li key={link.name}>
-                            <a
-                              href={link.href}
-                              onClick={link.isCookies
+                    </ul>
+                  </nav>
+                  <nav aria-label="Información de Fit Legacy">
+                    <span className="settings-modal-label">Legado</span>
+                    <ul>
+                      {LEGACY_LINKS.map((link) => (
+                        <li key={link.name}>
+                          <a
+                            href={link.href}
+                            onClick={
+                              link.isCookies
                                 ? (event) => {
                                     event.preventDefault();
                                     window.dispatchEvent(new CustomEvent('open-cookie-settings'));
                                   }
-                                : undefined}
-                            >
-                              <span>{link.name}</span><b aria-hidden="true">↗</b>
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                  </div>
-
-                  {/* ── Social links footer ── */}
-                  <footer className="settings-footer-meta">
-                    <div>
-                      <span className="settings-modal-label">Únete</span>
-                      <div className="settings-modal-social-links">
-                        {FIT_LEGACY_SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
-                          <a
-                            key={name}
-                            className="settings-modal-social-link"
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={name}
-                            title={name}
+                                : undefined
+                            }
                           >
-                            <Icon />
+                            <span>{link.name}</span>
+                            <b aria-hidden="true">↗</b>
                           </a>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="settings-modal-motto"><span>Memento Mori.</span><strong>Memento Vivere.</strong></p>
-                  </footer>
-
-                  {/* ── Logout button ── */}
-                  <button
-                    type="button"
-                    className="settings-modal-logout fl-cut-cta fl-cut-cta--primary"
-                    onClick={() => {
-                      setShowCustomize(false);
-                      window.location.href = '/';
-                    }}
-                  >
-                    <UiIcon name="on-off-1" size={18} variant="duo" />
-                    <span>Cerrar sesión</span>
-                  </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
                 </div>
-              </motion.section>
-            </motion.div>
-          </>
+
+                {/* ── Apariencia / Perfil de Atleta ── */}
+                <section className="settings-footer-theme">
+                  <div className="settings-footer-section-heading">
+                    <span className="settings-modal-label">Perfil de Atleta</span>
+                    <small>{builderProfile === 'woman' ? 'Rose signal' : 'Golden signal'}</small>
+                  </div>
+                  <div className="settings-modal-theme-toggle">
+                    {BUILDER_PROFILE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`settings-modal-theme-btn ${builderProfile === option.value ? 'is-active' : ''}`}
+                        aria-pressed={builderProfile === option.value}
+                        onClick={() => setBuilderProfile(option.value)}
+                        title={`${option.label} — ${option.theme}`}
+                      >
+                        <img src={option.image} alt="" className="h-4 w-4 rounded-full object-cover" />
+                        <span>{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                {/* ── Social links footer ── */}
+                <footer className="settings-footer-meta">
+                  <div>
+                    <span className="settings-modal-label">Únete</span>
+                    <div className="settings-modal-social-links">
+                      {FIT_LEGACY_SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
+                        <a
+                          key={name}
+                          className="settings-modal-social-link"
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={name}
+                          title={name}
+                        >
+                          <Icon />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="settings-modal-motto">
+                    <span>Memento Mori.</span>
+                    <strong>Memento Vivere.</strong>
+                  </p>
+                </footer>
+
+                {/* ── Logout button ── */}
+                <button
+                  type="button"
+                  className="settings-modal-logout fl-cut-cta fl-cut-cta--primary"
+                  onClick={() => {
+                    setShowCustomize(false);
+                    window.location.href = '/';
+                  }}
+                >
+                  <UiIcon name="on-off-1" size={18} variant="duo" />
+                  <span>Cerrar sesión</span>
+                </button>
+              </div>
+            </motion.section>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -2353,7 +2666,7 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-              className="builder-onboarding-shell fixed bottom-[92px] left-0 right-0 z-[60] px-4"
+              className="builder-onboarding-shell fixed bottom-4 left-0 right-0 z-[60] px-4"
               aria-label="Primeros pasos del builder"
               aria-modal="true"
               role="dialog"
@@ -2485,31 +2798,29 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
         )}
       </AnimatePresence>
 
-      <SabiasQueBanner
-        profile={builderProfile}
-      />
-
       {/* Mobile Nav (Vertical Right Rail Dock - Analytics Style) */}
-      <div className="builder-footer-nav-wrapper">
+      {!showOnboarding && <div className="builder-footer-nav-wrapper">
         <button
           type="button"
           className={`builder-footer-nav-toggle${navVisible ? '' : ' builder-footer-nav-toggle--pinned'}`}
           onClick={() => setNavVisible((v) => !v)}
           aria-label={navVisible ? 'Ocultar navegación' : 'Mostrar navegación'}
+          aria-controls="builder-primary-navigation"
+          aria-expanded={navVisible}
         >
           <span className="builder-footer-nav-toggle-icon" />
         </button>
-        <nav className={`builder-footer-nav${navVisible ? '' : ' builder-footer-nav--hidden'}`} role="navigation" aria-label="Navegación principal">
+        <nav id="builder-primary-navigation" className={`builder-footer-nav${navVisible ? '' : ' builder-footer-nav--hidden'}`} role="navigation" aria-label="Navegación principal">
           {[
-            { id: 'home' as TabType, label: 'Hoy', renderIcon: (active: boolean) => <UiIcon name="graph-pie" size={22} active={active} />, badge: null },
-            { id: 'build' as TabType, label: 'Mi plan', renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.length : null },
-            { id: 'train' as TabType, label: 'Entrenar', renderIcon: (active: boolean) => <UiIcon name="on-off-1" size={22} active={active} />, badge: null },
-            { id: 'oneRm' as TabType, label: '1RM', renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: null },
-            { id: 'timer' as TabType, label: 'Timer', renderIcon: (active: boolean) => <UiIcon name="date-time-setting" size={22} active={active} />, badge: null },
-            { id: 'food' as TabType, label: 'Meals', renderIcon: (active: boolean) => <UiIcon name="fuel_protein" size={22} active={active} variant="green" />, badge: mealCompositions.length > 0 ? mealCompositions.length : null },
-            { id: 'settings' as const, label: 'Ajustes', renderIcon: (active: boolean) => <UiIcon name="ajustes" size={22} active={active} variant={active ? 'green' : 'rose'} />, badge: null },
+            { id: 'home' as TabType, label: 'Hoy', meta: 'Tu punto de partida', renderIcon: (active: boolean) => <UiIcon name="graph-pie" size={22} active={active} />, badge: null },
+            { id: 'build' as TabType, label: 'Mi plan', meta: `${currentRoutine.exercises.length} ejercicios`, renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: currentRoutine.exercises.length > 0 ? currentRoutine.exercises.length : null },
+            { id: 'train' as TabType, label: 'Entrenar', meta: 'Registrar sesión', renderIcon: (active: boolean) => <UiIcon name="on-off-1" size={22} active={active} />, badge: null },
+            { id: 'oneRm' as TabType, label: '1RM', meta: 'Medir fuerza', renderIcon: (active: boolean) => <UiIcon name="rocket-launch-chart" size={22} active={active} />, badge: null },
+            { id: 'timer' as TabType, label: 'Descanso', meta: 'Descanso y ritmo', renderIcon: (active: boolean) => <UiIcon name="date-time-setting" size={22} active={active} />, badge: null },
+            { id: 'food' as TabType, label: 'Comidas', meta: `${mealCompositions.length} comidas`, renderIcon: (active: boolean) => <UiIcon name="fuel_protein" size={22} active={active} variant="green" />, badge: mealCompositions.length > 0 ? mealCompositions.length : null },
+            { id: 'settings' as const, label: 'Ajustes', meta: 'Preferencias', renderIcon: (active: boolean) => <UiIcon name="ajustes" size={22} active={active} variant={active ? 'green' : 'rose'} />, badge: null },
           ].map((item) => {
-            const isActive = activeTab === item.id;
+            const isActive = item.id === 'settings' ? showCustomize : activeTab === item.id;
             if (item.id === 'settings') {
               return (
                 <button
@@ -2518,12 +2829,15 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
                   onClick={() => {
                     setShowCustomize(true);
                   }}
-                  className="builder-footer-nav-btn"
-                  aria-label="Abrir ajustes del Builder"
+                  className={`builder-footer-nav-btn${isActive ? ' is-active' : ''}`}
+                  aria-label={`${item.label}: ${item.meta}`}
                   aria-expanded={showCustomize}
                 >
                   <span className="builder-footer-nav-btn-icon">{item.renderIcon(showCustomize)}</span>
-                  <span className="builder-footer-nav-btn-label">{item.label}</span>
+                  <span className="builder-footer-nav-btn-copy">
+                    <span className="builder-footer-nav-btn-label">{item.label}</span>
+                    <small className="builder-footer-nav-btn-meta">{item.meta}</small>
+                  </span>
                 </button>
               );
             }
@@ -2535,7 +2849,7 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
                   setActiveTab(item.id);
                 }}
                 className={`builder-footer-nav-btn${isActive ? ' is-active' : ''}`}
-                aria-label={item.label}
+                aria-label={`${item.label}: ${item.meta}`}
                 aria-current={isActive ? 'page' : undefined}
               >
                 <span className="builder-footer-nav-btn-icon">
@@ -2544,14 +2858,120 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
                     <span className="builder-footer-nav-btn-badge">{item.badge}</span>
                   )}
                 </span>
-                <span className="builder-footer-nav-btn-label">{item.label}</span>
+                <span className="builder-footer-nav-btn-copy">
+                  <span className="builder-footer-nav-btn-label">{item.label}</span>
+                  <small className="builder-footer-nav-btn-meta">{item.meta}</small>
+                </span>
               </button>
             );
           })}
         </nav>
-      </div>
+      </div>}
 
     </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Analytics keeps this guide outside its phone/dashboard surface so the
+        expand, close and navigation controls remain fully interactive. */}
+    {!showOnboarding && <SabiasQueBanner
+        profile={builderProfile}
+        context={tipContext}
+        onNavigateTab={(target) => {
+          if (target === 'catalog') setBuilderMode('workout');
+          if (target === 'food') setBuilderMode('nutrition');
+          setActiveTab(target);
+        }}
+      />}
+
+      {detailExercise && getExerciseAssetUrl(detailExercise as any, 1) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4" onClick={() => setDetailExercise(null)}>
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#111111] border border-white/10 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setDetailExercise(null)} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-white/5 hover:bg-white/10 text-[#9CA0A6] hover:text-white">
+              <X size={16} />
+            </button>
+            <h3 className="pr-8 font-['Big_Shoulders_Display',sans-serif] text-xl font-black uppercase tracking-wide text-white">{detailExercise.name}</h3>
+            <p className="mt-0.5 font-['IBM_Plex_Mono',monospace] text-[10px] text-white/50 uppercase tracking-wider">
+              {(detailExercise as any).muscleGroup || (detailExercise as any).section} • {(detailExercise as any).equipment || 'General'}
+            </p>
+
+            {(() => {
+              const slug = (detailExercise as any)._source === 'workout-guide'
+                ? detailExercise.id
+                : getLegacyMappedSlug(detailExercise.name) || detailExercise.id;
+              return (
+                <>
+                  <div className="mt-4 grid grid-cols-3 gap-2.5">
+                    {([1, 2, 3] as const).map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setDetailFrame(f)}
+                        className={`relative overflow-hidden rounded-2xl border p-2 transition-all ${
+                          detailFrame === f ? 'border-[var(--builder-accent)] bg-[var(--builder-accent)]/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/5'
+                        }`}
+                      >
+                        <img
+                          src={getWorkoutGuideAssetUrl(slug, f) || ''}
+                          alt={`${detailExercise.name} frame ${f}`}
+                          className="h-20 w-full object-contain"
+                          loading="lazy"
+                        />
+                        <span className="absolute bottom-1 left-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[8px] font-mono font-bold text-white/80">
+                          F{f}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-3.5 flex items-center justify-center rounded-2xl bg-black/40 border border-white/5 p-4">
+                    <img
+                      src={getWorkoutGuideAssetUrl(slug, detailFrame) || getExerciseAssetUrl(detailExercise as any, detailFrame) || ''}
+                      alt={`${detailExercise.name} frame ${detailFrame} large`}
+                      className="h-56 w-full object-contain"
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <WorkoutGuideAttribution className="text-[9px]" />
+                    {(() => {
+                      const attr = getWorkoutGuideFrameAttribution(slug, detailFrame);
+                      return attr ? (
+                        <p className="mt-1 text-[9px] font-mono leading-relaxed text-white/35">
+                          Frame {detailFrame}: {attr.license} — {attr.creator} {attr.source ? ` (derivado de ${attr.source.name})` : ''}
+                        </p>
+                      ) : null;
+                    })()}
+                  </div>
+                </>
+              );
+            })()}
+
+            <div className="mt-4 flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleCatalogItem(detailExercise);
+                  setDetailExercise(null);
+                }}
+                className="flex-1 builder-cta-primary py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+              >
+                <Plus size={14} />
+                <span>Agregar al plan</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailExercise(null)}
+                className="builder-cta-ghost px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[#9CA0A6] hover:text-white"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

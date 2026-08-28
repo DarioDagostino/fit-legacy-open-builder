@@ -1,9 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&family=Big+Shoulders+Display:wght@500;600;700;800;900&display=swap');
+@import '@fit-legacy/ui/tokens.css';
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
 @import './builder-boot.css';
 @import './tools.css';
 @import './tools-recovered.css';
+@import './builder-matte.css';
 /* The source stylesheet is mirrored into the monorepo; keep the entry point
    intentionally minimal so both Builder runtimes share the same contract. */
 /* Fit Legacy illustration icon system */
@@ -98,4 +101,419 @@
   background: var(--builder-accent);
   color: #080808;
   box-shadow: 0 8px 24px color-mix(in srgb, var(--builder-accent) 20%, transparent);
+}
+
+/* -------------------------------------------------------------------------
+   Matte ecosystem palette
+   Keep Builder's black canvas and profile accents legible without luminous
+   gradients. This is intentionally last so older component-level theme rules
+   cannot reintroduce a bright surface.
+------------------------------------------------------------------------- */
+:root,
+[data-builder-profile='man'] {
+  --builder-cyan-matte: #00d2ee;
+  --builder-orange-matte: #a75e38;
+}
+
+[data-builder-profile='woman'] {
+  --builder-rose-matte: #b95c79;
+  --builder-orange-matte: #a75e38;
+}
+
+html:has(.builder-profile-root),
+body:has(.builder-profile-root),
+body:has(.builder-profile-root) #root,
+.builder-profile-root,
+.builder-profile-root > [data-builder-preset],
+.builder-profile-root > [data-builder-preset] > main,
+.builder-profile-root > [data-builder-preset] > aside {
+  background: #000 !important;
+  background-image: none !important;
+}
+
+.builder-profile-root .builder-studio-header,
+.builder-profile-root .builder-footer-nav,
+.builder-profile-root .builder-header-share,
+.builder-profile-root .builder-studio-header__mark,
+.builder-profile-root .builder-right-panel-tab.is-active,
+.builder-profile-root .builder-footer-nav-btn.is-active {
+  background: color-mix(in srgb, var(--builder-accent) 16%, #090909) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Dashboard header lives on the same black canvas as the mock content. */
+.builder-profile-root .builder-studio-header {
+  border-bottom: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.builder-profile-root .builder-studio-header::after {
+  display: none !important;
+}
+
+.builder-profile-root .builder-studio-header__status {
+  border-right: 0 !important;
+  border-left: 0 !important;
+}
+
+.builder-profile-root .builder-studio-header::after {
+  background: var(--builder-accent) !important;
+  opacity: 0.42;
+}
+
+.builder-profile-root .builder-footer-nav-btn.is-active,
+.builder-profile-root .fl-cut-cta--primary {
+  border-color: color-mix(in srgb, var(--builder-accent) 58%, transparent) !important;
+}
+
+.builder-profile-root .fl-cut-cta.fl-cut-cta.fl-cut-cta--primary {
+  background: var(--builder-accent) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: #fff7ef !important;
+}
+
+/* Mobile rail quality pass: Analytics proportions with Builder accents. */
+@keyframes fl-footer-nav-item-enter {
+  from { opacity: 0.72; transform: translateY(3px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fl-footer-nav-icon-enter {
+  0% { opacity: 0.72; transform: translateY(2px) scale(0.82); }
+  65% { opacity: 1; transform: translateY(-1px) scale(1.08); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes builder-tactile-press {
+  0% { transform: scale(0.98) translateX(0); }
+  20% { transform: scale(0.94) translateX(-1px); }
+  40% { transform: scale(0.95) translateX(1px); }
+  60% { transform: scale(0.94) translateX(-0.6px); }
+  80% { transform: scale(0.96) translateX(0.6px); }
+  100% { transform: scale(0.95) translateX(0); }
+}
+
+@media (max-width: 1023px) {
+  .builder-footer-nav-wrapper {
+    right: max(6px, env(safe-area-inset-right));
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    will-change: transform;
+  }
+
+  .builder-profile-root .builder-footer-nav {
+    width: 62px;
+    gap: 3px;
+    padding: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 3px solid #000;
+    border-radius: 0;
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+    background: #090909 !important;
+    background-image: none !important;
+    box-shadow: 0 3px 0 #000, 0 16px 36px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.4) !important;
+    isolation: isolate;
+    backdrop-filter: blur(14px) saturate(1.08);
+    transition: transform 300ms cubic-bezier(.22, 1, .36, 1), opacity 300ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  .builder-footer-nav-btn {
+    min-height: 48px;
+    height: 48px;
+    gap: 3px;
+    overflow: visible;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: #0a0a0a !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+    color: #7a756e;
+    isolation: isolate;
+    transition: transform 200ms cubic-bezier(.22, 1, .36, 1), color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 200ms ease;
+  }
+
+  .builder-profile-root .builder-footer-nav-btn.is-active {
+    border-color: color-mix(in srgb, var(--builder-accent) 32%, transparent) !important;
+    background: color-mix(in srgb, var(--builder-accent) 14%, #0a0a0a) !important;
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--builder-accent) 32%, #000), 0 6px 14px color-mix(in srgb, var(--builder-accent) 10%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+    color: #fff !important;
+  }
+
+  .builder-footer-nav-btn-icon {
+    display: grid;
+    width: 26px;
+    height: 24px;
+    flex: 0 0 26px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .builder-footer-nav-btn-icon .ui-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
+
+  .builder-footer-nav-btn:active {
+    animation: builder-tactile-press 140ms cubic-bezier(.22, 1, .36, 1) forwards;
+    background: color-mix(in srgb, var(--builder-accent) 16%, #090909) !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .builder-footer-nav-btn-copy {
+    position: relative;
+    z-index: 1;
+    gap: 0;
+  }
+
+  .builder-footer-nav-btn-label {
+    max-width: 50px;
+    font-family: var(--font-mono);
+    font-size: 6.5px;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+    line-height: 1.15;
+  }
+
+  .builder-footer-nav-btn-meta { display: none; }
+
+  .builder-profile-root .builder-footer-nav-btn.is-active .builder-footer-nav-btn-icon {
+    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.06);
+    transform: scale(1.02);
+  }
+
+  .builder-profile-root .builder-footer-nav-btn.is-active::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 2px;
+    width: 2px;
+    border-radius: 999px;
+    background: var(--builder-accent-soft);
+    opacity: 0.9;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--builder-accent) 28%, transparent);
+  }
+
+  .builder-footer-nav-toggle {
+    transition: transform 190ms cubic-bezier(.22, 1, .36, 1), background 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
+  }
+
+  .builder-footer-nav-toggle:hover {
+    border-color: color-mix(in srgb, var(--builder-accent) 42%, transparent);
+    background: color-mix(in srgb, var(--builder-accent) 12%, #0e0f12);
+    box-shadow: -4px 3px 12px color-mix(in srgb, var(--builder-accent) 16%, transparent);
+  }
+
+  .builder-footer-nav-toggle:focus-visible {
+    outline: 2px solid var(--builder-accent-soft);
+    outline-offset: 3px;
+  }
+
+  .builder-footer-nav-toggle:active {
+    transform: translateY(-50%) scale(0.88);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (max-width: 1023px) {
+  .builder-footer-nav-btn:not(.is-active):hover {
+    border-color: color-mix(in srgb, var(--builder-accent) 18%, transparent);
+    background: color-mix(in srgb, var(--builder-accent) 7%, #0a0a0a) !important;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.38), 0 6px 12px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+    color: #e8e6e3;
+    transform: translateY(-1px) scale(1.01);
+  }
+
+  .builder-footer-nav-btn.is-active:hover {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--builder-accent) 32%, #000), 0 8px 16px color-mix(in srgb, var(--builder-accent) 12%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 1023px) {
+  .builder-footer-nav-btn.is-active {
+    animation: fl-footer-nav-item-enter 240ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  .builder-footer-nav-btn.is-active .builder-footer-nav-btn-icon .ui-icon {
+    animation: fl-footer-nav-icon-enter 360ms cubic-bezier(.22, 1, .36, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .builder-footer-nav-btn.is-active,
+  .builder-footer-nav-btn.is-active .builder-footer-nav-btn-icon .ui-icon {
+    animation: none;
+  }
+}
+
+/* Phase 3: Builder uses the same single phone surface as Analytics — mobile-first. */
+.builder-phone-mock {
+  position: relative;
+  width: min(375px, calc(100vw - 1.5rem));
+  aspect-ratio: 375 / 812;
+  margin: 0 auto;
+  isolation: isolate;
+  filter: drop-shadow(0 28px 52px rgba(0, 0, 0, 0.74));
+}
+
+@media (min-width: 1024px) {
+  .builder-phone-mock,
+  .builder-phone-mock__bezel,
+  .builder-phone-mock__screen {
+    display: contents;
+  }
+
+  .builder-phone-mock {
+    filter: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .builder-phone-mock__bezel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 6px;
+    border: 1px solid #1a1a1a;
+    border-radius: 3rem;
+    background: linear-gradient(145deg, #161616, #0a0a0a, #121212);
+    box-shadow:
+      0 28px 80px rgba(0, 0, 0, 0.65),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .builder-phone-mock__bezel::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    z-index: 3;
+    border: 1px solid rgba(255, 255, 255, 0.018);
+    border-radius: 2.7rem;
+    pointer-events: none;
+  }
+
+  .builder-phone-mock__screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.015);
+    border-radius: 2.7rem;
+    background: #000;
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 22px 50px rgba(0, 0, 0, 0.55);
+  }
+
+  .builder-phone-mock__screen::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    height: 30px;
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.82));
+    pointer-events: none;
+  }
+
+  .builder-phone-mock::before,
+  .builder-phone-mock::after {
+    content: '';
+    position: absolute;
+    z-index: 4;
+    width: 6px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #484b4e 0%, #17191b 38%, #070809 76%, #34373a 100%);
+    box-shadow:
+      inset 1px 0 0 rgba(255, 255, 255, 0.2),
+      inset -1px 0 0 rgba(0, 0, 0, 0.9),
+      0 7px 16px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+  }
+
+  .builder-phone-mock::before {
+    top: 132px;
+    left: -4px;
+    height: 82px;
+  }
+
+  .builder-phone-mock::after {
+    top: 188px;
+    right: -4px;
+    height: 118px;
+  }
+
+  .builder-phone-mock .builder-profile-root {
+    position: relative;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    border-radius: 2.7rem !important;
+    background: #000 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  .builder-phone-mock .builder-profile-root::before,
+  .builder-phone-mock .builder-profile-root::after,
+  .builder-phone-mock .builder-profile-root > [data-builder-preset]::before,
+  .builder-phone-mock .builder-profile-root > [data-builder-preset]::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .builder-phone-mock .builder-profile-root > [data-builder-preset] {
+    min-height: 0;
+  }
+}
+
+/* Phase 4: profile tone contract. Man uses Builder's Cyan matte palette. */
+.builder-profile-root[data-builder-profile='man'] {
+  --builder-tone: cyan;
+  --builder-accent: var(--cyan-matte, #00d2ee);
+  --builder-accent-soft: var(--cyan-matte-soft, #5ce1e6);
+  --builder-accent-deep: var(--cyan-matte-deep, #008ba3);
+  --builder-accent-rgb: var(--cyan-matte-rgb, 0, 210, 238);
+  --builder-accent-shadow: rgba(0, 210, 238, 0.22);
+}
+
+.builder-profile-root[data-builder-profile='woman'] {
+  --builder-tone: rose;
+  --builder-accent: var(--rose-matte, #c75078);
+  --builder-accent-soft: var(--rose-matte-soft, #d9779e);
+  --builder-accent-deep: var(--rose-matte-deep, #7a3a55);
+  --builder-accent-rgb: var(--rose-matte-rgb, 199, 80, 120);
+  --builder-accent-shadow: rgba(199, 80, 120, 0.18);
+}
+
+.builder-profile-root[data-builder-profile='man'] .builder-tool-page,
+.builder-profile-root[data-builder-profile='woman'] .builder-tool-page {
+  --blt-ember: var(--builder-accent);
+  --blt-ember-2: var(--builder-accent-soft);
+  --blt-molten: var(--builder-accent-deep);
+  --rest-ring-start: color-mix(in srgb, var(--builder-accent-soft) 55%, #fff);
+  --rest-ring-mid: var(--builder-accent-soft);
+  --rest-ring-end: var(--builder-accent);
+  --rest-ring-glow: color-mix(in srgb, var(--builder-accent-soft) 42%, transparent);
+  --chrono-accent: var(--builder-accent-soft);
+  --chrono-accent-deep: var(--builder-accent-deep);
+  --chrono-line: color-mix(in srgb, var(--builder-accent) 24%, transparent);
 }

@@ -1,8 +1,7 @@
 import { AppLoadingScreen } from './AppLoadingScreen';
-import cyanLogo from '@/assets/legacy-logo/cyan.svg';
+import { localAssetUrl } from '../lib/cdn';
 
-// Use the bundled cyan mark so the boot screen is independent of the
-// optional public /logo folder.
+const builderUrlLogo = localAssetUrl('/logo/logo_builder_app_cyan_url.svg');
 
 interface LoadingScreenProps {
   onFinished: () => void;
@@ -14,7 +13,7 @@ export function LoadingScreen({ onFinished }: LoadingScreenProps) {
       name="Builder"
       description="Diseñá entrenamientos y planes de comidas con asistencia de IA."
       eyebrow="FIT LEGACY · WORKOUT BUILDER"
-      logo={cyanLogo}
+      logo={builderUrlLogo}
       logoAlt="Fit Legacy Builder"
       accent="#00b8c8"
       statusLines={['Cargando catálogo', 'Preparando canvas', 'Builder listo']}

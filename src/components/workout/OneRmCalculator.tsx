@@ -1,18 +1,29 @@
-import { useMemo, useState, useRef } from 'react';
-import { motion } from 'motion/react';
-import { Save, Share2 } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Save, Share2, Plus, Minus, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { updateBuilderBestLift } from '../builderToolLedger';
 import { PinkCandleTrend } from './PinkCandleTrend';
 import { UiIcon } from '../UiIcon';
 
+export type OneRmCalculatorProps = {
+  onUpdateBestLift?: (bestLift: {
+    exerciseName: string;
+    estimated1RmKg: number;
+    weightKg: number;
+    reps: number;
+    date: string;
+  }) => void;
+};
+
 type FormulaKey = 'epley' | 'brzycki' | 'lander' | 'lombardi';
+type SubScreen = 'calc' | 'compare' | 'loads';
 
 const FORMULAS = [
-  { key: 'epley', label: 'Epley', description: 'Equilibrada para uso general' },
-  { key: 'brzycki', label: 'Brzycki', description: 'Más estable con pocas reps' },
-  { key: 'lander', label: 'Lander', description: 'Orientada a fuerza' },
-  { key: 'lombardi', label: 'Lombardi', description: 'Útil con series largas' },
-] as const;
+  { key: 'epley' as const, label: 'Epley', formulaStr: 'W × (1 + r/30)', description: 'Equilibrada para uso general' },
+  { key: 'brzycki' as const, label: 'Brzycki', formulaStr: 'W / (1.0278 - 0.0278×r)', description: 'Más estable con pocas reps' },
+  { key: 'lander' as const, label: 'Lander', formulaStr: '100W / (101.3 - 2.67×r)', description: 'Orientada a fuerza máxima' },
+  { key: 'lombardi' as const, label: 'Lombardi', formulaStr: 'W × r^0.1', description: 'Útil con series largas' },
+];
 
 const LOADS = [
   { pct: 95, focus: 'Pico de fuerza', reps: '1–2 reps' },
@@ -36,17 +47,62 @@ function roundToPlate(value: number) {
   return Math.round(value / 2.5) * 2.5;
 }
 
-export function OneRmCalculator() {
-  const [weight, setWeight] = useState(80);
+/* ─── CountUp Component from Analytics App ─── */
+function CountUp({
+  value,
+  decimals = 0,
+  refreshKey = 0,
+}: {
+  value: number;
+  decimals?: number;
+  refreshKey?: number;
+}) {
+  const [displayValue, setDisplayValue] = useState(value);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      setDisplayValue(value);
+      return undefined;
+    }
+
+    let frame = 0;
+    const start = performance.now();
+    const duration = 500;
+    const startVal = displayValue;
+    const diff = value - startVal;
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(startVal + diff * eased);
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value, refreshKey]);
+
+  return <>{displayValue.toLocaleString('es-AR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</>;
+}
+
+export function OneRmCalculator({ onUpdateBestLift }: OneRmCalculatorProps) {
+  const [weight, setWeight] = useState(85);
   const [reps, setReps] = useState(5);
-  const [formula, setFormula] = useState<FormulaKey>('epley');
+  const [formula, setFormula] = useState<FormulaKey>('lander');
+  const [expandedFormula, setExpandedFormula] = useState<FormulaKey>('lander');
+  const [activeScreen, setActiveScreen] = useState<SubScreen>('calc');
   const [feedback, setFeedback] = useState<'saved' | 'copied' | null>(null);
-  const [phonePage, setPhonePage] = useState(0);
   const [loadView, setLoadView] = useState<'loads' | 'warmup'>('loads');
-  const hscrollRef = useRef<HTMLDivElement>(null);
+  const [isHeroChartExpanded, setIsHeroChartExpanded] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    setRefreshKey((k) => k + 1);
+  }, [activeScreen]);
 
   const oneRm = useMemo(() => calculateOneRm(weight, reps, formula), [formula, reps, weight]);
   const percentOfEstimated = oneRm > 0 ? Math.min(100, (weight / oneRm) * 100) : 0;
+
   const warmupSets = useMemo(
     () => [40, 55, 70, 82].map((pct, index) => ({
       pct,
@@ -55,9 +111,14 @@ export function OneRmCalculator() {
     })),
     [oneRm],
   );
+
   const formulaValues = useMemo(
-    () => FORMULAS.map((item) => ({ ...item, value: calculateOneRm(weight, reps, item.key) })),
-    [reps, weight],
+    () => FORMULAS.map((item) => ({
+      ...item,
+      value: calculateOneRm(weight, reps, item.key),
+      diff: calculateOneRm(weight, reps, item.key) - oneRm,
+    })),
+    [oneRm, reps, weight],
   );
 
   const showFeedback = (value: 'saved' | 'copied') => {
@@ -66,234 +127,485 @@ export function OneRmCalculator() {
   };
 
   const saveBestLift = () => {
-    updateBuilderBestLift({
+    const payload = {
       exerciseName: 'Press banca',
-      estimated1RmKg: oneRm,
+      estimated1RmKg: Number(oneRm.toFixed(1)),
       weightKg: weight,
       reps,
       date: new Date().toISOString().slice(0, 10),
-    });
+    };
+    if (onUpdateBestLift) {
+      onUpdateBestLift(payload);
+    } else {
+      updateBuilderBestLift(payload);
+    }
     showFeedback('saved');
   };
 
   const sharePlan = async () => {
-    const text = `Vanguard Tools · 1RM\n${weight} kg × ${reps} reps = ${oneRm.toFixed(1)} kg\n\n80%: ${roundToPlate(oneRm * 0.8)} kg\n75%: ${roundToPlate(oneRm * 0.75)} kg\n70%: ${roundToPlate(oneRm * 0.7)} kg`;
+    const text = `⚡ Fit Legacy · 1RM Vanguard\n🏋️ ${weight} kg × ${reps} reps = ${oneRm.toFixed(1)} kg (${formula.toUpperCase()})\n\n🎯 Cargas:\n• 90%: ${roundToPlate(oneRm * 0.9)} kg\n• 80%: ${roundToPlate(oneRm * 0.8)} kg\n• 70%: ${roundToPlate(oneRm * 0.7)} kg`;
     try {
       if (navigator.share) await navigator.share({ title: 'Mi 1RM', text });
       else await navigator.clipboard.writeText(text);
       showFeedback('copied');
     } catch {
-      // El usuario puede cancelar el diálogo nativo de compartir.
+      // Ignorar cancelación
     }
   };
+
+  const maxFormulaVal = Math.max(...formulaValues.map((f) => f.value), 1);
 
   return (
     <section className="vanguard-tool vanguard-tool--phone" aria-labelledby="one-rm-title">
       <div className="one-rm-phone" aria-label="Mock smartphone 1RM">
-        <div className="one-rm-phone__bezel">
+        <div className="one-rm-phone__bezel !bg-[#000000] !border-[#141416]">
           <div className="one-rm-phone__speaker" aria-hidden="true" />
-          <div className="one-rm-phone__screen">
-            <div ref={hscrollRef} className="one-rm-phone__hscroll" onScroll={(e) => {
-              const el = e.currentTarget;
-              const idx = Math.round(el.scrollLeft / el.clientWidth);
-              if (idx !== phonePage) setPhonePage(idx);
-            }}>
+          <div className="one-rm-phone__screen relative overflow-hidden !bg-[#000000]">
+            
+            {/* Scrollable Phone Viewport in Pure Black */}
+            <div
+              className="one-rm-phone-page absolute inset-0 flex flex-col gap-3 p-3.5 pb-24 overflow-y-auto overscroll-contain !bg-[#000000]"
+              style={{ scrollbarWidth: 'thin' }}
+            >
 
-              {/* Página 1: calculadora 1RM */}
-              <div className="one-rm-phone-page">
-                <header className="one-rm-phone__topbar">
-                  <div>
-                    <span className="vanguard-tool__eyebrow">Vanguard Tools · Fuerza</span>
-                    <h2 id="one-rm-title">1RM</h2>
-                  </div>
-                  <div className="vanguard-tool__actions">
-                    <button type="button" onClick={saveBestLift} aria-label="Guardar 1RM en Legacito" title="Guardar en Legacito">
-                      {feedback === 'saved' ? <UiIcon name="validation-1" size={17} duo /> : <Save size={18} />}
-                    </button>
-                    <button type="button" onClick={sharePlan} aria-label="Copiar o compartir plan" title="Copiar o compartir">
-                      {feedback === 'copied' ? <UiIcon name="validation-1" size={17} duo /> : <Share2 size={18} />}
-                    </button>
-                  </div>
-                </header>
-
-                <section className="vanguard-tool__result" aria-live="polite">
-                  <div className="vanguard-tool__result-data">
-                    <span className="vanguard-tool__section-label">1RM estimado</span>
-                    <motion.div
-                      key={oneRm}
-                      initial={{ opacity: 0.55, y: 4, scale: 0.985 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              {/* Segmented Screen Switcher Pill Bar */}
+              <div className="flex items-center p-1 rounded-2xl bg-[#0d0d10] border border-white/[0.08] shrink-0 relative shadow-inner">
+                {([
+                  { key: 'calc' as SubScreen, iconName: 'one-rm' as const, label: '1RM' },
+                  { key: 'compare' as SubScreen, iconName: 'datos' as const, label: 'Métodos' },
+                  { key: 'loads' as SubScreen, iconName: 'rocket-launch-chart' as const, label: 'Arsenal' },
+                ] as const).map(({ key, iconName, label }) => {
+                  const isActive = activeScreen === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setActiveScreen(key)}
+                      className={`flex-1 py-1.5 rounded-xl font-mono text-[9px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 relative z-10 ${
+                        isActive
+                          ? 'text-black font-black'
+                          : 'text-[#6E6558] hover:text-white'
+                      }`}
                     >
-                      <span className="vanguard-tool__result-value">{oneRm.toFixed(1)} <em>kg</em></span>
-                      <p>1RM teórico · {weight} kg × {reps} reps · {FORMULAS.find((item) => item.key === formula)?.label}</p>
-                    </motion.div>
-                  </div>
-                  <p className="vanguard-tool__result-message">Tu fuerza está construyendo una base sólida. Veamos cómo convertirla en tu próxima serie.</p>
-                  <button type="button" className="vanguard-tool__result-insight" onClick={() => { setPhonePage(2); hscrollRef.current?.scrollTo({ left: hscrollRef.current.clientWidth * 2, behavior: 'smooth' }); }}>
-                    <span className="vanguard-tool__result-insight-mark" aria-hidden="true">♥</span>
-                    <span>Ver lectura de fuerza</span>
-                    <b aria-hidden="true">▶</b>
-                  </button>
-                  <div className="vanguard-tool__result-chart">
-                    <div className="vanguard-tool__result-axis" aria-hidden="true"><span>+6</span><span>+3</span><span>0</span><span>-3</span></div>
-                    <div className="vanguard-tool__result-plot">
-                      <PinkCandleTrend kind="result" variant={Math.round(oneRm)} label="Señal de fuerza estimada" />
-                      <div className="vanguard-tool__result-chart-labels" aria-hidden="true"><span>SET 1</span><span>SET 2</span><span>SET 3</span><span>LIVE</span></div>
-                    </div>
-                  </div>
-                  <div className="vanguard-tool__result-note">Tu levantamiento equivale al {Math.round(percentOfEstimated)}% de tu 1RM estimado.</div>
-                </section>
+                      {isActive && (
+                        <motion.div
+                          layoutId="active-tab-indicator"
+                          className="absolute inset-0 bg-[var(--builder-accent,#00d2ee)] rounded-xl shadow-[0_0_12px_rgba(0,210,238,0.35)] -z-10"
+                          transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                        />
+                      )}
+                      <UiIcon name={iconName} size={13} active={isActive} />
+                      <span>{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                <section className="vanguard-tool__inputs" aria-label="Entrada de levantamiento">
-                  <span className="vanguard-tool__section-label">Tu levantamiento</span>
-                  <div className="vanguard-tool__input-grid">
-                    <label>
-                      <span>Peso levantado</span>
-                      <div className="vanguard-tool__number-input">
-                        <input type="number" min="2.5" max="500" step="2.5" value={weight} onChange={(event) => setWeight(Math.max(0, Number(event.target.value)))} />
-                        <strong>kg</strong>
-                      </div>
-                    </label>
-                    <label>
-                      <span>Repeticiones</span>
-                      <div className="vanguard-tool__number-input">
-                        <input type="number" min="1" max="20" step="1" value={reps} onChange={(event) => setReps(Math.max(1, Number(event.target.value)))} />
-                        <strong>reps</strong>
-                      </div>
-                    </label>
+              {/* ═══════════════════════════════════════════
+                  SCREEN 1 — 1RM CALCULADORA (Exact Screenshot Match)
+                  ═══════════════════════════════════════════ */}
+              {activeScreen === 'calc' && (
+                <div className="flex flex-col gap-3">
+                  
+                  {/* Card 1: 1RM ESTIMADO */}
+                  <div className="rounded-[1.75rem] bg-[#08080a] border border-white/[0.08] p-5 space-y-3 relative overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.6)]">
+                    <div
+                      className="flex items-center justify-between cursor-pointer select-none"
+                      onClick={() => setIsHeroChartExpanded((prev) => !prev)}
+                    >
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                        1RM ESTIMADO
+                      </span>
+                      <motion.div animate={{ rotate: isHeroChartExpanded ? 0 : -90 }} transition={{ duration: 0.2 }}>
+                        {isHeroChartExpanded ? <ChevronDown size={16} className="text-white/70" /> : <ChevronRight size={16} className="text-[#6E6558]" />}
+                      </motion.div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-['Big_Shoulders_Display',sans-serif] text-[48px] font-black text-white tracking-tight leading-none">
+                        <CountUp value={oneRm} decimals={1} refreshKey={refreshKey} /> <span className="text-2xl font-black text-white uppercase">kg</span>
+                      </h3>
+                      <p className="font-mono text-[11px] text-[#9CA0A6] mt-1.5">
+                        <CountUp value={weight} decimals={0} /> kg × <CountUp value={reps} decimals={0} /> reps · <CountUp value={percentOfEstimated} decimals={0} />% carga
+                      </p>
+                    </div>
+
+                    {/* Continuous Spectral Waveform Chart with Circle Ring Beacon */}
+                    <AnimatePresence>
+                      {isHeroChartExpanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3, ease: 'easeOut' }}
+                          className="overflow-hidden pt-1"
+                        >
+                          <PinkCandleTrend
+                            kind="result"
+                            variant={Math.round(oneRm)}
+                            weight={weight}
+                            reps={reps}
+                            label="Señal de fuerza estimada"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Explanatory Copy */}
+                    <p className="text-[12px] text-[#c4c3c7] leading-relaxed pt-1">
+                      Tu fuerza está construyendo una base sólida. Levantamiento equivale al <strong className="text-white font-bold">{Math.round(percentOfEstimated)}%</strong> de tu 1RM ({formula.toUpperCase()}).
+                    </p>
                   </div>
-                  <span className="vanguard-tool__section-label">Método de estimación</span>
-                  <div className="vanguard-tool__formula-list" role="radiogroup" aria-label="Método de estimación">
-                    {formulaValues.map((item) => (
-                      <button
-                        key={item.key}
-                        type="button"
-                        role="radio"
-                        aria-checked={formula === item.key}
-                        className={formula === item.key ? 'is-selected' : ''}
-                        onClick={() => setFormula(item.key)}
-                      >
-                        <div className="vanguard-tool__formula-header">
-                          <strong>{item.label}</strong>
-                          <span className="vanguard-tool__formula-val">{item.value.toFixed(1)} kg</span>
+
+                  {/* Card 2: TU LEVANTAMIENTO */}
+                  <div className="rounded-[1.75rem] bg-[#08080a] border border-white/[0.08] p-5 space-y-3.5 relative overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.6)]">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white block">
+                      TU LEVANTAMIENTO
+                    </span>
+
+                    {/* Capsule Steppers Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Peso Stepper */}
+                      <div className="space-y-1">
+                        <span className="font-mono text-[8px] font-bold uppercase tracking-wider text-[#8a7f72] block px-1">
+                          PESO
+                        </span>
+                        <div className="flex items-center justify-between rounded-full bg-[#000000] border border-white/[0.12] p-1.5 h-12">
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
+                            type="button"
+                            className="h-9 w-9 flex items-center justify-center rounded-full bg-[#131316] text-white hover:bg-white/10 active:bg-white/20 transition-colors shrink-0"
+                            onClick={() => setWeight((v) => Math.max(2.5, Number((v - 2.5).toFixed(1))))}
+                            title="Restar 2.5 kg"
+                          >
+                            <Minus size={14} />
+                          </motion.button>
+
+                          <div className="flex items-baseline justify-center gap-1.5 flex-1 px-1">
+                            <span className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black text-white">
+                              <CountUp value={weight} decimals={0} />
+                            </span>
+                            <span className="text-[9px] font-mono font-bold text-[#8a7f72] uppercase">kg</span>
+                          </div>
+
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
+                            type="button"
+                            className="h-9 w-9 flex items-center justify-center rounded-full bg-[#131316] text-white hover:bg-white/10 active:bg-white/20 transition-colors shrink-0"
+                            onClick={() => setWeight((v) => Math.min(500, Number((v + 2.5).toFixed(1))))}
+                            title="Sumar 2.5 kg"
+                          >
+                            <Plus size={14} />
+                          </motion.button>
                         </div>
-                        <span>{item.description}</span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </div>
-
-              {/* Página 2: Comparar métodos */}
-              <div className="one-rm-phone-page">
-                <h3 className="one-rm-phone-page-title">Comparar métodos</h3>
-                <p className="one-rm-phone-page-sub">Contrasta el cálculo antes de definir tu bloque</p>
-                <motion.div className="vanguard-tool__methods" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-                  {formulaValues.map((item, index) => (
-                    <div key={item.key} className={formula === item.key ? 'is-selected' : ''}>
-                      <span>{item.label}</span>
-                      <strong>{item.value.toFixed(1)} kg</strong>
-                      <PinkCandleTrend variant={index} label={`Tendencia estimada por ${item.label}`} />
-                      <small>{item.description}</small>
-                    </div>
-                  ))}
-                </motion.div>
-              </div>
-
-              {/* Página 3: Series de trabajo + calentamiento */}
-              <div className="one-rm-phone-page one-rm-phone-page--loads">
-                <div className="vanguard-tool__loads-heading">
-                  <div><span className="vanguard-tool__section-label">Series de trabajo</span><h3 className="one-rm-phone-page-title" id="one-rm-loads">Tu arsenal de carga</h3></div>
-                </div>
-                <div className="one-rm-load-tabs" role="tablist" aria-label="Vista de carga">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={loadView === 'loads'}
-                    aria-controls="one-rm-load-panel"
-                    className={loadView === 'loads' ? 'is-active' : ''}
-                    onClick={() => setLoadView('loads')}
-                  >
-                    Carga
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={loadView === 'warmup'}
-                    aria-controls="one-rm-load-panel"
-                    className={loadView === 'warmup' ? 'is-active' : ''}
-                    onClick={() => setLoadView('warmup')}
-                  >
-                    Calentamiento
-                  </button>
-                </div>
-                <p className="one-rm-phone-page-sub">
-                  {loadView === 'loads' ? 'Redondeado a discos de 2.5 kg · presioná para cargar' : '4 rondas progresivas antes de tu serie efectiva'}
-                </p>
-                {loadView === 'loads' ? (
-                  <motion.div key="loads" id="one-rm-load-panel" role="tabpanel" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }} className="vanguard-tool__load-grid">
-                    {LOADS.map((load) => (
-                      <button key={load.pct} type="button" onClick={() => setWeight(roundToPlate(oneRm * (load.pct / 100)))}>
-                        <span>{load.pct}%</span>
-                        <strong>{roundToPlate(oneRm * (load.pct / 100)).toFixed(1)} <em>kg</em></strong>
-                        <PinkCandleTrend variant={load.pct} label={`Tendencia de carga al ${load.pct}%`} />
-                        <small>{load.focus} · {load.reps}</small>
-                      </button>
-                    ))}
-                  </motion.div>
-                ) : (
-                  <motion.div key="warmup" id="one-rm-load-panel" role="tabpanel" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }} className="vanguard-tool__warmup">
-                    {warmupSets.map((set) => (
-                      <div key={set.pct}>
-                        <span>{set.pct}%</span>
-                        <strong>{set.weight.toFixed(1)} kg</strong>
-                        <PinkCandleTrend variant={set.pct} label={`Tendencia de calentamiento al ${set.pct}%`} />
-                        <small>{set.reps} reps</small>
                       </div>
-                    ))}
-                  </motion.div>
-                )}
-              </div>
 
-            </div>
-            {/* Page indicator dots */}
-            <div className="one-rm-phone-dots" role="tablist" aria-label="Páginas del simulador">
-              {[0, 1, 2].map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  className={phonePage === page ? 'is-active' : ''}
-                  aria-label={`Ver página ${page + 1} de 3`}
-                  aria-current={phonePage === page ? 'true' : undefined}
-                  onClick={() => { setPhonePage(page); hscrollRef.current?.scrollTo({ left: hscrollRef.current.clientWidth * page, behavior: 'smooth' }); }}
-                />
-              ))}
+                      {/* Reps Stepper */}
+                      <div className="space-y-1">
+                        <span className="font-mono text-[8px] font-bold uppercase tracking-wider text-[#8a7f72] block px-1">
+                          REPS
+                        </span>
+                        <div className="flex items-center justify-between rounded-full bg-[#000000] border border-white/[0.12] p-1.5 h-12">
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
+                            type="button"
+                            className="h-9 w-9 flex items-center justify-center rounded-full bg-[#131316] text-white hover:bg-white/10 active:bg-white/20 transition-colors shrink-0"
+                            onClick={() => setReps((v) => Math.max(1, v - 1))}
+                            title="Restar 1 rep"
+                          >
+                            <Minus size={14} />
+                          </motion.button>
+
+                          <div className="flex items-baseline justify-center gap-1.5 flex-1 px-1">
+                            <span className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black text-white">
+                              <CountUp value={reps} decimals={0} />
+                            </span>
+                            <span className="text-[9px] font-mono font-bold text-[#8a7f72] uppercase">reps</span>
+                          </div>
+
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
+                            type="button"
+                            className="h-9 w-9 flex items-center justify-center rounded-full bg-[#131316] text-white hover:bg-white/10 active:bg-white/20 transition-colors shrink-0"
+                            onClick={() => setReps((v) => Math.min(20, v + 1))}
+                            title="Sumar 1 rep"
+                          >
+                            <Plus size={14} />
+                          </motion.button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Presets Rows: Peso and Reps */}
+                    <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                      {/* Peso Preset Row */}
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[8px] font-bold text-[#8a7f72] uppercase w-9 shrink-0">PESO</span>
+                        <div className="grid grid-cols-6 gap-1.5 flex-1">
+                          {[60, 70, 80, 90, 100, 120].map((val) => {
+                            const isSelected = weight === val;
+                            return (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => setWeight(val)}
+                                className={`h-7 rounded-lg font-mono text-[9px] font-bold transition-all flex items-center justify-center select-none ${
+                                  isSelected
+                                    ? 'bg-white/15 text-white border border-white/40'
+                                    : 'bg-[#131316] text-[#9ca0a6] hover:text-white'
+                                }`}
+                              >
+                                {val}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Reps Preset Row */}
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[8px] font-bold text-[#8a7f72] uppercase w-9 shrink-0">REPS</span>
+                        <div className="grid grid-cols-6 gap-1.5 flex-1">
+                          {[1, 3, 5, 8, 10, 12].map((val) => {
+                            const isSelected = reps === val;
+                            return (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => setReps(val)}
+                                className={`h-7 rounded-lg font-mono text-[9px] font-bold transition-all flex items-center justify-center select-none ${
+                                  isSelected
+                                    ? 'bg-white/15 text-white border border-white/40'
+                                    : 'bg-[#131316] text-[#9ca0a6] hover:text-white'
+                                }`}
+                              >
+                                {val}r
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Method Selector 2x2 Grid */}
+                    <div className="pt-2 border-t border-white/[0.06] space-y-1.5">
+                      <span className="font-mono text-[8px] font-bold uppercase tracking-wider text-[#8a7f72] block px-0.5">
+                        MÉTODO
+                      </span>
+                      <div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Método de estimación">
+                        {formulaValues.map((item) => {
+                          const isSelected = formula === item.key;
+                          return (
+                            <motion.button
+                              whileTap={{ scale: 0.97 }}
+                              key={item.key}
+                              type="button"
+                              role="radio"
+                              aria-checked={isSelected}
+                              onClick={() => {
+                                setFormula(item.key);
+                                setExpandedFormula(item.key);
+                              }}
+                              className={`p-3.5 text-left transition-all relative select-none rounded-2xl ${
+                                isSelected
+                                  ? 'bg-[#060608] border-2 border-white'
+                                  : 'bg-[#000000] border border-white/[0.08]'
+                              }`}
+                            >
+                              <strong className="font-mono text-[11px] font-bold text-white uppercase block">{item.label}</strong>
+                              <span className="font-mono text-[11px] font-black text-white block mt-1">
+                                <CountUp value={item.value} decimals={1} /> kg
+                              </span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Action Deck: Rounded Pill Buttons matching screenshot */}
+                    <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-white/[0.06]">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        type="button"
+                        onClick={saveBestLift}
+                        className="py-3 px-4 rounded-full bg-[#000000] border border-white/20 text-white font-mono text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:border-white/40 transition-colors"
+                      >
+                        {feedback === 'saved' ? <Check size={14} className="text-emerald-400" /> : <Save size={14} />}
+                        <span>{feedback === 'saved' ? 'GUARDADO' : 'GUARDAR'}</span>
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        type="button"
+                        onClick={sharePlan}
+                        className="py-3 px-4 rounded-full bg-[#000000] border border-white/20 text-white font-mono text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:border-white/40 transition-colors"
+                      >
+                        {feedback === 'copied' ? <Check size={14} className="text-[var(--builder-accent,#00d2ee)]" /> : <Share2 size={14} />}
+                        <span>{feedback === 'copied' ? 'COPIADO' : 'COMPARTIR'}</span>
+                      </motion.button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════
+                  SCREEN 2 — MÉTODOS (Detailed Comparison)
+                  ═══════════════════════════════════════════ */}
+              {activeScreen === 'compare' && (
+                <div className="flex flex-col gap-3">
+                  {formulaValues.map((item) => {
+                    const isSelected = formula === item.key;
+                    const isExpanded = expandedFormula === item.key;
+                    const barPct = maxFormulaVal > 0 ? (item.value / maxFormulaVal) * 100 : 0;
+
+                    return (
+                      <div
+                        key={item.key}
+                        onClick={() => {
+                          setFormula(item.key);
+                          setExpandedFormula(item.key);
+                        }}
+                        className={`rounded-[1.75rem] border p-5 space-y-2.5 cursor-pointer transition-all duration-300 relative overflow-hidden ${
+                          isSelected
+                            ? 'bg-[#08080a] border-white/30 shadow-lg'
+                            : 'bg-[#08080a] border-white/[0.08] hover:border-white/15'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white">
+                            {item.label}
+                          </span>
+                          {isSelected && (
+                            <span className="font-mono text-[8px] font-bold uppercase px-2 py-0.5 rounded-full bg-white/10 text-white">
+                              ACTIVO
+                            </span>
+                          )}
+                        </div>
+
+                        <div>
+                          <h3 className="font-['Big_Shoulders_Display',sans-serif] text-[40px] font-black text-white leading-none">
+                            <CountUp value={item.value} decimals={1} /> <span className="text-base text-[#9CA0A6]">kg</span>
+                          </h3>
+                          <p className="font-mono text-[10px] text-[#9CA0A6] mt-1">
+                            {item.formulaStr}
+                          </p>
+                        </div>
+
+                        <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${barPct}%` }}
+                            transition={{ duration: 0.5 }}
+                            className="h-full rounded-full bg-white/70"
+                          />
+                        </div>
+
+                        <p className="text-[11px] text-[#8a8990] leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════
+                  SCREEN 3 — ARSENAL (Cargas y Calentamiento)
+                  ═══════════════════════════════════════════ */}
+              {activeScreen === 'loads' && (
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-[1.75rem] bg-[#08080a] border border-white/[0.08] p-5 space-y-3">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white block">
+                      ARSENAL DE CARGA
+                    </span>
+                    <h3 className="font-['Big_Shoulders_Display',sans-serif] text-[40px] font-black text-white leading-none">
+                      <CountUp value={oneRm} decimals={1} /> <span className="text-base text-[#9CA0A6]">kg 1RM</span>
+                    </h3>
+                    <p className="font-mono text-[10px] text-[#9CA0A6]">
+                      Discos olímpicos · Redondeo 2.5 kg ({formula.toUpperCase()})
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 p-1 rounded-2xl bg-[#0d0d10] border border-white/[0.08]">
+                    <button
+                      type="button"
+                      onClick={() => setLoadView('loads')}
+                      className={`flex-1 py-1.5 rounded-xl font-mono text-[9px] font-bold uppercase transition-all ${
+                        loadView === 'loads' ? 'bg-white text-black font-black' : 'text-[#6E6558] hover:text-white'
+                      }`}
+                    >
+                      Porcentajes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoadView('warmup')}
+                      className={`flex-1 py-1.5 rounded-xl font-mono text-[9px] font-bold uppercase transition-all ${
+                        loadView === 'warmup' ? 'bg-white text-black font-black' : 'text-[#6E6558] hover:text-white'
+                      }`}
+                    >
+                      Calentamiento
+                    </button>
+                  </div>
+
+                  {loadView === 'loads' ? (
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {LOADS.map((load) => {
+                        const targetKg = roundToPlate(oneRm * (load.pct / 100));
+                        return (
+                          <button
+                            key={load.pct}
+                            type="button"
+                            onClick={() => {
+                              setWeight(targetKg);
+                              setActiveScreen('calc');
+                            }}
+                            className="p-3.5 text-left rounded-2xl bg-[#08080a] border border-white/[0.08] hover:border-white/20 transition-all"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono text-[10px] font-bold text-white">{load.pct}%</span>
+                              <span className="font-mono text-[8px] text-[#6E6558]">{load.reps}</span>
+                            </div>
+                            <strong className="block mt-1 font-['Big_Shoulders_Display',sans-serif] text-3xl font-black text-white">
+                              <CountUp value={targetKg} decimals={1} /> <small className="text-[10px] font-mono text-[#6E6558]">kg</small>
+                            </strong>
+                            <small className="block mt-1 font-mono text-[8px] text-[#8a8990]">{load.focus}</small>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {warmupSets.map((set, idx) => (
+                        <div
+                          key={set.pct}
+                          className="flex items-center justify-between p-3.5 rounded-2xl bg-[#08080a] border border-white/[0.08]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/5 font-mono text-xs font-black text-white">
+                              #{idx + 1}
+                            </span>
+                            <div>
+                              <p className="font-mono text-[10px] font-bold text-white">Ronda {idx + 1} ({set.pct}%)</p>
+                              <p className="font-mono text-[8px] text-[#6E6558]">{set.reps} reps</p>
+                            </div>
+                          </div>
+                          <strong className="font-['Big_Shoulders_Display',sans-serif] text-2xl font-black text-white">
+                            <CountUp value={set.weight} decimals={1} /> <small className="text-[10px] font-mono text-[#6E6558]">kg</small>
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
         </div>
       </div>
-
-      <div className="one-rm-presets" role="group" aria-label="Ajustes rápidos de 1RM">
-        <div className="one-rm-presets__group">
-          <span className="one-rm-presets__label">Peso</span>
-          <div className="one-rm-presets__row" role="radiogroup" aria-label="Carga rápida">
-            {[60, 70, 80, 90, 100].map((value) => (
-              <button key={value} type="button" role="radio" aria-checked={weight === value} className={weight === value ? 'is-selected' : ''} onClick={() => setWeight(value)}>{value}<small>kg</small></button>
-            ))}
-          </div>
-        </div>
-        <div className="one-rm-presets__group">
-          <span className="one-rm-presets__label">Reps</span>
-          <div className="one-rm-presets__row" role="radiogroup" aria-label="Repeticiones rápidas">
-            {[3, 5, 8, 10].map((value) => (
-              <button key={value} type="button" role="radio" aria-checked={reps === value} className={reps === value ? 'is-selected' : ''} onClick={() => setReps(value)}>{value}<small>R</small></button>
-            ))}
-          </div>
-        </div>
-      </div>
-
     </section>
   );
 }
-

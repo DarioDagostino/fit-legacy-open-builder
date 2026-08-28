@@ -1,4 +1,4 @@
-import { CalendarDays, Clock3, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarDays, Clock3, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { MealComposition } from '../../lib/store';
 
 const SLOT_LABELS = ['Desayuno', 'Media mañana', 'Almuerzo', 'Pre-entreno', 'Post-entreno', 'Cena'];
@@ -27,6 +27,8 @@ export interface MealTimelinePanelProps {
   date: string;
   compositions: MealComposition[];
   onDateChange: (value: string) => void;
+  onDateStep: (days: -1 | 1) => void;
+  onCopyPreviousDay: () => void;
   onAddMeal: (slot: number, date: string, time: string, name: string) => void;
   onEditMeal: (meal: MealComposition) => void;
   onRemoveMeal: (meal: MealComposition) => void;
@@ -36,11 +38,17 @@ export function MealTimelinePanel({
   date,
   compositions,
   onDateChange,
+  onDateStep,
+  onCopyPreviousDay,
   onAddMeal,
   onEditMeal,
   onRemoveMeal,
 }: MealTimelinePanelProps) {
   const mealsForDate = compositions.filter((meal) => meal.date === date).sort((a, b) => a.slot - b.slot);
+  const previousDate = new Date(`${date}T12:00:00`);
+  previousDate.setDate(previousDate.getDate() - 1);
+  const previousDateKey = previousDate.toISOString().slice(0, 10);
+  const hasPreviousDay = compositions.some((meal) => meal.date === previousDateKey);
   const bySlot = new Map(mealsForDate.map((meal) => [meal.slot, meal]));
   const totals = mealsForDate.reduce((sum, meal) => {
     const macros = mealMacros(meal);
@@ -61,15 +69,22 @@ export function MealTimelinePanel({
               <p className="builder-eyebrow">Protocolo de rendimiento · 6 slots</p>
               <h2 className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black uppercase tracking-tight text-[#F1F0F4]">Meals</h2>
             </div>
-            <label className="builder-draft-field w-[148px] shrink-0">
-              <span>Plan del día</span>
-              <span className="relative">
-                <CalendarDays size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--builder-accent-soft)]" aria-hidden="true" />
-                <input aria-label="Fecha del plan de comidas" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} className="pl-8" />
-              </span>
-            </label>
+            <div className="flex w-[184px] shrink-0 items-end gap-1.5">
+              <button type="button" className="builder-meal-date-step" onClick={() => onDateStep(-1)} aria-label="Día anterior"><ArrowLeft size={13} /></button>
+              <label className="builder-draft-field min-w-0 flex-1">
+                <span>Plan del día</span>
+                <span className="relative">
+                  <CalendarDays size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--builder-accent-soft)]" aria-hidden="true" />
+                  <input aria-label="Fecha del plan de comidas" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} className="pl-8" />
+                </span>
+              </label>
+              <button type="button" className="builder-meal-date-step" onClick={() => onDateStep(1)} aria-label="Día siguiente"><ArrowRight size={13} /></button>
+            </div>
           </div>
-          <p className="text-[11px] font-medium capitalize text-[#8f8b86]">{formatDateLabel(date)} · composición orientada a hipertrofia y alto rendimiento</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] font-medium capitalize text-[#8f8b86]">{formatDateLabel(date)} · composición orientada a hipertrofia y alto rendimiento</p>
+            {hasPreviousDay && <button type="button" className="builder-meal-copy-button" onClick={onCopyPreviousDay}><Copy size={12} /> Copiar día anterior</button>}
+          </div>
         </header>
 
         <section className="builder-meal-macro-strip" aria-label="Totales diarios de macros">

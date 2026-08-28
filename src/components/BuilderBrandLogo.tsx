@@ -1,4 +1,6 @@
-import cyanLogoUrl from '@/assets/legacy-logo/cyan.svg';
+import { localAssetUrl } from '../lib/cdn';
+
+const BUILDER_HEADER_LOGO = localAssetUrl('/logo/logo_builder_app_cyan_header.svg');
 
 type BuilderBrandLogoProps = {
   className?: string;
@@ -11,7 +13,7 @@ export function BuilderBrandLogo({
 }: BuilderBrandLogoProps) {
   return (
     <img
-      src={cyanLogoUrl}
+      src={BUILDER_HEADER_LOGO}
       alt={alt}
       className={className}
       draggable={false}

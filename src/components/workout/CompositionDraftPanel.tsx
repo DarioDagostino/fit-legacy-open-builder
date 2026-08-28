@@ -1,8 +1,9 @@
-import { Check, Minus, Plus, RotateCcw, Trash2, Utensils, Dumbbell } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Minus, Plus, RotateCcw, Trash2, Utensils, Dumbbell } from 'lucide-react';
 import type { FoodItem, SelectedExercise } from '../../lib/store';
 
 type WorkoutPatch = Partial<Pick<SelectedExercise, 'sets' | 'reps' | 'weight' | 'notes'>>;
 type FoodPatch = Partial<Pick<FoodItem, 'quantity' | 'notes'>>;
+type WorkoutPreset = { label: string; sets: number; reps: number };
 
 interface CompositionDraftPanelProps {
   mode: 'workout' | 'nutrition';
@@ -28,6 +29,9 @@ interface CompositionDraftPanelProps {
   onRemoveExercise: (id: string) => void;
   onUpdateFood: (id: string, patch: FoodPatch) => void;
   onRemoveFood: (id: string) => void;
+  onMoveExercise?: (id: string, direction: -1 | 1) => void;
+  onMoveFood?: (id: string, direction: -1 | 1) => void;
+  onApplyWorkoutPreset?: (preset: WorkoutPreset) => void;
   onConfirm: () => void;
   onDiscard: () => void;
   onContinueAdding?: () => void;
@@ -112,6 +116,9 @@ export function CompositionDraftPanel({
   onRemoveExercise,
   onUpdateFood,
   onRemoveFood,
+  onMoveExercise,
+  onMoveFood,
+  onApplyWorkoutPreset,
   onConfirm,
   onDiscard,
   onContinueAdding,
@@ -167,6 +174,14 @@ export function CompositionDraftPanel({
       </div>
 
       <div className="builder-composition-draft__list">
+        {isWorkout && onApplyWorkoutPreset && (
+          <div className="builder-draft-presets" role="group" aria-label="Presets rápidos para todos los ejercicios">
+            <span className="builder-draft-presets__label">Aplicar a todos</span>
+            {[{ label: '3×8', sets: 3, reps: 8 }, { label: '3×10', sets: 3, reps: 10 }, { label: '4×8', sets: 4, reps: 8 }, { label: '4×12', sets: 4, reps: 12 }].map((preset) => (
+              <button key={preset.label} type="button" onClick={() => onApplyWorkoutPreset(preset)}>{preset.label}</button>
+            ))}
+          </div>
+        )}
         {isWorkout ? exercises.map((exercise, index) => (
           <article className="builder-draft-item" key={exercise.id}>
             <span className="builder-draft-item__index">{String(index + 1).padStart(2, '0')}</span>
@@ -179,9 +194,13 @@ export function CompositionDraftPanel({
                 <NumberStepper value={Number(exercise.weight) || 0} min={0} step={2.5} suffix=" kg" label={`peso de ${exercise.name}`} onChange={(value) => onUpdateExercise(exercise.id, { weight: value })} />
               </div>
             </div>
-            <button type="button" className="builder-draft-item__remove" onClick={() => onRemoveExercise(exercise.id)} aria-label={`Quitar ${exercise.name}`}>
-              <Trash2 size={15} />
-            </button>
+            <div className="builder-draft-item__actions">
+              {onMoveExercise && <>
+                <button type="button" className="builder-draft-item__move" disabled={index === 0} onClick={() => onMoveExercise(exercise.id, -1)} aria-label={`Subir ${exercise.name}`}><ChevronUp size={13} /></button>
+                <button type="button" className="builder-draft-item__move" disabled={index === exercises.length - 1} onClick={() => onMoveExercise(exercise.id, 1)} aria-label={`Bajar ${exercise.name}`}><ChevronDown size={13} /></button>
+              </>}
+              <button type="button" className="builder-draft-item__remove" onClick={() => onRemoveExercise(exercise.id)} aria-label={`Quitar ${exercise.name}`}><Trash2 size={15} /></button>
+            </div>
           </article>
         )) : foods.map((food, index) => {
           const calories = Math.round((Number(food.calories) || 0) * ((Number(food.quantity) || 100) / 100));
@@ -193,11 +212,18 @@ export function CompositionDraftPanel({
                 <small>{food.category || 'alimento'} · {calories} kcal aprox.</small>
                 <div className="builder-draft-item__controls">
                   <NumberStepper value={Number(food.quantity) || 100} min={25} step={25} suffix=" g" label={`cantidad de ${food.name}`} onChange={(value) => onUpdateFood(food.id, { quantity: value })} />
+                  <div className="builder-draft-quick" aria-label={`Cantidades rápidas para ${food.name}`}>
+                    {[50, 100, 150, 200].map((grams) => <button key={grams} type="button" className={Number(food.quantity) === grams ? 'is-active' : ''} onClick={() => onUpdateFood(food.id, { quantity: grams })}>{grams}g</button>)}
+                  </div>
                 </div>
               </div>
-              <button type="button" className="builder-draft-item__remove" onClick={() => onRemoveFood(food.id)} aria-label={`Quitar ${food.name}`}>
-                <Trash2 size={15} />
-              </button>
+              <div className="builder-draft-item__actions">
+                {onMoveFood && <>
+                  <button type="button" className="builder-draft-item__move" disabled={index === 0} onClick={() => onMoveFood(food.id, -1)} aria-label={`Subir ${food.name}`}><ChevronUp size={13} /></button>
+                  <button type="button" className="builder-draft-item__move" disabled={index === foods.length - 1} onClick={() => onMoveFood(food.id, 1)} aria-label={`Bajar ${food.name}`}><ChevronDown size={13} /></button>
+                </>}
+                <button type="button" className="builder-draft-item__remove" onClick={() => onRemoveFood(food.id)} aria-label={`Quitar ${food.name}`}><Trash2 size={15} /></button>
+              </div>
             </article>
           );
         })}

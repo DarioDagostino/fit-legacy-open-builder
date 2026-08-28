@@ -1,11 +1,33 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import cyanLogo from '@/assets/legacy-logo/cyan.svg';
 import goldLogo from '@/assets/legacy-logo/gold.svg';
 import goldenLogo from '@/assets/legacy-logo/golden.svg';
 import roseLogo from '@/assets/legacy-logo/rose.svg';
+import { localAssetUrl } from '../lib/cdn';
 
 type LogoVariant = 'gold' | 'golden' | 'cyan' | 'rose';
+export type BuilderLogoVariant = 'header' | 'footer' | 'url';
+
+const BUILDER_LOGO_MAP: Record<BuilderLogoVariant, string> = {
+  header: localAssetUrl('/logo/logo_builder_app_cyan_header.svg'),
+  footer: localAssetUrl('/logo/logo_builder_app_cyan_footer.svg'),
+  url: localAssetUrl('/logo/logo_builder_app_cyan_url.svg'),
+};
+
+const HEADER_LOGOS = [
+  BUILDER_LOGO_MAP.header,
+  localAssetUrl('/logo/logo_mind_app_gold_header_alternate.svg'),
+  localAssetUrl('/logo/logo_analytics_app_rose_header_alternate.svg'),
+  localAssetUrl('/logo/logo_landing_app_golden_header_alternate.svg'),
+] as const;
+
+const HEADER_GLOWS = [
+  'rgba(0, 255, 255, 0.45)',
+  'rgba(255, 207, 99, 0.45)',
+  'rgba(255, 112, 188, 0.45)',
+  'rgba(255, 196, 82, 0.45)',
+] as const;
 
 // Builder leads with cyan, then keeps the shared Legacy logo cycle. The logo
 // variants live in src/assets so the header never depends on an optional
@@ -33,34 +55,63 @@ const AURA_MAP: Record<LogoVariant, string> = {
   rose: 'rgba(255, 147, 191, 0.2)',
 };
 
-export function DynamicLogoIcon({ interactive = true }: { interactive?: boolean }) {
+export function DynamicLogoIcon({
+  interactive = true,
+  variant,
+}: {
+  interactive?: boolean;
+  variant?: BuilderLogoVariant;
+}) {
   const [index, setIndex] = useState(0);
+  const [headerIndex, setHeaderIndex] = useState(0);
   const [bursting, setBursting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const headerTimerRef = useRef<ReturnType<typeof setInterval>>();
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!interactive) return;
+    if (!interactive || variant) return;
     timerRef.current = setTimeout(() => {
       setIndex(i => (i + 1) % VARIANTS.length);
     }, 3000);
     return () => clearTimeout(timerRef.current);
-  }, [index, interactive]);
+  }, [index, interactive, variant]);
+
+  useEffect(() => {
+    if (variant !== 'header' || reducedMotion) return;
+    headerTimerRef.current = setInterval(() => {
+      setHeaderIndex(i => (i + 1) % HEADER_LOGOS.length);
+    }, 1050);
+    return () => clearInterval(headerTimerRef.current);
+  }, [reducedMotion, variant]);
 
   const handleBurst = () => {
-    if (!interactive || bursting) return;
+    if (!interactive || variant || bursting) return;
     setBursting(true);
     setIndex(i => (i + 1) % VARIANTS.length);
     setTimeout(() => setBursting(false), 600);
   };
 
   const active = VARIANTS[index];
-  const src = LOGO_MAP[active];
-  const glow = GLOW_MAP[active];
-  const aura = AURA_MAP[active];
+  const src = variant === 'header'
+    ? HEADER_LOGOS[headerIndex]
+    : variant
+      ? BUILDER_LOGO_MAP[variant]
+      : LOGO_MAP[active];
+  const glow = variant === 'header'
+    ? HEADER_GLOWS[headerIndex]
+    : variant === 'footer' || variant === 'url'
+      ? 'rgba(0, 255, 255, 0.45)'
+      : GLOW_MAP[active];
+  const aura = variant === 'header' || variant === 'footer' || variant === 'url'
+    ? 'rgba(0, 220, 255, 0.18)'
+    : AURA_MAP[active];
 
   return (
     <div
-      className="relative flex h-full w-full items-center justify-center cursor-pointer"
+      className="builder-logo-icon relative flex h-full w-full items-center justify-center cursor-pointer"
+      data-builder-logo-variant={variant}
+      data-builder-logo-index={variant === 'header' ? headerIndex : undefined}
       onClick={handleBurst}
       style={{ position: 'relative' }}
       aria-hidden="true"
@@ -74,7 +125,7 @@ export function DynamicLogoIcon({ interactive = true }: { interactive?: boolean 
         }}
       />
       <div
-        className="absolute inset-0 rounded-[18%] transition-all duration-400"
+        className={`absolute inset-0 transition-all duration-400 ${variant === 'footer' || variant === 'url' ? 'rounded-full' : 'rounded-[18%]'}`}
         style={{
           border: '1px solid',
           borderColor: glow,
@@ -84,7 +135,7 @@ export function DynamicLogoIcon({ interactive = true }: { interactive?: boolean 
       />
       <AnimatePresence mode="wait">
         <motion.img
-          key={active}
+          key={variant === 'header' ? `header-${headerIndex}` : variant ?? active}
           src={src}
           alt=""
           draggable={false}
