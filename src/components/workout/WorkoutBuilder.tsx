@@ -1659,7 +1659,7 @@ export default function MobileFirstBuilder() {
                          {builderMode === 'workout' ? 'Catálogo de ejercicios' : 'Catálogo de alimentos'}
                        </p>
                        <p className="font-['IBM_Plex_Mono',monospace] text-[9px] uppercase tracking-[0.14em] text-[#6E6558]">
-                         {builderMode === 'workout' ? 'Mi Plan · solo entrenamiento' : 'Meals · solo nutrición'}
+                         {builderMode === 'workout' ? 'Biblioteca oficial' : 'Base de datos'}
                        </p>
                      </div>
                    </div>
@@ -1739,17 +1739,17 @@ export default function MobileFirstBuilder() {
                )}
 
                <div className="space-y-3">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6E6558]" aria-hidden="true" />
-                  <input 
-                    type="text"
-                    aria-label="Buscar ejercicios y comidas"
-                    placeholder={`Buscar ${builderMode === 'workout' ? 'ejercicios' : 'comidas'}...`}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="builder-apple-input w-full py-4 pl-12 pr-4 focus:outline-none font-bold text-base text-[#F1F0F4] placeholder:text-[#9CA0A6] sm:text-[15px]"
-                  />
-                </div>
+                 <div className="relative">
+                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6E6558]" aria-hidden="true" />
+                   <input 
+                     type="text"
+                     aria-label="Buscar ejercicios y comidas"
+                     placeholder={`Buscar ${builderMode === 'workout' ? 'ejercicios' : 'comidas'}...`}
+                     value={search}
+                     onChange={(e) => setSearch(e.target.value)}
+                     className="builder-apple-input w-full py-3.5 pl-11 pr-4 focus:outline-none font-bold text-sm text-[#F1F0F4] placeholder:text-[#9CA0A6]"
+                   />
+                 </div>
 
                 {builderMode === 'workout' && (
                   <div className="grid grid-cols-2 gap-2">
@@ -1780,26 +1780,26 @@ export default function MobileFirstBuilder() {
 
                 <div className="flex items-center justify-between px-1">
                   <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium tracking-[0.18em] text-[#6E6558] uppercase">Focus</p>
-                  <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium text-[#6E6558]">{filteredItems.length} options</p>
+                  <p className="font-['IBM_Plex_Mono',monospace] text-[9px] font-medium text-[#6E6558]">{filteredItems.length} opciones</p>
                 </div>
                 <div className="-mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
                    {(builderMode === 'workout' ? workoutFilters : foodFilters).map(f => (
                      <button
                        key={f.id}
                        onClick={() => setActiveFilter(f.id)}
-                       className={`group flex min-w-[112px] snap-start items-center gap-4 whitespace-nowrap px-4 py-3 text-left transition-all active:scale-95 ${
+                       className={`group flex min-w-[112px] snap-start items-center gap-3 whitespace-nowrap px-3.5 py-2.5 text-left transition-all active:scale-95 ${
                          activeFilter === f.id ? 'builder-cta-primary' : 'builder-focus-pill'
                        }`}
                       >
-{builderMode === 'workout'
-            ? <ExerciseIcon section={f.id === 'all' ? 'fullbody' : f.id} className="h-8 w-8 shrink-0" />
-            : <FoodIcon category={f.id === 'all' ? 'protein' : f.id} className="h-8 w-8 shrink-0" />}
+                        {builderMode === 'workout'
+                          ? <ExerciseIcon section={f.id === 'all' ? 'fullbody' : f.id} className="h-7 w-7 shrink-0" />
+                          : <FoodIcon category={f.id === 'all' ? 'protein' : f.id} className="h-7 w-7 shrink-0" />}
                         <span className="flex min-w-0 flex-col">
                           <span className="truncate font-['Big_Shoulders_Display',sans-serif] text-xs font-bold uppercase tracking-[0.06em]">{f.label}</span>
                           <span className={`text-[8px] font-medium font-['IBM_Plex_Mono',monospace] uppercase tracking-[0.16em] ${
                             activeFilter === f.id ? 'text-white/55' : 'text-[#6E6558]'
                           }`}>
-                           {f.id === 'all' ? 'All' : builderMode === 'workout' ? 'Muscle' : 'Meal'}
+                           {f.id === 'all' ? 'Todos' : builderMode === 'workout' ? 'Músculo' : 'Nutrición'}
                          </span>
                        </span>
                      </button>
@@ -1807,7 +1807,8 @@ export default function MobileFirstBuilder() {
                 </div>
               </div>
 
-              <div className="-mx-1 flex-1 overflow-y-auto space-y-3 px-1 pr-1 custom-scrollbar pb-28 sm:pr-2">
+              {/* Item list with safe right clearance (pr-14 on mobile) for vertical dock */}
+              <div className="-mx-1 flex-1 overflow-y-auto space-y-3 px-1 pr-14 custom-scrollbar pb-28 sm:pr-2">
                 {isCustomWorkoutFilter && (
                   <div className="builder-apple-card p-4 space-y-3">
                     <div className="flex items-center justify-between">
