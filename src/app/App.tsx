@@ -4,14 +4,17 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import WorkoutBuilder from '../components/workout/WorkoutBuilder';
-import { StartPage } from '../components/StartPage';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { initGoogleAnalytics } from '@/lib/analytics/google';
 import { UserProvider } from './providers/UserProvider';
 import { AppErrorBoundary } from './components/shared/AppErrorBoundary';
 import { CookieBanner } from './components/shared/CookieBanner';
 import { getCookiePreferences } from '@/lib/integrations/legal';
+
+const WorkoutBuilder = lazy(() => import('../components/workout/WorkoutBuilder'));
+const StartPage = lazy(() =>
+  import('../components/StartPage').then((module) => ({ default: module.StartPage }))
+);
 
 const SharedPostPage = lazy(() =>
   import('./community/SharedPostPage').then((module) => ({ default: module.SharedPostPage }))

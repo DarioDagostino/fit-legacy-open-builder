@@ -1528,6 +1528,130 @@ body:has(.builder-profile-root) #root {
   letter-spacing: 0.18em;
 }
 
+/* Timer / Chronograph / Intervals: one OLED canvas, no stacked cards.
+   The controls remain grouped by spacing and hairline dividers, while the
+   rings and readouts can use the full width of the phone mock. */
+.builder-profile-root .one-rm-phone-page .timer-surface {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-surface--ring,
+.builder-profile-root .one-rm-phone-page .timer-surface--intervals {
+  width: 100%;
+  padding: 4px 0 0;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-surface--ring > svg,
+.builder-profile-root .one-rm-phone-page .timer-surface--intervals > svg,
+.builder-profile-root .one-rm-phone-page .timer-surface--chrono > svg {
+  opacity: 0.58;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-surface--controls {
+  width: 100%;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-surface--chrono {
+  width: 100%;
+  padding: 4px 0 0;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-surface--chrono .sports-chrono__display,
+.builder-profile-root .one-rm-phone-page .timer-surface--chrono .sports-chrono__actions {
+  width: 100%;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-surface--laps,
+.builder-profile-root .one-rm-phone-page .timer-surface--history {
+  width: 100%;
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-lap-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #9ca0a6;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-lap-row:first-of-type {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Flatten the interval protocol list while keeping selected state obvious. */
+.builder-profile-root .one-rm-phone-page .timer-surface--intervals ~ div button[style*="clip-path"] {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.builder-profile-root .one-rm-phone-page .timer-surface--intervals ~ div button[style*="clip-path"]:hover {
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+@media (max-width: 640px) {
+  .builder-profile-root .one-rm-phone-page .timer-surface--ring,
+  .builder-profile-root .one-rm-phone-page .timer-surface--intervals {
+    padding-top: 0;
+  }
+
+  .builder-profile-root .one-rm-phone-page .timer-surface--controls {
+    padding-top: 14px;
+  }
+}
+
+.builder-profile-root .builder-tool-page .rest-tool__progress {
+  margin-top: 12px;
+  font-size: 8px;
+}
+
+.builder-profile-root .builder-tool-page .rest-tool__progress i {
+  height: 4px;
+  margin-top: 6px;
+}
+
+.builder-profile-root .builder-tool-page .rest-tool__actions {
+  grid-template-columns: 40px minmax(0, 1fr) 54px;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.builder-profile-root .builder-tool-page .rest-tool__actions button,
+.builder-profile-root .builder-tool-page .rest-tool__actions .rest-tool__reset.fl-cut-cta,
+.builder-profile-root .builder-tool-page .rest-tool__actions .rest-tool__add.fl-cut-cta {
+  min-height: 42px !important;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.builder-profile-root .builder-tool-page .rest-tool__actions .rest-tool__reset.fl-cut-cta,
+.builder-profile-root .builder-tool-page .rest-tool__actions .rest-tool__add.fl-cut-cta {
+  padding-inline: 5px !important;
+}
+
+.builder-profile-root .builder-tool-page .rest-tool__start {
+  gap: 6px;
+  padding-inline: 10px;
+}
+
+.builder-profile-root .builder-tool-page .rest-tool__duration-grid {
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.builder-profile-root .builder-tool-page .rest-tool__duration-grid button {
+  min-height: 38px;
+  padding: 7px 4px;
+  font-size: 9px;
+}
+
+
 .builder-profile-root .builder-tool-page .rest-tool__progress {
   margin-top: 12px;
   font-size: 8px;
@@ -1581,4 +1705,389 @@ body:has(.builder-profile-root) #root {
 .builder-profile-root .builder-tool-page .rest-tool__hint {
   margin-top: 11px;
   font-size: 10px;
+}
+
+/* ==========================================================================
+   Builder Screen Skeletons (Parity with Analytics & High-Perf Matte HUD)
+   ========================================================================== */
+
+.builder-screen-skeleton-layer {
+  position: absolute;
+  z-index: 25;
+  inset: 0;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(0, 210, 238, 0.04), transparent 45%),
+    var(--builder-matte-black, #000000);
+  pointer-events: all;
+}
+
+.builder-skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid rgba(250, 245, 236, 0.05);
+  border-radius: 12px;
+  background: rgba(250, 245, 236, 0.035);
+}
+
+.builder-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 15%,
+    rgba(0, 210, 238, 0.08) 50%,
+    transparent 85%
+  );
+  transform: translateX(-125%);
+  animation: builderSkeletonSweep 1.25s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.builder-skeleton--circle {
+  border-radius: 9999px;
+}
+
+.builder-skeleton--text {
+  width: 70%;
+  height: 10px;
+  border-radius: 9999px;
+}
+
+.builder-skeleton--card {
+  min-height: 120px;
+  border-radius: 18px;
+}
+
+.builder-skeleton-card {
+  border: 1px solid var(--builder-matte-line, rgba(250, 245, 236, 0.08));
+  border-radius: 20px;
+  background: var(--builder-matte-card, #0b0b0d);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(250, 245, 236, 0.04);
+}
+
+@keyframes builderSkeletonSweep {
+  to {
+    transform: translateX(125%);
+  }
+}
+
+.builder-screen-skeleton {
+  width: min(1180px, 100%);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: clamp(14px, 2.4vw, 28px) clamp(12px, 2vw, 24px) 110px;
+}
+
+.builder-screen-skeleton__container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.builder-screen-skeleton__home,
+.builder-screen-skeleton__build,
+.builder-screen-skeleton__catalog,
+.builder-screen-skeleton__food,
+.builder-screen-skeleton__train,
+.builder-screen-skeleton__onerm,
+.builder-screen-skeleton__timer,
+.builder-screen-skeleton__calendar,
+.builder-screen-skeleton__export {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  animation: builderSkeletonFadeIn 0.25s ease-out;
+}
+
+@keyframes builderSkeletonFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================================================
+   Mobile-only product surface
+
+   Builder is intentionally shipped as a phone experience at every viewport.
+   The desktop breakpoint used to unwrap the phone, reveal editor sidebars
+   and hide the lateral navigation. Keeping this contract at the end of the
+   cascade makes the desktop browser a neutral stage for the same 375 x 812
+   surface users see on mobile.
+======================================================================== */
+
+html:has(.builder-phone-mock),
+body:has(.builder-phone-mock),
+body:has(.builder-phone-mock) #root {
+  min-height: 100%;
+  background: #000 !important;
+}
+
+body:has(.builder-phone-mock) {
+  overflow-x: hidden;
+}
+
+.builder-phone-mock {
+  display: block !important;
+  position: relative !important;
+  width: min(375px, calc(100vw - 1.5rem)) !important;
+  max-width: 375px !important;
+  aspect-ratio: 375 / 812 !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  isolation: isolate;
+  filter: drop-shadow(0 28px 52px rgba(0, 0, 0, 0.74));
+}
+
+.builder-phone-mock__bezel {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid #1a1a1a;
+  border-radius: 3rem;
+  background: linear-gradient(145deg, #161616, #0a0a0a, #121212);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.builder-phone-mock__bezel::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: 3;
+  border: 1px solid rgba(255, 255, 255, 0.018);
+  border-radius: 2.7rem;
+  pointer-events: none;
+}
+
+.builder-phone-mock__screen {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.015);
+  border-radius: 2.7rem;
+  background: #000;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 22px 50px rgba(0, 0, 0, 0.55);
+}
+
+.builder-phone-mock__screen::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  height: 30px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.82));
+  pointer-events: none;
+}
+
+.builder-phone-mock::before,
+.builder-phone-mock::after {
+  content: '';
+  position: absolute;
+  z-index: 4;
+  width: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #484b4e 0%, #17191b 38%, #070809 76%, #34373a 100%);
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.2),
+    inset -1px 0 0 rgba(0, 0, 0, 0.9),
+    0 7px 16px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.builder-phone-mock::before {
+  top: 132px;
+  left: -4px;
+  height: 82px;
+}
+
+.builder-phone-mock::after {
+  top: 188px;
+  right: -4px;
+  height: 118px;
+}
+
+.builder-phone-mock .builder-profile-root {
+  position: relative !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 2.7rem !important;
+  background: #000 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* One column only: the mobile main surface is the complete Builder. */
+.builder-phone-mock .builder-profile-root > [data-builder-preset] {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  flex: 1 1 auto !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.builder-phone-mock .builder-profile-root > [data-builder-preset] > .pointer-events-none,
+.builder-phone-mock .builder-profile-root > [data-builder-preset] > aside {
+  display: none !important;
+}
+
+.builder-phone-mock .builder-profile-root > [data-builder-preset] > main {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* The wide-screen header status is part of the old desktop layout. */
+.builder-phone-mock .builder-studio-header__status {
+  display: none !important;
+}
+
+/* The same compact Analytics-style rail is visible on desktop, but remains
+   anchored inside the phone rather than to the browser viewport. */
+.builder-phone-mock .builder-footer-nav-wrapper {
+  position: absolute !important;
+  top: 50% !important;
+  right: 6px !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 90 !important;
+  display: flex !important;
+  transform: translateY(-50%) !important;
+  will-change: transform;
+}
+
+.builder-phone-mock .builder-footer-nav {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 62px !important;
+  gap: 3px !important;
+  padding: 5px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-bottom: 3px solid #000 !important;
+  border-radius: 0 !important;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  background: #090909 !important;
+  background-image: none !important;
+  box-shadow: 0 3px 0 #000, 0 16px 36px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.4) !important;
+  isolation: isolate;
+  backdrop-filter: blur(14px) saturate(1.08);
+}
+
+.builder-phone-mock .builder-footer-nav-btn {
+  min-height: 48px !important;
+  height: 48px !important;
+  gap: 3px !important;
+  overflow: visible;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: #0a0a0a !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  color: #7a756e;
+}
+
+.builder-phone-mock .builder-footer-nav-btn-icon {
+  display: grid;
+  width: 26px;
+  height: 24px;
+  flex: 0 0 26px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.builder-phone-mock .builder-footer-nav-btn-icon .ui-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.builder-phone-mock .builder-footer-nav-btn-label {
+  max-width: 50px;
+  font-family: var(--font-mono);
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  line-height: 1.15;
+}
+
+.builder-phone-mock .builder-footer-nav-btn-meta {
+  display: none !important;
+}
+
+.builder-phone-mock .builder-footer-nav-btn.is-active {
+  border-color: color-mix(in srgb, var(--builder-accent) 32%, transparent) !important;
+  background: color-mix(in srgb, var(--builder-accent) 14%, #0a0a0a) !important;
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--builder-accent) 32%, #000), 0 6px 14px color-mix(in srgb, var(--builder-accent) 10%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+  color: #fff !important;
+}
+
+.builder-phone-mock .builder-footer-nav-btn.is-active::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 2px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--builder-accent-soft);
+  opacity: 0.9;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--builder-accent) 28%, transparent);
+}
+
+.builder-phone-mock .builder-footer-nav-toggle {
+  display: flex !important;
+}
+
+@media (max-width: 380px) {
+  .builder-phone-mock {
+    width: calc(100vw - 0.5rem) !important;
+  }
+
+  .builder-phone-mock .builder-footer-nav-wrapper {
+    right: 6px !important;
+  }
 }

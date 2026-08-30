@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Pause, Play, Plus, RotateCcw, Volume2, VolumeX, Activity, Award, Flame, Radio, Zap, Clock, Shield } from 'lucide-react';
+import { Pause, Play, Plus, RotateCcw, Volume2, VolumeX, Activity, Award, Flame, Radio, Zap, Shield } from 'lucide-react';
 import { recordBuilderRestTimerSession } from '../builderToolLedger';
 import { UiIcon } from '../UiIcon';
 
@@ -44,25 +44,6 @@ function splitMs(durationMs: number) {
     seconds: seconds.toString().padStart(2, '0'),
     centiseconds: centiseconds.toString().padStart(2, '0'),
   };
-}
-
-/* ─── Tech Grid Pattern ─── */
-function TechGrid() {
-  return (
-    <svg
-      className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.06]"
-      viewBox="0 0 300 100"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <defs>
-        <pattern id="techGridRest" width="16" height="16" patternUnits="userSpaceOnUse">
-          <path d="M 16 0 L 0 0 0 16" fill="none" stroke="white" strokeWidth="0.5" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#techGridRest)" />
-    </svg>
-  );
 }
 
 /* ─── Canonical Fit Legacy Chamfered CTA Button ─── */
@@ -403,14 +384,10 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
               style={{ scrollbarWidth: 'thin' }}
             >
 
-              {/* Topbar: Canonical Vanguard Telemetry Header */}
+              {/* Topbar: compact tool header */}
               <header className="flex items-start justify-between shrink-0 pt-1">
                 <div>
-                  <span className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--builder-accent-soft,#5ce1e6)] flex items-center gap-1.5">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--builder-accent,#00d2ee)] shadow-[0_0_8px_var(--builder-accent,#00d2ee)] animate-pulse" />
-                    VANGUARD TOOLS · RECOVERY
-                  </span>
-                  <h2 id="rest-timer-title" className="font-['Big_Shoulders_Display',sans-serif] text-4xl font-black italic tracking-tight text-[#F1F0F4] leading-none mt-1">
+                  <h2 id="rest-timer-title" className="font-['Big_Shoulders_Display',sans-serif] text-4xl font-black italic tracking-tight text-[#F1F0F4] leading-none">
                     {activeTab === 'rest' ? 'Descanso' : activeTab === 'chrono' ? 'Cronógrafo' : 'Intervalos'}
                   </h2>
                 </div>
@@ -476,10 +453,8 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
                   transition={{ duration: 0.28 }}
                   className="flex flex-col gap-4"
                 >
-                  {/* Hero Radial Hologram Ring Card */}
-                  <div className="rounded-[1.75rem] bg-[#07070a] border border-white/[0.08] p-5 flex flex-col items-center justify-center relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.7)]">
-                    <TechGrid />
-
+                  {/* Hero Radial Hologram Ring — a single OLED surface, no card wrapper */}
+                  <div className="timer-surface timer-surface--ring flex flex-col items-center justify-center relative">
                     {/* Giant Radial SVG Ring */}
                     <div className="relative w-56 h-56 flex items-center justify-center my-3 select-none">
                       <svg className="w-full h-full -rotate-90" viewBox="0 0 220 220">
@@ -566,8 +541,8 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
                     </div>
                   </div>
 
-                  {/* Actions Deck with Canonical Fit Legacy Chamfer Buttons */}
-                  <div className="rounded-[1.75rem] bg-[#07070a] border border-white/[0.08] p-4 space-y-3.5 relative overflow-hidden shadow-[0_12px_30px_rgba(0,0,0,0.6)]">
+                  {/* Controls stay on the OLED canvas; dividers preserve scanability without a card */}
+                  <div className="timer-surface timer-surface--controls space-y-3.5 relative">
                     
                     {/* Primary 3-Button Control Bar */}
                     <div className="grid grid-cols-[50px_1fr_64px] gap-2.5 items-center">
@@ -679,9 +654,9 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
                     )}
                   </AnimatePresence>
 
-                  {/* Telemetry Last Session Card */}
+                  {/* Telemetry last session — inline ledger row, not a second card */}
                   {lastCompletedRest && (
-                    <div className="rounded-2xl bg-[#07070a] border border-white/[0.08] p-3.5 flex items-center justify-between">
+                    <div className="timer-surface timer-surface--history flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <Flame size={15} className="text-[var(--builder-accent,#00d2ee)]" />
                         <div>
@@ -698,7 +673,7 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
               )}
 
               {/* ═══════════════════════════════════════════
-                  SCREEN 2 — CRONÓGRAFO (Performance Timing)
+                  SCREEN 2 — CRONÓGRAFO
                   ═══════════════════════════════════════════ */}
               {activeTab === 'chrono' && (
                 <motion.div
@@ -709,14 +684,8 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
                   transition={{ duration: 0.28 }}
                   className="flex flex-col gap-4"
                 >
-                  <div className="rounded-[1.75rem] bg-[#07070a] border border-white/[0.08] p-6 space-y-4 relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.7)]">
-                    <TechGrid />
-
+                  <div className="timer-surface timer-surface--chrono space-y-4 relative">
                     <div className="flex items-center justify-between relative z-10">
-                      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--builder-accent-soft,#5ce1e6)] flex items-center gap-1.5">
-                        <Clock size={12} className="text-[var(--builder-accent,#00d2ee)]" />
-                        PERFORMANCE TIMING
-                      </span>
                       {isChronoRunning && (
                         <span className="font-mono text-[8px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">
                           EN CARRERA
@@ -780,9 +749,9 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
                     </div>
                   </div>
 
-                  {/* Laps Ledger Card */}
+                  {/* Laps ledger — lightweight rows on the same OLED canvas */}
                   {chronoLaps.length > 0 && (
-                    <div className="rounded-2xl bg-[#07070a] border border-white/[0.08] p-4 space-y-2">
+                    <div className="timer-surface timer-surface--laps space-y-2">
                       <span className="font-mono text-[8px] font-bold uppercase tracking-wider text-[#6E6558] block">
                         TIEMPOS DE VUELTA REGISTRADOS
                       </span>
@@ -792,7 +761,7 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
                           return (
                             <div
                               key={idx}
-                              className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]"
+                              className="timer-lap-row flex items-center justify-between p-2.5"
                             >
                               <span className="font-mono text-[9px] font-bold text-[#6E6558]">
                                 Vuelta #{chronoLaps.length - idx}
@@ -821,16 +790,8 @@ export function RestTimer({ onRewardXp, onRecordSession }: RestTimerProps) {
                   transition={{ duration: 0.28 }}
                   className="flex flex-col gap-4"
                 >
-                  <div className="rounded-[1.75rem] bg-[#07070a] border border-white/[0.08] p-5 flex flex-col items-center justify-center relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.7)]">
-                    <TechGrid />
-
-                    <div className="w-full flex items-center justify-between relative z-10 mb-1 px-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full ${isWorkPhase ? 'bg-[var(--builder-accent,#00d2ee)]' : 'bg-rose-500'} shadow-[0_0_8px_currentColor] animate-pulse`} />
-                        <span className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--builder-accent-soft,#5ce1e6)]">
-                          {selectedInterval.label} · Ronda {Math.min(currentRound + 1, selectedInterval.rounds)}/{selectedInterval.rounds}
-                        </span>
-                      </div>
+                  <div className="timer-surface timer-surface--intervals flex flex-col items-center justify-center relative">
+                    <div className="w-full flex items-center justify-end relative z-10 mb-1 px-1">
                       <span className={`font-mono text-[8px] font-black px-2 py-0.5 rounded border ${
                         isWorkPhase ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30 animate-pulse'
                       }`}>

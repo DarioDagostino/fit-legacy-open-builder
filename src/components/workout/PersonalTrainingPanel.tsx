@@ -19,12 +19,14 @@ type SetLog = {
 
 type ActiveSession = {
   routineName: string;
+  routineKey: string;
   startedAt: number | null;
   logs: Record<string, SetLog[]>;
 };
 
 const EMPTY_SESSION: ActiveSession = {
   routineName: '',
+  routineKey: '',
   startedAt: null,
   logs: {},
 };
@@ -125,14 +127,24 @@ export function PersonalTrainingPanel({
     currentRoutine.name && currentRoutine.name !== 'Untitled routine'
       ? currentRoutine.name
       : 'Mi entrenamiento';
+  const routineKey = useMemo(
+    () => currentRoutine.exercises.map((exercise) => `${exercise.id}:${exercise.sets}:${exercise.reps}`).join('|'),
+    [currentRoutine.exercises],
+  );
 
   useEffect(() => {
-    if (session.routineName && session.routineName !== routineName) {
+    const hasPersistedSession = Boolean(session.routineName || session.startedAt || Object.keys(session.logs).length);
+    const belongsToCurrentRoutine = session.routineName === routineName && session.routineKey === routineKey;
+    if (hasPersistedSession && !belongsToCurrentRoutine) {
+      // Do not let an old session with the same title keep moving its timer
+      // after a template was replaced or its exercises were edited.
       setSession(EMPTY_SESSION);
+      setRestActive(false);
+      setRestRemaining(null);
       return;
     }
     scopedLocalStorageSet(ACTIVE_SESSION_KEY, session);
-  }, [routineName, session]);
+  }, [routineKey, routineName, session]);
 
   // Elapsed Timer
   useEffect(() => {
@@ -251,6 +263,7 @@ export function PersonalTrainingPanel({
 
     setSession({
       routineName,
+      routineKey,
       startedAt: Date.now(),
       logs: initialLogs,
     });
@@ -406,7 +419,9 @@ export function PersonalTrainingPanel({
             </div>
 
             <div className="text-right shrink-0">
-              <span className="font-mono text-[8px] font-bold uppercase text-[#6E6558]">TIEMPO</span>
+              <span className="font-mono text-[8px] font-bold uppercase text-[#6E6558]">
+                {session.startedAt ? 'EN CURSO' : 'LISTO PARA EMPEZAR'}
+              </span>
               <p className="font-['Big_Shoulders_Display',sans-serif] text-3xl font-black italic tracking-tight text-[var(--builder-accent,#00d2ee)] leading-none mt-0.5">
                 {session.startedAt ? formattedElapsedTime : '00:00'}
               </p>
@@ -536,6 +551,7 @@ export function PersonalTrainingPanel({
                         <button
                           type="button"
                           onClick={() => updateSetValues(exercise.id, setIdx, -2.5, 0)}
+                          aria-label={`Disminuir peso de ${exercise.name}, serie ${setIdx + 1}`}
                           className="h-6 w-6 flex items-center justify-center text-[#6E6558] hover:text-white transition-colors"
                         >
                           <Minus size={11} />
@@ -546,6 +562,7 @@ export function PersonalTrainingPanel({
                         <button
                           type="button"
                           onClick={() => updateSetValues(exercise.id, setIdx, +2.5, 0)}
+                          aria-label={`Aumentar peso de ${exercise.name}, serie ${setIdx + 1}`}
                           className="h-6 w-6 flex items-center justify-center text-[#6E6558] hover:text-white transition-colors"
                         >
                           <Plus size={11} />
@@ -557,6 +574,7 @@ export function PersonalTrainingPanel({
                         <button
                           type="button"
                           onClick={() => updateSetValues(exercise.id, setIdx, 0, -1)}
+                          aria-label={`Disminuir repeticiones de ${exercise.name}, serie ${setIdx + 1}`}
                           className="h-6 w-6 flex items-center justify-center text-[#6E6558] hover:text-white transition-colors"
                         >
                           <Minus size={11} />
@@ -567,6 +585,7 @@ export function PersonalTrainingPanel({
                         <button
                           type="button"
                           onClick={() => updateSetValues(exercise.id, setIdx, 0, +1)}
+                          aria-label={`Aumentar repeticiones de ${exercise.name}, serie ${setIdx + 1}`}
                           className="h-6 w-6 flex items-center justify-center text-[#6E6558] hover:text-white transition-colors"
                         >
                           <Plus size={11} />
@@ -578,6 +597,7 @@ export function PersonalTrainingPanel({
                         whileTap={{ scale: 0.88 }}
                         type="button"
                         onClick={() => toggleSetComplete(exercise, setIdx)}
+                        aria-label={log.completed ? `Marcar pendiente ${exercise.name}, serie ${setIdx + 1}` : `Completar ${exercise.name}, serie ${setIdx + 1}`}
                         className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
                           log.completed
                             ? 'bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.5)]'

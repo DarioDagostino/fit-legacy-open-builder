@@ -17,7 +17,7 @@ import { WorkoutGuideAttribution } from '../WorkoutGuideAttribution';
 import { DynamicLogoIcon } from '../DynamicLogoIcon';
 import { SabiasQueBanner, type BuilderTipContext } from './SabiasQueBanner';
 import { StreakGuard } from './StreakGuard';
-import { NotificationBell } from './NotificationBell';
+import { ScreenSkeleton } from '../Skeleton';
 import { PlanDecisionPanel } from './PlanDecisionPanel';
 import { PlanWeeksPanel } from './PlanWeeksPanel';
 import { useWorkoutStore, type FoodItem, type MealComposition, type SelectedExercise } from '../../lib/store';
@@ -377,6 +377,9 @@ export default function MobileFirstBuilder() {
     ? { tab: 'home' as TabType, mode: undefined }
     : resolveBuilderRoute(window.location.pathname);
   const [activeTab, setActiveTab] = useState<TabType>(initialBuilderRoute.tab);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [tabDirection, setTabDirection] = useState<1 | -1>(1);
+  const skeletonTimer = useRef<ReturnType<typeof setTimeout>>();
   const [activeFilter, setActiveFilter] = useState('all');
   const [equipmentFilter, setEquipmentFilter] = useState<string>('all');
   const [muscleFilter, setMuscleFilter] = useState<string>('all');
@@ -412,6 +415,7 @@ export default function MobileFirstBuilder() {
   const [onboardingDirection, setOnboardingDirection] = useState<1 | -1>(1);
   const builderProfileRailRef = useRef<HTMLDivElement>(null);
   const routeHydratedRef = useRef(false);
+  const templateHydratedRef = useRef<string | null>(null);
   const reduceMotion = useReducedMotion();
   const [builderProfile, setBuilderProfile] = useState<BuilderProfile>(() => (
     scopedRawGet(BUILDER_PROFILE_KEY) === 'woman' ? 'woman' : 'man'
@@ -420,6 +424,26 @@ export default function MobileFirstBuilder() {
     const stored = scopedRawGet(LEGACITO_SKIN_KEY) as LegacitoSkin | null;
     return LEGACITO_SKIN_OPTIONS.some((option) => option.value === stored) ? stored! : 'legacy-ai';
   });
+
+  const handleTabChange = useCallback((tab: TabType) => {
+    if (tab === activeTab) return;
+    const tabOrder: TabType[] = ['home', 'build', 'draft', 'catalog', 'food', 'train', 'oneRm', 'timer', 'calendar', 'export'];
+    const currentIndex = tabOrder.indexOf(activeTab);
+    const nextIndex = tabOrder.indexOf(tab);
+    setTabDirection(nextIndex >= currentIndex ? 1 : -1);
+    setTabLoading(true);
+    if (skeletonTimer.current) clearTimeout(skeletonTimer.current);
+    setActiveTab(tab);
+    skeletonTimer.current = setTimeout(() => {
+      setTabLoading(false);
+    }, reduceMotion ? 120 : 260);
+  }, [activeTab, reduceMotion]);
+
+  useEffect(() => {
+    return () => {
+      if (skeletonTimer.current) clearTimeout(skeletonTimer.current);
+    };
+  }, []);
 
   // Every Builder screen has a stable URL so reloads, deep links and the
   // browser back button keep the user inside the app instead of falling back
@@ -454,11 +478,11 @@ export default function MobileFirstBuilder() {
         return;
       }
       if (route.mode && route.mode !== builderMode) setBuilderMode(route.mode);
-      setActiveTab(route.tab);
+      handleTabChange(route.tab);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [builderMode, setBuilderMode]);
+  }, [builderMode, handleTabChange, setBuilderMode]);
 
   useEffect(() => {
     saveCalendarActions(calendarActions);
@@ -600,10 +624,14 @@ export default function MobileFirstBuilder() {
       const rail = builderProfileRailRef.current;
       const selected = rail?.querySelector<HTMLElement>(`[data-builder-profile-option="${builderProfile}"]`);
       if (!rail || !selected) return;
-      rail.scrollTo({
-        left: selected.offsetLeft - (rail.clientWidth - selected.clientWidth) / 2,
-        behavior: 'smooth',
-      });
+      const left = selected.offsetLeft - (rail.clientWidth - selected.clientWidth) / 2;
+      if (typeof rail.scrollTo === 'function') {
+        rail.scrollTo({ left, behavior: 'smooth' });
+      } else {
+        // JSDOM does not implement Element.scrollTo; keep the selection
+        // behavior observable in tests without changing browser behavior.
+        rail.scrollLeft = left;
+      }
     });
     return () => window.cancelAnimationFrame(frame);
   }, [builderProfile, onboardingStep, showOnboarding]);
@@ -630,6 +658,7 @@ export default function MobileFirstBuilder() {
   useEffect(() => {
     const data = searchParams.get('data');
     if (data) {
+      templateHydratedRef.current = null;
       try {
         const decoded = JSON.parse(decodeURIComponent(escape(atob(data))));
         loadRoutine(decoded);
@@ -638,21 +667,32 @@ export default function MobileFirstBuilder() {
       return;
     }
     if (searchParams.get('start') === '1') {
+      templateHydratedRef.current = null;
       clearRoutine();
       setActiveTab('home');
       return;
     }
     const plan = searchParams.get('plan');
     if (plan === 'strength' || plan === 'conditioning') {
+      if (templateHydratedRef.current === plan) return;
+      let cancelled = false;
       import('../../lib/templates').then(({ ROUTINE_TEMPLATES }) => {
+        if (cancelled) return;
         const template = ROUTINE_TEMPLATES[plan];
         if (template) {
+          // A template is an entry action, not a subscription to the URL.
+          // Without this guard, deleting an exercise could be undone when
+          // the route effect is evaluated again by a parent navigation.
+          templateHydratedRef.current = plan;
           clearRoutine();
           template.exercises.forEach((ex) => addExercise(ex));
           updateRoutineName(template.name);
           setActiveTab('build');
         }
       });
+      return () => {
+        cancelled = true;
+      };
     }
   }, [searchParams, loadRoutine, clearRoutine, addExercise, updateRoutineName]);
 
@@ -1164,7 +1204,7 @@ export default function MobileFirstBuilder() {
   const sharePreviewText = useMemo(() => {
     const link = getShareableLink(selectedWirPalette);
     const contentType = shareTemplate === 'meal' ? 'plan de comidas' : shareTemplate === 'mixed' ? 'rutina y comidas' : 'rutina de entrenamiento';
-    
+
     return `¿Estás listo para empezar tu nuev@ ${contentType} personalizado?\nHaz clic en este link ahora y accede a tu plan sin instalar nada.\n\n${link}`;
   }, [shareTemplate, getShareableLink, selectedWirPalette]);
 
@@ -1602,6 +1642,21 @@ export default function MobileFirstBuilder() {
         className="relative h-full min-h-0 flex-1 overflow-hidden lg:rounded-[2rem] lg:border lg:border-[#F1F0F4]/[0.06] lg:bg-[#18181c]/60 lg:shadow-[0_24px_60px_-36px_rgba(0,0,0,0.6)]"
         role="main"
       >
+        <AnimatePresence initial={false}>
+          {tabLoading && (
+            <motion.div
+              key={`screen-skeleton-${activeTab}`}
+              className="builder-screen-skeleton-layer"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0.01 : 0.16 }}
+            >
+              <ScreenSkeleton screen={activeTab} direction={tabDirection} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait">
           {activeTab === 'home' && (
             <PersonalHomePanel onShare={() => setActiveTab('export')} onNavigate={(destination) => {
@@ -2488,38 +2543,6 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
               </div>
 
               <div className="settings-modal-content settings-footer-content">
-                {/* ── Sistema de entrenamiento ── */}
-                <div className="settings-footer-intro">
-                  <div>
-                    <span className="settings-modal-label">Sistema de entrenamiento</span>
-                    <p>Tu centro de creación conectado con todo el ecosistema Fit Legacy.</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="settings-footer-sync is-online"
-                    title="Builder activo"
-                  >
-                    <i aria-hidden="true" />
-                    <span>Live conectado</span>
-                    <strong>{routineDisplayName}</strong>
-                  </button>
-                </div>
-
-                {/* ── Notificaciones de Builder ── */}
-                <section className="settings-global-notifications" aria-labelledby="settings-builder-notifications-title">
-                  <span className="settings-global-notifications__icon" aria-hidden="true">
-                    <UiIcon name="alert" size={18} active />
-                  </span>
-                  <div className="settings-global-notifications__copy">
-                    <span className="settings-modal-label">Notificaciones de Builder</span>
-                    <strong id="settings-builder-notifications-title">Avisos de este tablero</strong>
-                    <p>Sincronización, racha y alertas de tus rutinas. Solo se muestran dentro de esta app.</p>
-                  </div>
-                  <div className="settings-global-notifications__actions">
-                    <NotificationBell />
-                  </div>
-                </section>
-
                 {/* ── Producto / Legado link grid (idéntico a Analytics) ── */}
                 <div className="settings-footer-link-grid">
                   <nav aria-label="Productos Fit Legacy">
@@ -2846,7 +2869,7 @@ className="relative hidden min-h-0 overflow-hidden rounded-[2rem] border border-
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  setActiveTab(item.id);
+                  handleTabChange(item.id);
                 }}
                 className={`builder-footer-nav-btn${isActive ? ' is-active' : ''}`}
                 aria-label={`${item.label}: ${item.meta}`}

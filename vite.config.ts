@@ -15,8 +15,10 @@ export default defineConfig({
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
       'utils': path.resolve(__dirname, './utils'),
+      // Keep the standalone repo compatible with Builder's guide-aware
+      // imports even though the optional guide package is not installed here.
+      '@fit-legacy/shared/builder': path.resolve(__dirname, './src/lib/builderShared.ts'),
       // Shared package alias. Keep this repo self-contained for Vercel builds.
-      '@fit-legacy/shared/builder': path.resolve(__dirname, './_consolidated_workout_nutrition/packages/shared/index.ts'),
       '@fit-legacy/shared': path.resolve(__dirname, './_consolidated_workout_nutrition/packages/shared/index.ts'),
       '@fit-legacy/ai': path.resolve(__dirname, './src/lib/integrations/nvidiaFallback.ts'),
       '@fit-legacy/config': path.resolve(__dirname, './src/lib/integrations'),
